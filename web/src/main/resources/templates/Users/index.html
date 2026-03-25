@@ -1,0 +1,184 @@
+{#include main.html}
+{#title}Users — Prüfstein{/title}
+
+<div class="cds--grid cds--grid--full-width">
+
+  <div class="cds--row" style="margin-bottom: 1.5rem;">
+    <div class="cds--col">
+      <h1 class="cds--type-productive-heading-04">Users</h1>
+    </div>
+  </div>
+
+  <div class="cds--row">
+    <div class="cds--col">
+
+      <cds-table-toolbar>
+        <cds-table-toolbar-content>
+          <cds-table-toolbar-search placeholder="Search users"></cds-table-toolbar-search>
+          <cds-button kind="primary" id="open-create-modal">Add User</cds-button>
+        </cds-table-toolbar-content>
+      </cds-table-toolbar>
+
+      <cds-table>
+        <cds-table-head>
+          <cds-table-header-row>
+            <cds-table-header-cell>First Name</cds-table-header-cell>
+            <cds-table-header-cell>Last Name</cds-table-header-cell>
+            <cds-table-header-cell>Email</cds-table-header-cell>
+            <cds-table-header-cell></cds-table-header-cell>
+          </cds-table-header-row>
+        </cds-table-head>
+        <cds-table-body>
+          {#for user in users}
+          <cds-table-row>
+            <cds-table-cell>{user.firstname}</cds-table-cell>
+            <cds-table-cell>{user.lastname}</cds-table-cell>
+            <cds-table-cell>{user.mail}</cds-table-cell>
+            <cds-table-cell>
+              <cds-overflow-menu>
+                <cds-overflow-menu-item
+                  onclick="openEditModal(this)"
+                  data-id="{user.id}"
+                  data-firstname="{user.firstname}"
+                  data-lastname="{user.lastname}"
+                  data-mail="{user.mail}">
+                  Edit
+                </cds-overflow-menu-item>
+                <cds-overflow-menu-item
+                  danger
+                  onclick="openDeleteModal('{user.id}')">
+                  Delete
+                </cds-overflow-menu-item>
+              </cds-overflow-menu>
+            </cds-table-cell>
+          </cds-table-row>
+          {#else}
+          <cds-table-row>
+            <cds-table-cell colspan="4" style="color: #525252; font-style: italic;">
+              No users found. Click "Add User" to create one.
+            </cds-table-cell>
+          </cds-table-row>
+          {/for}
+        </cds-table-body>
+      </cds-table>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Create User Modal ──────────────────────────────────────── -->
+<cds-modal id="create-user-modal" size="sm">
+  <cds-modal-header>
+    <cds-modal-close-button></cds-modal-close-button>
+    <cds-modal-heading>Add User</cds-modal-heading>
+  </cds-modal-header>
+  <cds-modal-body has-scrolling-content>
+    <form id="create-user-form" method="post" action="{uri:Users.create}">
+      <div style="margin-bottom: 1rem;">
+        <cds-text-input
+          name="firstname"
+          label="First Name"
+          placeholder="Jane"
+          required>
+        </cds-text-input>
+      </div>
+      <div style="margin-bottom: 1rem;">
+        <cds-text-input
+          name="lastname"
+          label="Last Name"
+          placeholder="Doe"
+          required>
+        </cds-text-input>
+      </div>
+      <div style="margin-bottom: 1rem;">
+        <cds-text-input
+          name="mail"
+          label="Email"
+          type="email"
+          placeholder="jane.doe@example.com"
+          required>
+        </cds-text-input>
+      </div>
+    </form>
+  </cds-modal-body>
+  <cds-modal-footer>
+    <cds-modal-footer-button kind="secondary" data-modal-close>Cancel</cds-modal-footer-button>
+    <cds-modal-footer-button
+      kind="primary"
+      onclick="document.getElementById('create-user-form').submit()">
+      Add User
+    </cds-modal-footer-button>
+  </cds-modal-footer>
+</cds-modal>
+
+<!-- ── Edit User Modal ────────────────────────────────────────── -->
+<cds-modal id="edit-user-modal" size="sm">
+  <cds-modal-header>
+    <cds-modal-close-button></cds-modal-close-button>
+    <cds-modal-heading>Edit User</cds-modal-heading>
+  </cds-modal-header>
+  <cds-modal-body has-scrolling-content>
+    <form id="edit-user-form" method="post" action="{uri:Users.update}">
+      <input type="hidden" id="edit-id" name="id">
+      <div style="margin-bottom: 1rem;">
+        <cds-text-input
+          id="edit-firstname"
+          name="firstname"
+          label="First Name"
+          required>
+        </cds-text-input>
+      </div>
+      <div style="margin-bottom: 1rem;">
+        <cds-text-input
+          id="edit-lastname"
+          name="lastname"
+          label="Last Name"
+          required>
+        </cds-text-input>
+      </div>
+      <div style="margin-bottom: 1rem;">
+        <cds-text-input
+          id="edit-mail"
+          name="mail"
+          label="Email"
+          type="email"
+          required>
+        </cds-text-input>
+      </div>
+    </form>
+  </cds-modal-body>
+  <cds-modal-footer>
+    <cds-modal-footer-button kind="secondary" data-modal-close>Cancel</cds-modal-footer-button>
+    <cds-modal-footer-button
+      kind="primary"
+      onclick="document.getElementById('edit-user-form').submit()">
+      Save Changes
+    </cds-modal-footer-button>
+  </cds-modal-footer>
+</cds-modal>
+
+<!-- ── Delete Confirmation Modal ─────────────────────────────── -->
+<cds-modal id="delete-user-modal" size="sm" danger>
+  <cds-modal-header>
+    <cds-modal-close-button></cds-modal-close-button>
+    <cds-modal-heading>Delete User</cds-modal-heading>
+  </cds-modal-header>
+  <cds-modal-body>
+    <cds-modal-body-content description>
+      Are you sure you want to delete this user? This action cannot be undone.
+    </cds-modal-body-content>
+    <form id="delete-user-form" method="post" action="{uri:Users.delete}">
+      <input type="hidden" id="delete-id" name="id">
+    </form>
+  </cds-modal-body>
+  <cds-modal-footer>
+    <cds-modal-footer-button kind="secondary" data-modal-close>Cancel</cds-modal-footer-button>
+    <cds-modal-footer-button
+      kind="danger"
+      onclick="document.getElementById('delete-user-form').submit()">
+      Delete
+    </cds-modal-footer-button>
+  </cds-modal-footer>
+</cds-modal>
+
+{/include}

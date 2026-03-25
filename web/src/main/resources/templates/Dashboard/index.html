@@ -1,0 +1,44 @@
+{#include main.html}
+{#title}Dashboard — Prüfstein{/title}
+
+<div class="cds--grid cds--grid--full-width">
+
+  <div class="cds--row" style="margin-bottom: 2rem;">
+    <div class="cds--col">
+      <h1 class="cds--type-productive-heading-04">Dashboard</h1>
+      <p class="cds--type-body-long-01" style="color: #525252; margin-top: 0.5rem;">
+        Welcome to Prüfstein. Here is an overview of your data.
+      </p>
+    </div>
+  </div>
+
+  <div class="cds--row">
+    <div class="cds--col-lg-4 cds--col-md-4 cds--col-sm-4" style="margin-bottom: 1rem;">
+      <cds-tile>
+        <p class="cds--type-label-01" style="color: #525252; text-transform: uppercase; letter-spacing: 0.05em;">Total Users</p>
+        <p class="cds--type-productive-heading-06" style="margin-top: 0.5rem;">{userCount}</p>
+      </cds-tile>
+    </div>
+    <div class="cds--col-lg-4 cds--col-md-4 cds--col-sm-4" style="margin-bottom: 1rem;">
+      <cds-tile>
+        <p class="cds--type-label-01" style="color: #525252; text-transform: uppercase; letter-spacing: 0.05em;">Reports</p>
+        <p class="cds--type-productive-heading-06" style="margin-top: 0.5rem;">0</p>
+      </cds-tile>
+    </div>
+    <div class="cds--col-lg-4 cds--col-md-4 cds--col-sm-4" style="margin-bottom: 1rem;">
+      <cds-tile>
+        <p class="cds--type-label-01" style="color: #525252; text-transform: uppercase; letter-spacing: 0.05em;">Compliance Items</p>
+        <p class="cds--type-productive-heading-06" style="margin-top: 0.5rem;">0</p>
+      </cds-tile>
+    </div>
+    <div class="cds--col-lg-4 cds--col-md-4 cds--col-sm-4" style="margin-bottom: 1rem;">
+      <cds-tile>
+        <p class="cds--type-label-01" style="color: #525252; text-transform: uppercase; letter-spacing: 0.05em;">Open Issues</p>
+        <p class="cds--type-productive-heading-06" style="margin-top: 0.5rem;">0</p>
+      </cds-tile>
+    </div>
+  </div>
+
+</div>
+
+{/include}

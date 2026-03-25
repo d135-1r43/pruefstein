@@ -1,28 +1,51 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <!-- You can pass parameters from your templates to your main template and insert them -->
-    <title>{#insert title/}</title>
-    <style type="text/css">
-    .head {
-      border-bottom: 1px solid black;
-      margin-bottom: 1em;
-    }
-    .head div {
-      display: inline-block;
-      margin: 0.5em;
-    }
-    </style>
-    {#insert moreStyles /}
-    {#insert moreScripts /}
-  </head>
-  <body>
-    <div class="head">
-      <!-- You can make links to actions using the uri: namespace -->
-      <div><a href="{uri:Todos.index}">Index</a></div>
-      <div><a href="{uri:Todos.todos}">Todos</a></div>
-    </div>
-    <!-- This inserts the body of your templates -->
-    {#insert /}
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{#insert title}Prüfstein{/insert}</title>
+  <link rel="stylesheet" href="https://unpkg.com/@carbon/styles@1/css/styles.css">
+  <script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v2.50.0/ui-shell.min.js"></script>
+  <script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v2.50.0/button.min.js"></script>
+  <script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v2.50.0/data-table.min.js"></script>
+  <script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v2.50.0/modal.min.js"></script>
+  <script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v2.50.0/text-input.min.js"></script>
+  <script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v2.50.0/tile.min.js"></script>
+  <script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v2.50.0/tag.min.js"></script>
+  <script type="module" src="https://1.www.s81c.com/common/carbon/web-components/version/v2.50.0/overflow-menu.min.js"></script>
+  {#bundle /}
+</head>
+<body class="cds--white">
+
+  <cds-header aria-label="Prüfstein">
+    <cds-header-menu-button
+      button-label-active="Close menu"
+      button-label-inactive="Open menu">
+    </cds-header-menu-button>
+    <cds-header-name href="{uri:Dashboard.index}" prefix="">
+      Prüfstein
+    </cds-header-name>
+    <cds-side-nav aria-label="Side navigation" collapse-mode="responsive">
+      <cds-side-nav-items>
+        <cds-side-nav-link href="{uri:Dashboard.index}">Dashboard</cds-side-nav-link>
+        <cds-side-nav-divider></cds-side-nav-divider>
+        <cds-side-nav-menu title="Management">
+          <cds-side-nav-menu-item href="{uri:Users.index}">Users</cds-side-nav-menu-item>
+        </cds-side-nav-menu>
+      </cds-side-nav-items>
+    </cds-side-nav>
+  </cds-header>
+
+  <div class="cds--content">
+    <main>
+      {#insert /}
+    </main>
+
+    <footer style="border-top: 1px solid #e0e0e0; margin-top: 4rem; padding: 1rem 0; display: flex; justify-content: space-between; align-items: center;">
+      <p class="cds--type-body-compact-01" style="color: #525252;">© 2026 Prüfstein</p>
+      <p class="cds--type-body-compact-01" style="color: #8d8d8d;">v1.0.0</p>
+    </footer>
+  </div>
+
+</body>
 </html>
