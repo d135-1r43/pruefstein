@@ -1,0 +1,50 @@
+package com.pruefstein.model;
+
+import io.quarkus.hibernate.panache.PanacheEntity;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
+
+import java.util.List;
+
+@Entity
+public class User extends PanacheEntity
+{
+    private String firstname;
+    private String lastname;
+    private String mail;
+
+    @OneToMany(mappedBy = "user")
+    private List<Report> reports;
+
+    public String getFirstname() {
+        return firstname;
+    }
+
+    public void setFirstname(String firstname) {
+        this.firstname = firstname;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
+    }
+
+    public String getMail() {
+        return mail;
+    }
+
+    public void setMail(String mail) {
+        this.mail = mail;
+    }
+
+    public List<Report> getReports() {
+        return reports;
+    }
+
+    public void setReports(List<Report> reports) {
+        this.reports = reports;
+    }
+}

@@ -1,4 +1,4 @@
-package model;
+package com.pruefstein.model;
 
 import java.util.ArrayList;
 import java.util.Date;

@@ -1,4 +1,4 @@
-package rest;
+package com.pruefstein.rest;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ import org.jboss.resteasy.reactive.RestForm;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkiverse.renarde.Controller;
-import model.Todo;
+import com.pruefstein.model.Todo;
 
 /**
  * This defines a REST controller, each method will be available under the "Classname/method" URI by convention

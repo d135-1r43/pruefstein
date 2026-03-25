@@ -1,4 +1,4 @@
-package util;
+package com.pruefstein.util;
 
 import io.quarkus.qute.TemplateExtension;
 
