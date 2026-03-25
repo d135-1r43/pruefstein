@@ -1,6 +1,6 @@
-package com.pruefstein.repository;
+package com.pruefstein.user.repository;
 
-import com.pruefstein.model.User;
+import com.pruefstein.user.domain.User;
 import io.quarkus.hibernate.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 

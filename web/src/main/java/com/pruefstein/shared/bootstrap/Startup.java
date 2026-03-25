@@ -1,4 +1,4 @@
-package com.pruefstein.util;
+package com.pruefstein.shared.bootstrap;
 
 import java.util.Date;
 
@@ -7,7 +7,7 @@ import jakarta.enterprise.event.Observes;
 
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.StartupEvent;
-import com.pruefstein.model.Todo;
+import com.pruefstein.todo.domain.Todo;
 
 @ApplicationScoped
 public class Startup {
@@ -16,14 +16,14 @@ public class Startup {
      */
     public void start(@Observes StartupEvent evt) {
         // in DEV mode we seed some data
-        if(LaunchMode.current() == LaunchMode.DEVELOPMENT) {
+        if (LaunchMode.current() == LaunchMode.DEVELOPMENT) {
             Todo a = new Todo();
-            a.task = "First item";
+            a.setTask("First item");
             a.persist();
 
             Todo b = new Todo();
-            b.task = "Second item";
-            b.completed = new Date();
+            b.setTask("Second item");
+            b.setCompleted(new Date());
             b.persist();
         }
     }

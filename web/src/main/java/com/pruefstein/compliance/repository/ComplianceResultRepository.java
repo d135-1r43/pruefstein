@@ -1,6 +1,6 @@
-package com.pruefstein.repository;
+package com.pruefstein.compliance.repository;
 
-import com.pruefstein.model.ComplianceResult;
+import com.pruefstein.compliance.domain.ComplianceResult;
 import io.quarkus.hibernate.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 

@@ -1,5 +1,6 @@
-package com.pruefstein.model;
+package com.pruefstein.user.domain;
 
+import com.pruefstein.report.domain.Report;
 import io.quarkus.hibernate.panache.PanacheEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
