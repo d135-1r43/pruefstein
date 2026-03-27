@@ -7,14 +7,14 @@ import jakarta.persistence.OneToMany;
 
 import java.util.List;
 
-@Entity
-public class User extends PanacheEntity
+@Entity()
+public class AppUser extends PanacheEntity
 {
     private String firstname;
     private String lastname;
     private String mail;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "appUser")
     private List<Report> reports;
 
     public String getFirstname() {

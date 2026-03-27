@@ -1,9 +1,11 @@
 package com.pruefstein.user.api;
 
-import com.pruefstein.user.domain.User;
+import com.pruefstein.user.domain.AppUser;
+import com.pruefstein.user.repository.UserRepository;
 import io.quarkiverse.renarde.Controller;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -14,13 +16,16 @@ import java.util.List;
 
 public class Users extends Controller {
 
+    @Inject
+    UserRepository userRepository;
+
     @CheckedTemplate
     public static class Templates {
-        public static native TemplateInstance index(List<User> users);
+        public static native TemplateInstance index(List<AppUser> appUsers);
     }
 
     public TemplateInstance index() {
-        return Templates.index(User.listAll());
+        return Templates.index(userRepository.listAll());
     }
 
     @POST
@@ -33,11 +38,11 @@ public class Users extends Controller {
             index();
             return;
         }
-        User user = new User();
-        user.setFirstname(firstname);
-        user.setLastname(lastname);
-        user.setMail(mail);
-        user.persist();
+        AppUser appUser = new AppUser();
+        appUser.setFirstname(firstname);
+        appUser.setLastname(lastname);
+        appUser.setMail(mail);
+        userRepository.persist(appUser);
         index();
     }
 
@@ -52,21 +57,21 @@ public class Users extends Controller {
             index();
             return;
         }
-        User user = User.findById(id);
-        if (user == null) {
+        AppUser appUser = userRepository.findById(id);
+        if (appUser == null) {
             notFound();
             return;
         }
-        user.setFirstname(firstname);
-        user.setLastname(lastname);
-        user.setMail(mail);
+        appUser.setFirstname(firstname);
+        appUser.setLastname(lastname);
+        appUser.setMail(mail);
         index();
     }
 
     @POST
     @Transactional
     public void delete(@RestForm Long id) {
-        User.deleteById(id);
+        userRepository.deleteById(id);
         index();
     }
 }

@@ -1,42 +1,39 @@
 {#include main.html}
 {#title}Dashboard — Prüfstein{/title}
 
-<div class="cds--grid cds--grid--full-width">
+<div class="max-w-5xl">
 
-  <div class="cds--row" style="margin-bottom: 2rem;">
-    <div class="cds--col">
-      <h1 class="cds--type-productive-heading-04">Dashboard</h1>
-      <p class="cds--type-body-long-01" style="color: #525252; margin-top: 0.5rem;">
-        Welcome to Prüfstein. Here is an overview of your data.
-      </p>
-    </div>
+  <div class="mb-8">
+    <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
+    <p class="text-sm text-zinc-500 mt-1">Welcome to Prüfstein. Here's an overview of your data.</p>
   </div>
 
-  <div class="cds--row">
-    <div class="cds--col-lg-4 cds--col-md-4 cds--col-sm-4" style="margin-bottom: 1rem;">
-      <cds-tile>
-        <p class="cds--type-label-01" style="color: #525252; text-transform: uppercase; letter-spacing: 0.05em;">Total Users</p>
-        <p class="cds--type-productive-heading-06" style="margin-top: 0.5rem;">{userCount}</p>
-      </cds-tile>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+    <div class="bg-white rounded-lg border border-zinc-200 p-6">
+      <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Total Users</p>
+      <p class="text-3xl font-semibold mt-2">{userCount}</p>
+      <p class="text-xs text-zinc-400 mt-1.5">registered accounts</p>
     </div>
-    <div class="cds--col-lg-4 cds--col-md-4 cds--col-sm-4" style="margin-bottom: 1rem;">
-      <cds-tile>
-        <p class="cds--type-label-01" style="color: #525252; text-transform: uppercase; letter-spacing: 0.05em;">Reports</p>
-        <p class="cds--type-productive-heading-06" style="margin-top: 0.5rem;">0</p>
-      </cds-tile>
+
+    <div class="bg-white rounded-lg border border-zinc-200 p-6">
+      <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Reports</p>
+      <p class="text-3xl font-semibold mt-2">0</p>
+      <p class="text-xs text-zinc-400 mt-1.5">no reports yet</p>
     </div>
-    <div class="cds--col-lg-4 cds--col-md-4 cds--col-sm-4" style="margin-bottom: 1rem;">
-      <cds-tile>
-        <p class="cds--type-label-01" style="color: #525252; text-transform: uppercase; letter-spacing: 0.05em;">Compliance Items</p>
-        <p class="cds--type-productive-heading-06" style="margin-top: 0.5rem;">0</p>
-      </cds-tile>
+
+    <div class="bg-white rounded-lg border border-zinc-200 p-6">
+      <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Compliance Items</p>
+      <p class="text-3xl font-semibold mt-2">0</p>
+      <p class="text-xs text-zinc-400 mt-1.5">items tracked</p>
     </div>
-    <div class="cds--col-lg-4 cds--col-md-4 cds--col-sm-4" style="margin-bottom: 1rem;">
-      <cds-tile>
-        <p class="cds--type-label-01" style="color: #525252; text-transform: uppercase; letter-spacing: 0.05em;">Open Issues</p>
-        <p class="cds--type-productive-heading-06" style="margin-top: 0.5rem;">0</p>
-      </cds-tile>
+
+    <div class="bg-white rounded-lg border border-zinc-200 p-6">
+      <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Open Issues</p>
+      <p class="text-3xl font-semibold mt-2">0</p>
+      <p class="text-xs text-zinc-400 mt-1.5">require attention</p>
     </div>
+
   </div>
 
 </div>

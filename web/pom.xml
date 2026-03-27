@@ -96,20 +96,6 @@
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>default-compile</id>
-                        <configuration>
-                            <annotationProcessorPathsUseDepMgmt>true</annotationProcessorPathsUseDepMgmt>
-                            <annotationProcessorPaths>
-                                <annotationProcessorPath>
-                                    <groupId>org.hibernate.orm</groupId>
-                                    <artifactId>hibernate-processor</artifactId>
-                                </annotationProcessorPath>
-                            </annotationProcessorPaths>
-                        </configuration>
-                    </execution>
-                </executions>
                 <configuration>
                     <parameters>true</parameters>
                 </configuration>

@@ -1,26 +1,4 @@
-// Carbon shell takes care of layout — remove old demo styles
-body {
-  margin: 0;
-  padding: 0;
-  background-color: unset;
-}
-
-// Dashboard tile grid
-.ps-dashboard-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-// Full-width table inside content area
-.cds--content cds-table {
-  width: 100%;
-}
-
-// Consistent spacing for modal body form fields
-cds-modal-body cds-text-input,
-cds-modal-body cds-text-input + cds-text-input {
-  display: block;
-  margin-bottom: 1rem;
+// Hide Alpine.js-controlled elements before JS hydrates (prevents flash)
+[x-cloak] {
+  display: none !important;
 }

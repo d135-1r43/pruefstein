@@ -1,7 +1,7 @@
 package com.pruefstein.report.domain;
 
 import com.pruefstein.compliance.domain.ComplianceResult;
-import com.pruefstein.user.domain.User;
+import com.pruefstein.user.domain.AppUser;
 import io.quarkus.hibernate.panache.PanacheEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
@@ -15,7 +15,7 @@ public class Report extends PanacheEntity
     private String title;
 
     @ManyToOne
-    private User user;
+    private AppUser appUser;
 
     @OneToMany(mappedBy = "report")
     private List<ComplianceResult> results;
@@ -28,12 +28,12 @@ public class Report extends PanacheEntity
         this.title = title;
     }
 
-    public User getUser() {
-        return user;
+    public AppUser getUser() {
+        return appUser;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUser(AppUser appUser) {
+        this.appUser = appUser;
     }
 
     public List<ComplianceResult> getResults() {
