@@ -3,6 +3,7 @@ package com.pruefstein.dev;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.quarkus.runtime.LaunchMode;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.NotFoundException;
@@ -19,16 +20,22 @@ public class DevOsqueryResource
 	@POST
 	@Path("/run")
 	@Consumes(MediaType.APPLICATION_JSON)
-	public OsqueryResult run(OsqueryRequest request)
+	public OsqueryResult run(JsonNode body)
 	{
 		if (LaunchMode.current() != LaunchMode.DEVELOPMENT)
 		{
 			throw new NotFoundException();
 		}
 
+		String query = body != null && body.has("query") ? body.get("query").asText() : null;
+		if (query == null || query.isBlank())
+		{
+			return OsqueryResult.error("query is required");
+		}
+
 		try
 		{
-			ProcessBuilder pb = new ProcessBuilder("osqueryi", "--json", request.query());
+			ProcessBuilder pb = new ProcessBuilder("osqueryi", "--json", query);
 			pb.redirectErrorStream(true);
 			Process process = pb.start();
 
@@ -63,10 +70,6 @@ public class DevOsqueryResource
 			Thread.currentThread().interrupt();
 			return OsqueryResult.error("Interrupted");
 		}
-	}
-
-	public record OsqueryRequest(String query)
-	{
 	}
 
 	public record OsqueryResult(String output, String error)
