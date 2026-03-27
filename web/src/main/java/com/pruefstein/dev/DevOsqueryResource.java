@@ -1,16 +1,15 @@
 package com.pruefstein.dev;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.quarkus.runtime.LaunchMode;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 @Path("/dev/osquery")
 @Produces(MediaType.APPLICATION_JSON)
@@ -20,11 +19,11 @@ public class DevOsqueryResource
 	@POST
 	@Path("/run")
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response run(OsqueryRequest request)
+	public OsqueryResult run(OsqueryRequest request)
 	{
 		if (LaunchMode.current() != LaunchMode.DEVELOPMENT)
 		{
-			return Response.status(Response.Status.NOT_FOUND).build();
+			throw new NotFoundException();
 		}
 
 		try
@@ -37,7 +36,7 @@ public class DevOsqueryResource
 			if (!finished)
 			{
 				process.destroyForcibly();
-				return Response.ok(Map.of("error", "osqueryi timed out after 10 seconds")).build();
+				return OsqueryResult.error("osqueryi timed out after 10 seconds");
 			}
 
 			String output = new String(process.getInputStream().readAllBytes()).strip();
@@ -45,26 +44,41 @@ public class DevOsqueryResource
 
 			if (exitCode != 0)
 			{
-				return Response.ok(Map.of("error", output.isEmpty() ? "osqueryi exited with code " + exitCode : output)).build();
+				return OsqueryResult.error(output.isEmpty() ? "osqueryi exited with code " + exitCode : output);
 			}
 
-			return Response.ok(Map.of("output", output)).build();
+			return OsqueryResult.ok(output);
 		}
 		catch (IOException e)
 		{
-			String message = e.getMessage() != null && e.getMessage().contains("No such file")
-				? "osqueryi not found — is osquery installed and on PATH?"
-				: e.getMessage();
-			return Response.ok(Map.of("error", message)).build();
+			String msg = e.getMessage();
+			if (msg != null && msg.contains("No such file"))
+			{
+				return OsqueryResult.error("osqueryi not found — is osquery installed and on PATH?");
+			}
+			return OsqueryResult.error(msg != null ? msg : "Unknown IO error");
 		}
 		catch (InterruptedException e)
 		{
 			Thread.currentThread().interrupt();
-			return Response.ok(Map.of("error", "Interrupted")).build();
+			return OsqueryResult.error("Interrupted");
 		}
 	}
 
 	public record OsqueryRequest(String query)
 	{
+	}
+
+	public record OsqueryResult(String output, String error)
+	{
+		static OsqueryResult ok(String output)
+		{
+			return new OsqueryResult(output, null);
+		}
+
+		static OsqueryResult error(String error)
+		{
+			return new OsqueryResult(null, error);
+		}
 	}
 }
