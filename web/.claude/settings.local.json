@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw quarkus:dev -Dquarkus.http.host=0.0.0.0)",
+      "Bash(./mvnw clean:*)",
+      "WebSearch",
+      "Bash(curl -s http://localhost:8080/q/health)",
+      "Bash(curl -s http://localhost:8080/q/dev-mcp)"
+    ]
+  }
+}

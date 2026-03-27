@@ -2,18 +2,24 @@ package com.pruefstein.compliance.domain;
 
 import com.pruefstein.report.domain.Report;
 import io.quarkus.hibernate.panache.PanacheEntity;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 
 @Entity
 public class ComplianceResult extends PanacheEntity
 {
-	@OneToOne
+
+	@ManyToOne(optional = false)
 	private ComplianceItem item;
 
-	@ManyToOne
+	@ManyToOne(optional = false)
 	private Report report;
+
+	private boolean passed;
+
+	@Column(columnDefinition = "TEXT")
+	private String output;
 
 	public ComplianceItem getItem()
 	{
@@ -33,5 +39,25 @@ public class ComplianceResult extends PanacheEntity
 	public void setReport(Report report)
 	{
 		this.report = report;
+	}
+
+	public boolean isPassed()
+	{
+		return passed;
+	}
+
+	public void setPassed(boolean passed)
+	{
+		this.passed = passed;
+	}
+
+	public String getOutput()
+	{
+		return output;
+	}
+
+	public void setOutput(String output)
+	{
+		this.output = output;
 	}
 }

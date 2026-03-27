@@ -1,41 +1,68 @@
 package com.pruefstein.report.domain;
 
+import java.time.Instant;
+import java.util.List;
+
 import com.pruefstein.compliance.domain.ComplianceResult;
 import com.pruefstein.user.domain.AppUser;
 import io.quarkus.hibernate.panache.PanacheEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
-import java.util.List;
-
 @Entity
 public class Report extends PanacheEntity
 {
-	private String title;
+
+	private String deviceId;
+
+	private String userId;
+
+	private Instant checkedAt;
 
 	@ManyToOne
 	private AppUser appUser;
 
-	@OneToMany(mappedBy = "report")
+	@OneToMany(mappedBy = "report", cascade = CascadeType.ALL)
 	private List<ComplianceResult> results;
 
-	public String getTitle()
+	public String getDeviceId()
 	{
-		return title;
+		return deviceId;
 	}
 
-	public void setTitle(String title)
+	public void setDeviceId(String deviceId)
 	{
-		this.title = title;
+		this.deviceId = deviceId;
 	}
 
-	public AppUser getUser()
+	public String getUserId()
+	{
+		return userId;
+	}
+
+	public void setUserId(String userId)
+	{
+		this.userId = userId;
+	}
+
+	public Instant getCheckedAt()
+	{
+		return checkedAt;
+	}
+
+	public void setCheckedAt(Instant checkedAt)
+	{
+		this.checkedAt = checkedAt;
+	}
+
+	public AppUser getAppUser()
 	{
 		return appUser;
 	}
 
-	public void setUser(AppUser appUser)
+	public void setAppUser(AppUser appUser)
 	{
 		this.appUser = appUser;
 	}
@@ -43,10 +70,5 @@ public class Report extends PanacheEntity
 	public List<ComplianceResult> getResults()
 	{
 		return results;
-	}
-
-	public void setResults(List<ComplianceResult> results)
-	{
-		this.results = results;
 	}
 }
