@@ -48,12 +48,12 @@ public class Startup
 		addItem(operations,
 			"Firewall enabled",
 			"SELECT global_state FROM alf;",
-			"results[0].global_state == \"1\"");
+			"results.size() > 0 && results[0].global_state == '1'");
 
 		addItem(operations,
 			"Automatic updates enabled",
 			"SELECT value FROM preferences WHERE domain = 'com.apple.SoftwareUpdate' AND key = 'AutomaticCheckEnabled';",
-			"results[0].value == \"1\"");
+			"results.size() > 0 && results[0].value == '1'");
 
 		ComplianceGroup access = new ComplianceGroup();
 		access.setName("A.9 Access Control");
@@ -62,7 +62,7 @@ public class Startup
 		addItem(access,
 			"Screen lock timeout ≤ 300 seconds",
 			"SELECT value FROM preferences WHERE domain = 'com.apple.screensaver' AND key = 'idleTime';",
-			"results.size() > 0 && Integer.parseInt(results[0].value) <= 300");
+			"results.size() > 0 && results[0].value <= 300");
 	}
 
 	private void addItem(ComplianceGroup group, String name, String query, String expectedExpression)

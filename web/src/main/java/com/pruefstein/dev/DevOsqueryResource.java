@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.pruefstein.compliance.service.ComplianceEvaluator;
 import io.quarkus.runtime.LaunchMode;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -17,6 +19,9 @@ import jakarta.ws.rs.core.MediaType;
 public class DevOsqueryResource
 {
 
+	@Inject
+	ComplianceEvaluator evaluator;
+
 	@POST
 	@Path("/run")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -28,11 +33,14 @@ public class DevOsqueryResource
 		}
 
 		String query = body != null && body.has("query") ? body.get("query").asText() : null;
+		String expression = body != null && body.has("expression") ? body.get("expression").asText() : null;
+
 		if (query == null || query.isBlank())
 		{
 			return OsqueryResult.error("query is required");
 		}
 
+		String output;
 		try
 		{
 			ProcessBuilder pb = new ProcessBuilder("osqueryi", "--json", query);
@@ -46,15 +54,13 @@ public class DevOsqueryResource
 				return OsqueryResult.error("osqueryi timed out after 10 seconds");
 			}
 
-			String output = new String(process.getInputStream().readAllBytes()).strip();
+			output = new String(process.getInputStream().readAllBytes()).strip();
 			int exitCode = process.exitValue();
 
 			if (exitCode != 0)
 			{
 				return OsqueryResult.error(output.isEmpty() ? "osqueryi exited with code " + exitCode : output);
 			}
-
-			return OsqueryResult.ok(output);
 		}
 		catch (IOException e)
 		{
@@ -70,18 +76,38 @@ public class DevOsqueryResource
 			Thread.currentThread().interrupt();
 			return OsqueryResult.error("Interrupted");
 		}
+
+		if (expression == null || expression.isBlank())
+		{
+			return OsqueryResult.withOutput(output, null);
+		}
+
+		try
+		{
+			boolean passed = evaluator.evaluate(output, expression);
+			return OsqueryResult.withOutput(output, passed);
+		}
+		catch (Exception e)
+		{
+			return OsqueryResult.withOutput(output, null).withExpressionError(e.getMessage());
+		}
 	}
 
-	public record OsqueryResult(String output, String error)
+	public record OsqueryResult(String output, Boolean passed, String error, String expressionError)
 	{
-		static OsqueryResult ok(String output)
+		static OsqueryResult withOutput(String output, Boolean passed)
 		{
-			return new OsqueryResult(output, null);
+			return new OsqueryResult(output, passed, null, null);
+		}
+
+		OsqueryResult withExpressionError(String msg)
+		{
+			return new OsqueryResult(this.output, null, null, msg);
 		}
 
 		static OsqueryResult error(String error)
 		{
-			return new OsqueryResult(null, error);
+			return new OsqueryResult(null, null, error, null);
 		}
 	}
 }
