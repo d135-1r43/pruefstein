@@ -7,7 +7,7 @@
      class="max-w-5xl">
 
   <!-- Breadcrumb -->
-  <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-stone-400 mb-6">
+  <div class="flex items-center gap-2 text-xs font-bold tracking-wide text-stone-400 mb-6">
     <a href="{uri:ComplianceGroups.index}" class="hover:text-black transition-colors">Compliance Groups</a>
     <span>/</span>
     <span class="text-black">{group.name}</span>
@@ -16,11 +16,11 @@
   <!-- Page header -->
   <div class="flex items-start justify-between mb-8">
     <div>
-      <h1 class="text-4xl font-black uppercase tracking-tight">{group.name}</h1>
+      <h1 class="text-4xl font-black tracking-tight">{group.name}</h1>
       <p class="text-sm font-medium text-stone-500 mt-1">Compliance checks in this group.</p>
     </div>
     <button @click="showCreate = true"
-            class="inline-flex items-center gap-2 bg-black text-white text-sm font-bold uppercase px-4 py-2.5 border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+            class="inline-flex items-center gap-2 bg-black text-white text-sm font-bold px-4 py-2.5 border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
       </svg>
@@ -33,9 +33,9 @@
     <table class="w-full text-sm">
       <thead>
         <tr class="border-b-2 border-black bg-black text-white">
-          <th class="text-left px-4 py-3 font-black uppercase tracking-wide text-xs w-1/4">Name</th>
-          <th class="text-left px-4 py-3 font-black uppercase tracking-wide text-xs w-5/12">Query</th>
-          <th class="text-left px-4 py-3 font-black uppercase tracking-wide text-xs w-5/12">Expression</th>
+          <th class="text-left px-4 py-3 font-black tracking-wide text-xs w-1/4">Name</th>
+          <th class="text-left px-4 py-3 font-black tracking-wide text-xs w-5/12">Query</th>
+          <th class="text-left px-4 py-3 font-black tracking-wide text-xs w-5/12">Expression</th>
           <th class="px-4 py-3 w-10"></th>
         </tr>
       </thead>
@@ -106,25 +106,25 @@
        @click.self="showCreate = false" @keydown.escape.window="showCreate = false">
     <div class="bg-white border-2 border-black shadow-brutal-lg w-full max-w-2xl" @click.stop>
       <div class="px-6 pt-5 pb-4 border-b-2 border-black">
-        <h2 class="text-xl font-black uppercase">Add Compliance Item</h2>
+        <h2 class="text-xl font-black">Add Compliance Item</h2>
         <p class="text-xs font-medium text-stone-500 mt-0.5">osquery SQL + JEXL pass/fail expression.</p>
       </div>
       <form method="post" action="{uri:ComplianceGroups.createItem}" class="px-6 pt-4 pb-6 space-y-4">
         {#authenticityToken /}
         <input type="hidden" name="groupId" value="{group.id}">
         <div>
-          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">Name</label>
+          <label class="block text-xs font-black tracking-wide mb-1.5">Name</label>
           <input name="name" type="text" placeholder="e.g. Disk encryption enabled" required
                  class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent">
         </div>
         <div>
-          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">osquery SQL</label>
+          <label class="block text-xs font-black tracking-wide mb-1.5">osquery SQL</label>
           <textarea name="query" rows="3" required
                     placeholder="SELECT encrypted FROM mounts WHERE path = '/';"
                     class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
         </div>
         <div>
-          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">JEXL Expression</label>
+          <label class="block text-xs font-black tracking-wide mb-1.5">JEXL Expression</label>
           <textarea name="expectedExpression" rows="2" required
                     placeholder='results[0].encrypted == "1"'
                     class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
@@ -135,11 +135,11 @@
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" @click="showCreate = false"
-                  class="px-4 py-2 text-sm font-bold uppercase border-2 border-black hover:bg-stone-100">
+                  class="px-4 py-2 text-sm font-bold border-2 border-black hover:bg-stone-100">
             Cancel
           </button>
           <button type="submit"
-                  class="px-4 py-2 text-sm font-bold uppercase bg-black text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                  class="px-4 py-2 text-sm font-bold bg-black text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
             Add Item
           </button>
         </div>
@@ -153,24 +153,24 @@
        @click.self="showEdit = false" @keydown.escape.window="showEdit = false">
     <div class="bg-white border-2 border-black shadow-brutal-lg w-full max-w-2xl" @click.stop>
       <div class="px-6 pt-5 pb-4 border-b-2 border-black">
-        <h2 class="text-xl font-black uppercase">Edit Compliance Item</h2>
+        <h2 class="text-xl font-black">Edit Compliance Item</h2>
       </div>
       <form method="post" action="{uri:ComplianceGroups.updateItem}" class="px-6 pt-4 pb-6 space-y-4">
         {#authenticityToken /}
         <input type="hidden" name="id" :value="editData.id">
         <div>
-          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">Name</label>
+          <label class="block text-xs font-black tracking-wide mb-1.5">Name</label>
           <input name="name" type="text" :value="editData.name" required
                  class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent">
         </div>
         <div>
-          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">osquery SQL</label>
+          <label class="block text-xs font-black tracking-wide mb-1.5">osquery SQL</label>
           <textarea name="query" rows="3" required
                     x-effect="$el.value = editData.query"
                     class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
         </div>
         <div>
-          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">JEXL Expression</label>
+          <label class="block text-xs font-black tracking-wide mb-1.5">JEXL Expression</label>
           <textarea name="expectedExpression" rows="2" required
                     x-effect="$el.value = editData.expectedExpression"
                     class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
@@ -181,11 +181,11 @@
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" @click="showEdit = false"
-                  class="px-4 py-2 text-sm font-bold uppercase border-2 border-black hover:bg-stone-100">
+                  class="px-4 py-2 text-sm font-bold border-2 border-black hover:bg-stone-100">
             Cancel
           </button>
           <button type="submit"
-                  class="px-4 py-2 text-sm font-bold uppercase bg-black text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                  class="px-4 py-2 text-sm font-bold bg-black text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
             Save
           </button>
         </div>
@@ -199,7 +199,7 @@
        @click.self="showDelete = false" @keydown.escape.window="showDelete = false">
     <div class="bg-white border-2 border-black shadow-brutal-lg w-full max-w-sm" @click.stop>
       <div class="px-6 pt-5 pb-4 border-b-2 border-black">
-        <h2 class="text-xl font-black uppercase">Delete Item</h2>
+        <h2 class="text-xl font-black">Delete Item</h2>
       </div>
       <div class="px-6 pt-4 pb-2">
         <p class="text-sm font-medium text-stone-600">Are you sure? This cannot be undone.</p>
@@ -209,11 +209,11 @@
         <input type="hidden" name="id" :value="deleteItemId">
         <div class="flex justify-end gap-2 pt-4">
           <button type="button" @click="showDelete = false"
-                  class="px-4 py-2 text-sm font-bold uppercase border-2 border-black hover:bg-stone-100">
+                  class="px-4 py-2 text-sm font-bold border-2 border-black hover:bg-stone-100">
             Cancel
           </button>
           <button type="submit"
-                  class="px-4 py-2 text-sm font-bold uppercase bg-red-600 text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+                  class="px-4 py-2 text-sm font-bold bg-red-600 text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
             Delete
           </button>
         </div>
