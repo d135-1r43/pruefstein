@@ -4,15 +4,12 @@ import com.pruefstein.compliance.domain.ComplianceGroup;
 import com.pruefstein.compliance.domain.ComplianceItem;
 import com.pruefstein.compliance.repository.ComplianceGroupRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
-import com.pruefstein.todo.domain.Todo;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-
-import java.util.Date;
 
 @ApplicationScoped
 public class Startup {
@@ -26,15 +23,6 @@ public class Startup {
     @Transactional
     public void start(@Observes StartupEvent evt) {
         if (LaunchMode.current() == LaunchMode.DEVELOPMENT) {
-            Todo a = new Todo();
-            a.setTask("First item");
-            a.persist();
-
-            Todo b = new Todo();
-            b.setTask("Second item");
-            b.setCompleted(new Date());
-            b.persist();
-
             seedCompliance();
         }
     }
