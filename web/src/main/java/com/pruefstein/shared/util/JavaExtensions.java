@@ -13,10 +13,10 @@ public class JavaExtensions {
     public static String capitalise(String string) {
         StringBuilder sb = new StringBuilder();
         for (String part : string.split("\\s+")) {
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(" ");
             }
-            if (part.length() > 0) {
+            if (!part.isEmpty()) {
                 sb.append(part.substring(0, 1).toUpperCase());
                 sb.append(part.substring(1));
             }
