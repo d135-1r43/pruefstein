@@ -5,44 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{#insert title}Prüfstein{/insert}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
+          fontFamily: { sans: ['Epilogue', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+          boxShadow: {
+            'brutal':    '4px 4px 0px 0px #000',
+            'brutal-sm': '2px 2px 0px 0px #000',
+            'brutal-lg': '6px 6px 0px 0px #000',
+          },
+          colors: {
+            accent: '#FACC15', // yellow-400
+          }
         }
       }
     }
   </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .nav-link-active {
+      background: #FACC15;
+      color: #000;
+      font-weight: 700;
+      border: 2px solid #000;
+    }
+  </style>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
   {#bundle /}
 </head>
-<body class="bg-zinc-50 font-sans antialiased text-zinc-900">
+<body class="bg-stone-100 font-sans text-black" style="font-feature-settings:'ss01'">
 
   <div class="flex h-screen overflow-hidden">
 
     <!-- ── Sidebar ──────────────────────────────────────────── -->
-    <aside class="w-56 bg-white border-r border-zinc-200 flex flex-col flex-shrink-0">
-      <div class="h-14 flex items-center px-5 border-b border-zinc-200">
-        <span class="font-semibold tracking-tight text-zinc-900">Prüfstein</span>
+    <aside class="w-60 bg-white border-r-2 border-black flex flex-col flex-shrink-0">
+
+      <div class="h-16 flex items-center px-5 border-b-2 border-black">
+        <span class="font-black text-lg tracking-tight uppercase">Prüfstein</span>
       </div>
 
-      <nav class="flex-1 overflow-y-auto p-3 space-y-0.5" id="sidebar-nav">
+      <nav class="flex-1 overflow-y-auto p-3 space-y-1" id="sidebar-nav">
+
         <a href="{uri:Dashboard.index}"
-           class="nav-link flex items-center gap-2.5 px-3 py-2 text-sm rounded-md text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-colors">
-          <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+           class="nav-link flex items-center gap-2.5 px-3 py-2 text-sm font-medium border-2 border-transparent hover:border-black hover:bg-accent transition-none">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/>
           </svg>
           Dashboard
         </a>
 
         <div class="pt-4">
-          <p class="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Compliance</p>
+          <p class="px-3 pb-2 text-[10px] font-black uppercase tracking-widest text-stone-400">Compliance</p>
           <a href="{uri:ComplianceGroups.index}"
-             class="nav-link flex items-center gap-2.5 px-3 py-2 text-sm rounded-md text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-colors">
-            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+             class="nav-link flex items-center gap-2.5 px-3 py-2 text-sm font-medium border-2 border-transparent hover:border-black hover:bg-accent transition-none">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             Groups &amp; Items
@@ -50,20 +70,20 @@
         </div>
 
         <div class="pt-4">
-          <p class="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Management</p>
+          <p class="px-3 pb-2 text-[10px] font-black uppercase tracking-widest text-stone-400">Management</p>
           <a href="{uri:Users.index}"
-             class="nav-link flex items-center gap-2.5 px-3 py-2 text-sm rounded-md text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-colors">
-            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+             class="nav-link flex items-center gap-2.5 px-3 py-2 text-sm font-medium border-2 border-transparent hover:border-black hover:bg-accent transition-none">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
             </svg>
             Users
           </a>
         </div>
+
       </nav>
 
-      <div class="border-t border-zinc-200 px-5 py-3">
-        <p class="text-xs text-zinc-400">© 2026 Prüfstein</p>
-        <p class="text-xs text-zinc-300 mt-0.5">v1.0.0</p>
+      <div class="border-t-2 border-black px-5 py-3">
+        <p class="text-xs font-bold text-stone-400 uppercase tracking-wide">© 2026 Prüfstein</p>
       </div>
     </aside>
 
@@ -77,14 +97,12 @@
   </div>
 
   <script>
-    // Highlight the active nav link
     document.querySelectorAll('#sidebar-nav .nav-link').forEach(link => {
       try {
         const linkPath = new URL(link.href).pathname;
         const here = window.location.pathname;
         if (here === linkPath || (linkPath !== '/' && here.startsWith(linkPath))) {
-          link.classList.add('bg-zinc-100', 'text-zinc-900', 'font-medium');
-          link.classList.remove('text-zinc-600');
+          link.classList.add('nav-link-active');
         }
       } catch (_) {}
     });

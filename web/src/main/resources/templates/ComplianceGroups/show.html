@@ -7,49 +7,47 @@
      class="max-w-5xl">
 
   <!-- Breadcrumb -->
-  <div class="flex items-center gap-2 text-sm text-zinc-400 mb-6">
-    <a href="{uri:ComplianceGroups.index}" class="hover:text-zinc-600 transition-colors">Compliance Groups</a>
-    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
-    </svg>
-    <span class="text-zinc-600 font-medium">{group.name}</span>
+  <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-stone-400 mb-6">
+    <a href="{uri:ComplianceGroups.index}" class="hover:text-black transition-colors">Compliance Groups</a>
+    <span>/</span>
+    <span class="text-black">{group.name}</span>
   </div>
 
   <!-- Page header -->
-  <div class="flex items-start justify-between mb-6">
+  <div class="flex items-start justify-between mb-8">
     <div>
-      <h1 class="text-2xl font-semibold tracking-tight">{group.name}</h1>
-      <p class="text-sm text-zinc-500 mt-1">Compliance checks in this group.</p>
+      <h1 class="text-4xl font-black uppercase tracking-tight">{group.name}</h1>
+      <p class="text-sm font-medium text-stone-500 mt-1">Compliance checks in this group.</p>
     </div>
     <button @click="showCreate = true"
-            class="inline-flex items-center gap-2 bg-zinc-900 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-zinc-700 transition-colors">
-      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            class="inline-flex items-center gap-2 bg-black text-white text-sm font-bold uppercase px-4 py-2.5 border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
       </svg>
       Add Item
     </button>
   </div>
 
-  <!-- Table card -->
-  <div class="bg-white border border-zinc-200 rounded-lg overflow-hidden">
+  <!-- Table -->
+  <div class="bg-white border-2 border-black shadow-brutal overflow-hidden">
     <table class="w-full text-sm">
       <thead>
-        <tr class="border-b border-zinc-200 bg-zinc-50 text-zinc-500">
-          <th class="text-left px-4 py-3 font-medium w-1/4">Name</th>
-          <th class="text-left px-4 py-3 font-medium w-5/12">Query</th>
-          <th class="text-left px-4 py-3 font-medium w-5/12">Expression</th>
+        <tr class="border-b-2 border-black bg-black text-white">
+          <th class="text-left px-4 py-3 font-black uppercase tracking-wide text-xs w-1/4">Name</th>
+          <th class="text-left px-4 py-3 font-black uppercase tracking-wide text-xs w-5/12">Query</th>
+          <th class="text-left px-4 py-3 font-black uppercase tracking-wide text-xs w-5/12">Expression</th>
           <th class="px-4 py-3 w-10"></th>
         </tr>
       </thead>
       <tbody>
         {#for item in items}
-        <tr class="border-b border-zinc-100 last:border-0 hover:bg-zinc-50 transition-colors">
-          <td class="px-4 py-3 font-medium text-zinc-900">{item.name}</td>
+        <tr class="border-b-2 border-black last:border-0 hover:bg-accent transition-colors">
+          <td class="px-4 py-3 font-bold">{item.name}</td>
           <td class="px-4 py-3">
-            <code class="block text-xs text-zinc-500 font-mono whitespace-pre-wrap break-all line-clamp-2">{item.query}</code>
+            <code class="block text-xs font-mono text-stone-500 whitespace-pre-wrap break-all line-clamp-2">{item.query}</code>
           </td>
           <td class="px-4 py-3">
-            <code class="block text-xs text-zinc-500 font-mono whitespace-pre-wrap break-all line-clamp-2">{item.expectedExpression}</code>
+            <code class="block text-xs font-mono text-stone-500 whitespace-pre-wrap break-all line-clamp-2">{item.expectedExpression}</code>
           </td>
           <td class="px-4 py-3 text-right">
             <div class="inline-block"
@@ -62,7 +60,7 @@
                      this.open = !this.open;
                    } }">
               <button @click="toggle($el)" @click.outside="open = false" @keydown.escape.window="open = false"
-                      class="p-1.5 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors">
+                      class="p-1.5 border-2 border-transparent hover:border-black hover:bg-accent transition-none">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
                 </svg>
@@ -70,23 +68,21 @@
               <div x-show="open" x-cloak
                    :style="pos"
                    x-transition:enter="transition ease-out duration-100"
-                   x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                   x-transition:leave="transition ease-in duration-75"
-                   x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                   class="z-50 w-32 bg-white border border-zinc-200 rounded-md shadow-lg py-1 origin-top-right">
+                   x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                   class="z-50 w-32 bg-white border-2 border-black shadow-brutal py-1 origin-top-right">
                 <button
                   @click="$dispatch('open-edit-item', $el.dataset); open = false"
                   data-id="{item.id}"
                   data-name="{item.name}"
                   data-query="{item.query}"
                   data-expected-expression="{item.expectedExpression}"
-                  class="w-full text-left px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors">
+                  class="w-full text-left px-3 py-1.5 text-sm font-medium hover:bg-accent transition-none">
                   Edit
                 </button>
                 <button
                   @click="$dispatch('open-delete-item', $el.dataset); open = false"
                   data-id="{item.id}"
-                  class="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                  class="w-full text-left px-3 py-1.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-none">
                   Delete
                 </button>
               </div>
@@ -95,8 +91,8 @@
         </tr>
         {#else}
         <tr>
-          <td colspan="4" class="px-4 py-12 text-center text-sm text-zinc-400">
-            No items yet. Click <span class="font-medium text-zinc-600">Add Item</span> to create the first check.
+          <td colspan="4" class="px-4 py-16 text-center text-sm font-medium text-stone-400">
+            No items yet — click <span class="font-bold text-black">Add Item</span> to create the first check.
           </td>
         </tr>
         {/for}
@@ -106,48 +102,44 @@
 
   <!-- ── Create Item Modal ──────────────────────────────────── -->
   <div x-show="showCreate" x-cloak
-       x-transition:enter="transition ease-out duration-200"
-       x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-       x-transition:leave="transition ease-in duration-150"
-       x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
        @click.self="showCreate = false" @keydown.escape.window="showCreate = false">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
-         @click.stop>
-      <div class="px-6 pt-5 pb-4 border-b border-zinc-100">
-        <h2 class="text-base font-semibold">Add Compliance Item</h2>
-        <p class="text-sm text-zinc-500 mt-0.5">Define an osquery check and its JEXL pass/fail expression.</p>
+    <div class="bg-white border-2 border-black shadow-brutal-lg w-full max-w-2xl" @click.stop>
+      <div class="px-6 pt-5 pb-4 border-b-2 border-black">
+        <h2 class="text-xl font-black uppercase">Add Compliance Item</h2>
+        <p class="text-xs font-medium text-stone-500 mt-0.5">osquery SQL + JEXL pass/fail expression.</p>
       </div>
       <form method="post" action="{uri:ComplianceGroups.createItem}" class="px-6 pt-4 pb-6 space-y-4">
         {#authenticityToken /}
         <input type="hidden" name="groupId" value="{group.id}">
         <div>
-          <label class="block text-sm font-medium text-zinc-700 mb-1.5">Name</label>
+          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">Name</label>
           <input name="name" type="text" placeholder="e.g. Disk encryption enabled" required
-                 class="w-full px-3 py-2 text-sm border border-zinc-200 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent">
+                 class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent">
         </div>
         <div>
-          <label class="block text-sm font-medium text-zinc-700 mb-1.5">osquery SQL</label>
+          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">osquery SQL</label>
           <textarea name="query" rows="3" required
                     placeholder="SELECT encrypted FROM mounts WHERE path = '/';"
-                    class="w-full px-3 py-2 text-sm font-mono border border-zinc-200 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent resize-y"></textarea>
+                    class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
         </div>
         <div>
-          <label class="block text-sm font-medium text-zinc-700 mb-1.5">JEXL Expression</label>
+          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">JEXL Expression</label>
           <textarea name="expectedExpression" rows="2" required
                     placeholder='results[0].encrypted == "1"'
-                    class="w-full px-3 py-2 text-sm font-mono border border-zinc-200 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent resize-y"></textarea>
-          <p class="text-xs text-zinc-400 mt-1">Must evaluate to <code class="bg-zinc-100 px-1 rounded">true</code> to pass. <code class="bg-zinc-100 px-1 rounded">results</code> is the JSON array from osquery.</p>
+                    class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
+          <p class="text-xs font-medium text-stone-400 mt-1">
+            Must return <code class="bg-stone-100 px-1 border border-stone-200">true</code> to pass.
+            <code class="bg-stone-100 px-1 border border-stone-200">results</code> is the osquery JSON array.
+          </p>
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" @click="showCreate = false"
-                  class="px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-200 rounded-md hover:bg-zinc-50 transition-colors">
+                  class="px-4 py-2 text-sm font-bold uppercase border-2 border-black hover:bg-stone-100">
             Cancel
           </button>
           <button type="submit"
-                  class="px-4 py-2 text-sm font-medium text-white bg-zinc-900 rounded-md hover:bg-zinc-700 transition-colors">
+                  class="px-4 py-2 text-sm font-bold uppercase bg-black text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
             Add Item
           </button>
         </div>
@@ -157,48 +149,44 @@
 
   <!-- ── Edit Item Modal ───────────────────────────────────── -->
   <div x-show="showEdit" x-cloak
-       x-transition:enter="transition ease-out duration-200"
-       x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-       x-transition:leave="transition ease-in duration-150"
-       x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
        @click.self="showEdit = false" @keydown.escape.window="showEdit = false">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
-         @click.stop>
-      <div class="px-6 pt-5 pb-4 border-b border-zinc-100">
-        <h2 class="text-base font-semibold">Edit Compliance Item</h2>
+    <div class="bg-white border-2 border-black shadow-brutal-lg w-full max-w-2xl" @click.stop>
+      <div class="px-6 pt-5 pb-4 border-b-2 border-black">
+        <h2 class="text-xl font-black uppercase">Edit Compliance Item</h2>
       </div>
       <form method="post" action="{uri:ComplianceGroups.updateItem}" class="px-6 pt-4 pb-6 space-y-4">
         {#authenticityToken /}
         <input type="hidden" name="id" :value="editData.id">
         <div>
-          <label class="block text-sm font-medium text-zinc-700 mb-1.5">Name</label>
+          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">Name</label>
           <input name="name" type="text" :value="editData.name" required
-                 class="w-full px-3 py-2 text-sm border border-zinc-200 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent">
+                 class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent">
         </div>
         <div>
-          <label class="block text-sm font-medium text-zinc-700 mb-1.5">osquery SQL</label>
+          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">osquery SQL</label>
           <textarea name="query" rows="3" required
                     x-effect="$el.value = editData.query"
-                    class="w-full px-3 py-2 text-sm font-mono border border-zinc-200 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent resize-y"></textarea>
+                    class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
         </div>
         <div>
-          <label class="block text-sm font-medium text-zinc-700 mb-1.5">JEXL Expression</label>
+          <label class="block text-xs font-black uppercase tracking-wide mb-1.5">JEXL Expression</label>
           <textarea name="expectedExpression" rows="2" required
                     x-effect="$el.value = editData.expectedExpression"
-                    class="w-full px-3 py-2 text-sm font-mono border border-zinc-200 rounded-md focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent resize-y"></textarea>
-          <p class="text-xs text-zinc-400 mt-1">Must evaluate to <code class="bg-zinc-100 px-1 rounded">true</code> to pass. <code class="bg-zinc-100 px-1 rounded">results</code> is the JSON array from osquery.</p>
+                    class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
+          <p class="text-xs font-medium text-stone-400 mt-1">
+            Must return <code class="bg-stone-100 px-1 border border-stone-200">true</code> to pass.
+            <code class="bg-stone-100 px-1 border border-stone-200">results</code> is the osquery JSON array.
+          </p>
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" @click="showEdit = false"
-                  class="px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-200 rounded-md hover:bg-zinc-50 transition-colors">
+                  class="px-4 py-2 text-sm font-bold uppercase border-2 border-black hover:bg-stone-100">
             Cancel
           </button>
           <button type="submit"
-                  class="px-4 py-2 text-sm font-medium text-white bg-zinc-900 rounded-md hover:bg-zinc-700 transition-colors">
-            Save Changes
+                  class="px-4 py-2 text-sm font-bold uppercase bg-black text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+            Save
           </button>
         </div>
       </form>
@@ -207,30 +195,25 @@
 
   <!-- ── Delete Item Confirmation ──────────────────────────── -->
   <div x-show="showDelete" x-cloak
-       x-transition:enter="transition ease-out duration-200"
-       x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-       x-transition:leave="transition ease-in duration-150"
-       x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
        @click.self="showDelete = false" @keydown.escape.window="showDelete = false">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-sm"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
-         @click.stop>
-      <div class="px-6 pt-5 pb-4">
-        <h2 class="text-base font-semibold">Delete Item</h2>
-        <p class="text-sm text-zinc-500 mt-2">Are you sure? This action cannot be undone.</p>
+    <div class="bg-white border-2 border-black shadow-brutal-lg w-full max-w-sm" @click.stop>
+      <div class="px-6 pt-5 pb-4 border-b-2 border-black">
+        <h2 class="text-xl font-black uppercase">Delete Item</h2>
+      </div>
+      <div class="px-6 pt-4 pb-2">
+        <p class="text-sm font-medium text-stone-600">Are you sure? This cannot be undone.</p>
       </div>
       <form method="post" action="{uri:ComplianceGroups.deleteItem}" class="px-6 pb-6">
         {#authenticityToken /}
         <input type="hidden" name="id" :value="deleteItemId">
-        <div class="flex justify-end gap-2">
+        <div class="flex justify-end gap-2 pt-4">
           <button type="button" @click="showDelete = false"
-                  class="px-4 py-2 text-sm font-medium text-zinc-700 border border-zinc-200 rounded-md hover:bg-zinc-50 transition-colors">
+                  class="px-4 py-2 text-sm font-bold uppercase border-2 border-black hover:bg-stone-100">
             Cancel
           </button>
           <button type="submit"
-                  class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors">
+                  class="px-4 py-2 text-sm font-bold uppercase bg-red-600 text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
             Delete
           </button>
         </div>
