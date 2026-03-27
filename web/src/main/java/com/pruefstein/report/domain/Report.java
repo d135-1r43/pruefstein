@@ -12,35 +12,41 @@ import java.util.List;
 @Entity
 public class Report extends PanacheEntity
 {
-    private String title;
+	private String title;
 
-    @ManyToOne
-    private AppUser appUser;
+	@ManyToOne
+	private AppUser appUser;
 
-    @OneToMany(mappedBy = "report")
-    private List<ComplianceResult> results;
+	@OneToMany(mappedBy = "report")
+	private List<ComplianceResult> results;
 
-    public String getTitle() {
-        return title;
-    }
+	public String getTitle()
+	{
+		return title;
+	}
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+	public void setTitle(String title)
+	{
+		this.title = title;
+	}
 
-    public AppUser getUser() {
-        return appUser;
-    }
+	public AppUser getUser()
+	{
+		return appUser;
+	}
 
-    public void setUser(AppUser appUser) {
-        this.appUser = appUser;
-    }
+	public void setUser(AppUser appUser)
+	{
+		this.appUser = appUser;
+	}
 
-    public List<ComplianceResult> getResults() {
-        return results;
-    }
+	public List<ComplianceResult> getResults()
+	{
+		return results;
+	}
 
-    public void setResults(List<ComplianceResult> results) {
-        this.results = results;
-    }
+	public void setResults(List<ComplianceResult> results)
+	{
+		this.results = results;
+	}
 }

@@ -10,42 +10,50 @@ import java.util.List;
 @Entity()
 public class AppUser extends PanacheEntity
 {
-    private String firstname;
-    private String lastname;
-    private String mail;
+	private String firstname;
+	private String lastname;
+	private String mail;
 
-    @OneToMany(mappedBy = "appUser")
-    private List<Report> reports;
+	@OneToMany(mappedBy = "appUser")
+	private List<Report> reports;
 
-    public String getFirstname() {
-        return firstname;
-    }
+	public String getFirstname()
+	{
+		return firstname;
+	}
 
-    public void setFirstname(String firstname) {
-        this.firstname = firstname;
-    }
+	public void setFirstname(String firstname)
+	{
+		this.firstname = firstname;
+	}
 
-    public String getLastname() {
-        return lastname;
-    }
+	public String getLastname()
+	{
+		return lastname;
+	}
 
-    public void setLastname(String lastname) {
-        this.lastname = lastname;
-    }
+	public void setLastname(String lastname)
+	{
+		this.lastname = lastname;
+	}
 
-    public String getMail() {
-        return mail;
-    }
+	public String getMail()
+	{
+		return mail;
+	}
 
-    public void setMail(String mail) {
-        this.mail = mail;
-    }
+	public void setMail(String mail)
+	{
+		this.mail = mail;
+	}
 
-    public List<Report> getReports() {
-        return reports;
-    }
+	public List<Report> getReports()
+	{
+		return reports;
+	}
 
-    public void setReports(List<Report> reports) {
-        this.reports = reports;
-    }
+	public void setReports(List<Report> reports)
+	{
+		this.reports = reports;
+	}
 }

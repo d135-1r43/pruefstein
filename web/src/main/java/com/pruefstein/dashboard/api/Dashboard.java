@@ -7,18 +7,21 @@ import io.quarkus.qute.TemplateInstance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
 
-public class Dashboard extends Controller {
+public class Dashboard extends Controller
+{
 
-    @Inject
-    UserRepository userRepository;
+	@Inject
+	UserRepository userRepository;
 
-    @CheckedTemplate
-    public static class Templates {
-        public static native TemplateInstance index(long userCount);
-    }
+	@CheckedTemplate
+	public static class Templates
+	{
+		public static native TemplateInstance index(long userCount);
+	}
 
-    @Path("/")
-    public TemplateInstance index() {
-        return Templates.index(userRepository.count());
-    }
+	@Path("/")
+	public TemplateInstance index()
+	{
+		return Templates.index(userRepository.count());
+	}
 }

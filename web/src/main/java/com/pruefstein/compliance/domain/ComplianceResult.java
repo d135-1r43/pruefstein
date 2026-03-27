@@ -9,25 +9,29 @@ import jakarta.persistence.OneToOne;
 @Entity
 public class ComplianceResult extends PanacheEntity
 {
-    @OneToOne
-    private ComplianceItem item;
+	@OneToOne
+	private ComplianceItem item;
 
-    @ManyToOne
-    private Report report;
+	@ManyToOne
+	private Report report;
 
-    public ComplianceItem getItem() {
-        return item;
-    }
+	public ComplianceItem getItem()
+	{
+		return item;
+	}
 
-    public void setItem(ComplianceItem item) {
-        this.item = item;
-    }
+	public void setItem(ComplianceItem item)
+	{
+		this.item = item;
+	}
 
-    public Report getReport() {
-        return report;
-    }
+	public Report getReport()
+	{
+		return report;
+	}
 
-    public void setReport(Report report) {
-        this.report = report;
-    }
+	public void setReport(Report report)
+	{
+		this.report = report;
+	}
 }
