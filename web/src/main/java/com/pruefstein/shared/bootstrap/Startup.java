@@ -37,9 +37,9 @@ public class Startup
 		groupRepository.persist(cryptography);
 
 		addItem(cryptography,
-			"Disk encryption enabled",
-			"SELECT encrypted FROM mounts WHERE path = '/';",
-			"results[0].encrypted == \"1\"");
+			"FileVault enabled",
+			"SELECT filevault_status FROM disk_encryption WHERE filevault_status = 'on' LIMIT 1;",
+			"results.size() > 0");
 
 		ComplianceGroup operations = new ComplianceGroup();
 		operations.setName("A.12 Operations Security");
