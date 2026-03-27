@@ -49,7 +49,18 @@
           <td class="px-4 py-3">
             <code class="block text-xs font-mono text-stone-500 whitespace-pre-wrap break-all line-clamp-2">{item.expectedExpression}</code>
           </td>
-          <td class="px-4 py-3 text-right">
+          <td class="px-4 py-3 text-right flex items-center justify-end gap-1">
+            {#if devMode}
+            <button
+              @click="testItem($el.dataset.query)"
+              data-query="{item.query}"
+              title="Test locally with osquery"
+              class="p-1.5 border-2 border-transparent hover:border-black hover:bg-accent transition-none text-stone-400 hover:text-black">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"/>
+              </svg>
+            </button>
+            {/if}
             <div class="inline-block"
                  x-data="{ open: false, pos: 'position:fixed',
                    toggle(btn) {
@@ -193,6 +204,56 @@
     </div>
   </div>
 
+  <!-- ── Test locally Modal (dev mode only) ───────────────── -->
+  {#if devMode}
+  <div x-show="showTest" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+       @click.self="showTest = false" @keydown.escape.window="showTest = false">
+    <div class="bg-white border-2 border-black shadow-brutal-lg w-full max-w-2xl" @click.stop>
+      <div class="px-6 pt-5 pb-4 border-b-2 border-black flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-black">Test locally</h2>
+          <p class="text-xs font-medium text-stone-400 mt-0.5">Runs against osquery on this machine</p>
+        </div>
+        <span class="text-[10px] font-black tracking-widest border-2 border-black px-2 py-1 bg-accent">DEV</span>
+      </div>
+      <div class="px-6 py-4 border-b-2 border-black bg-stone-50">
+        <p class="text-xs font-black text-stone-400 mb-1.5">Query</p>
+        <code class="block text-xs font-mono whitespace-pre-wrap break-all" x-text="testQuery"></code>
+      </div>
+      <div class="px-6 py-4 min-h-[8rem]">
+        <template x-if="testLoading">
+          <div class="flex items-center gap-2 text-sm font-medium text-stone-400">
+            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            Running osquery…
+          </div>
+        </template>
+        <template x-if="!testLoading && testError">
+          <div>
+            <p class="text-xs font-black text-red-600 mb-1.5">Error</p>
+            <code class="block text-xs font-mono text-red-600 whitespace-pre-wrap break-all" x-text="testError"></code>
+          </div>
+        </template>
+        <template x-if="!testLoading && testOutput !== null">
+          <div>
+            <p class="text-xs font-black text-stone-400 mb-1.5">Result</p>
+            <pre class="text-xs font-mono bg-stone-50 border-2 border-black p-3 overflow-x-auto whitespace-pre-wrap break-all" x-text="testOutput"></pre>
+          </div>
+        </template>
+      </div>
+      <div class="px-6 pb-6 flex justify-end">
+        <button @click="showTest = false"
+                class="px-4 py-2 text-sm font-bold border-2 border-black hover:bg-stone-100">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+  {/if}
+
   <!-- ── Delete Item Confirmation ──────────────────────────── -->
   <div x-show="showDelete" x-cloak
        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
@@ -231,6 +292,11 @@ function showGroupPage() {
     showDelete: false,
     editData: { id: '', name: '', query: '', expectedExpression: '' },
     deleteItemId: '',
+    showTest: false,
+    testQuery: '',
+    testLoading: false,
+    testOutput: null,
+    testError: null,
     editItem(detail) {
       this.editData = {
         id: detail.id,
@@ -243,6 +309,30 @@ function showGroupPage() {
     deleteItem(detail) {
       this.deleteItemId = detail.id;
       this.showDelete = true;
+    },
+    async testItem(query) {
+      this.testQuery = query;
+      this.testOutput = null;
+      this.testError = null;
+      this.testLoading = true;
+      this.showTest = true;
+      try {
+        const res = await fetch('/dev/osquery/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query }),
+        });
+        const data = await res.json();
+        if (data.error) {
+          this.testError = data.error;
+        } else {
+          this.testOutput = JSON.stringify(JSON.parse(data.output), null, 2);
+        }
+      } catch (e) {
+        this.testError = e.message;
+      } finally {
+        this.testLoading = false;
+      }
     },
   }
 }

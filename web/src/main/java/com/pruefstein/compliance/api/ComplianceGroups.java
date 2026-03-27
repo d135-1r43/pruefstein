@@ -7,6 +7,7 @@ import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import io.quarkiverse.renarde.Controller;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.runtime.LaunchMode;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotBlank;
@@ -30,7 +31,7 @@ public class ComplianceGroups extends Controller
 	{
 		public static native TemplateInstance index(List<ComplianceGroup> groups);
 
-		public static native TemplateInstance show(ComplianceGroup group, List<ComplianceItem> items);
+		public static native TemplateInstance show(ComplianceGroup group, List<ComplianceItem> items, boolean devMode);
 	}
 
 	// ── Groups
@@ -50,7 +51,8 @@ public class ComplianceGroups extends Controller
 			return null;
 		}
 		List<ComplianceItem> items = itemRepository.list("group", group);
-		return Templates.show(group, items);
+		boolean devMode = LaunchMode.current() == LaunchMode.DEVELOPMENT;
+		return Templates.show(group, items, devMode);
 	}
 
 	@POST
