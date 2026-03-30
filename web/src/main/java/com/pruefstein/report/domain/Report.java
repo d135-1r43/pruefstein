@@ -14,7 +14,6 @@ import jakarta.persistence.OneToMany;
 @Entity
 public class Report extends PanacheEntity
 {
-
 	private String deviceId;
 
 	private String userId;

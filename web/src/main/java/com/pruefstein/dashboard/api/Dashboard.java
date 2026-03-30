@@ -10,9 +10,9 @@ import io.quarkus.qute.TemplateInstance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
 
+@SuppressWarnings("unused")
 public class Dashboard extends Controller
 {
-
 	@Inject
 	UserRepository userRepository;
 

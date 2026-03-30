@@ -9,7 +9,6 @@ import jakarta.persistence.ManyToOne;
 @Entity
 public class ComplianceResult extends PanacheEntity
 {
-
 	@ManyToOne(optional = false)
 	private ComplianceItem item;
 

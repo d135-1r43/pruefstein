@@ -18,7 +18,6 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public class DevOsqueryResource
 {
-
 	@Inject
 	ComplianceEvaluator evaluator;
 

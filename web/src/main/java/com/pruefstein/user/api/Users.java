@@ -14,9 +14,9 @@ import org.jboss.resteasy.reactive.RestForm;
 
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class Users extends Controller
 {
-
 	@Inject
 	UserRepository userRepository;
 

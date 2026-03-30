@@ -14,7 +14,6 @@ import jakarta.transaction.Transactional;
 @ApplicationScoped
 public class Startup
 {
-
 	@Inject
 	ComplianceGroupRepository groupRepository;
 
