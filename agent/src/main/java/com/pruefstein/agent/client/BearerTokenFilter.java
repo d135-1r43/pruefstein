@@ -1,6 +1,7 @@
 package com.pruefstein.agent.client;
 
-import io.quarkus.oidc.client.OidcClient;
+import com.pruefstein.agent.auth.TokenHolder;
+
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
@@ -10,12 +11,11 @@ import jakarta.ws.rs.ext.Provider;
 public class BearerTokenFilter implements ClientRequestFilter
 {
 	@Inject
-	OidcClient oidcClient;
+	TokenHolder tokenHolder;
 
 	@Override
 	public void filter(ClientRequestContext requestContext)
 	{
-		String token = oidcClient.getTokens().await().indefinitely().getAccessToken();
-		requestContext.getHeaders().add("Authorization", "Bearer " + token);
+		requestContext.getHeaders().add("Authorization", "Bearer " + tokenHolder.getAccessToken());
 	}
 }

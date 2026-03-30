@@ -12,34 +12,15 @@
       "publicClient": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
+      "attributes": {
+        "oauth2.device.authorization.grant.enabled": "true"
+      },
       "redirectUris": [
         "http://localhost:8080/*",
         "https://localhost:8443/*"
       ],
       "webOrigins": [
         "http://localhost:8080"
-      ]
-    },
-    {
-      "clientId": "pruefstein-agent",
-      "name": "Prüfstein Agent",
-      "enabled": true,
-      "protocol": "openid-connect",
-      "publicClient": false,
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": true,
-      "secret": "pruefstein-agent-secret",
-      "protocolMappers": [
-        {
-          "name": "audience-pruefstein-web",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "config": {
-            "included.client.audience": "pruefstein-web",
-            "access.token.claim": "true"
-          }
-        }
       ]
     }
   ],

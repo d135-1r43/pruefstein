@@ -1,6 +1,8 @@
 package com.pruefstein.agent.command;
 
+import com.pruefstein.agent.auth.AuthResolver;
 import com.pruefstein.agent.runner.ComplianceRunner;
+
 import jakarta.inject.Inject;
 import picocli.CommandLine;
 
@@ -8,11 +10,22 @@ import picocli.CommandLine;
 public class RunCommand implements Runnable
 {
 	@Inject
+	AuthResolver authResolver;
+
+	@Inject
 	ComplianceRunner runner;
 
 	@Override
 	public void run()
 	{
+		try
+		{
+			authResolver.ensureAuthenticated();
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException("Authentication failed: " + e.getMessage(), e);
+		}
 		runner.runAll();
 	}
 }
