@@ -121,23 +121,52 @@
         <h2 class="text-xl font-black">Add Compliance Item</h2>
         <p class="text-xs font-medium text-stone-500 mt-0.5">osquery SQL + JEXL pass/fail expression.</p>
       </div>
+      <!-- AI generate bar -->
+      <div class="px-6 pt-4 pb-4 border-b-2 border-black bg-stone-50">
+        <label class="block text-xs font-black tracking-wide mb-1.5">Generate with AI</label>
+        <div class="flex gap-2">
+          <input x-model="createAiDescription" type="text"
+                 placeholder="e.g. screen lock timeout under 5 minutes"
+                 @keydown.enter.prevent="generateCreate()"
+                 class="flex-1 px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent bg-white">
+          <button type="button" @click="generateCreate()"
+                  :disabled="createAiLoading"
+                  class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black border-2 border-black bg-white hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed transition-none">
+            <template x-if="createAiLoading">
+              <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            </template>
+            <template x-if="!createAiLoading">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/>
+              </svg>
+            </template>
+            Generate
+          </button>
+        </div>
+        <template x-if="createAiError">
+          <p class="text-xs font-medium text-red-600 mt-1.5" x-text="createAiError"></p>
+        </template>
+      </div>
       <form method="post" action="{uri:ComplianceGroups.createItem}" class="px-6 pt-4 pb-6 space-y-4">
         {#authenticityToken /}
         <input type="hidden" name="groupId" value="{group.id}">
         <div>
           <label class="block text-xs font-black tracking-wide mb-1.5">Name</label>
-          <input name="name" type="text" placeholder="e.g. Disk encryption enabled" required
+          <input name="name" type="text" x-model="createData.name" placeholder="e.g. Disk encryption enabled" required
                  class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent">
         </div>
         <div>
           <label class="block text-xs font-black tracking-wide mb-1.5">osquery SQL</label>
-          <textarea name="query" rows="3" required
+          <textarea name="query" rows="3" x-model="createData.query" required
                     placeholder="SELECT encrypted FROM mounts WHERE path = '/';"
                     class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
         </div>
         <div>
           <label class="block text-xs font-black tracking-wide mb-1.5">JEXL Expression</label>
-          <textarea name="expectedExpression" rows="2" required
+          <textarea name="expectedExpression" rows="2" x-model="createData.expectedExpression" required
                     placeholder="results.size() > 0 &amp;&amp; results[0].filevault_status == 'on'"
                     class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
           <p class="text-xs font-medium text-stone-400 mt-1">
@@ -146,7 +175,7 @@
           </p>
         </div>
         <div class="flex justify-end gap-2 pt-2">
-          <button type="button" @click="showCreate = false"
+          <button type="button" @click="showCreate = false; resetCreate()"
                   class="px-4 py-2 text-sm font-bold border-2 border-black hover:bg-stone-100">
             Cancel
           </button>
@@ -167,24 +196,53 @@
       <div class="px-6 pt-5 pb-4 border-b-2 border-black">
         <h2 class="text-xl font-black">Edit Compliance Item</h2>
       </div>
+      <!-- AI generate bar -->
+      <div class="px-6 pt-4 pb-4 border-b-2 border-black bg-stone-50">
+        <label class="block text-xs font-black tracking-wide mb-1.5">Regenerate with AI</label>
+        <div class="flex gap-2">
+          <input x-model="editAiDescription" type="text"
+                 placeholder="Describe what you want to check…"
+                 @keydown.enter.prevent="generateEdit()"
+                 class="flex-1 px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent bg-white">
+          <button type="button" @click="generateEdit()"
+                  :disabled="editAiLoading"
+                  class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black border-2 border-black bg-white hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed transition-none">
+            <template x-if="editAiLoading">
+              <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            </template>
+            <template x-if="!editAiLoading">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/>
+              </svg>
+            </template>
+            Generate
+          </button>
+        </div>
+        <template x-if="editAiError">
+          <p class="text-xs font-medium text-red-600 mt-1.5" x-text="editAiError"></p>
+        </template>
+      </div>
       <form method="post" action="{uri:ComplianceGroups.updateItem}" class="px-6 pt-4 pb-6 space-y-4">
         {#authenticityToken /}
         <input type="hidden" name="id" :value="editData.id">
         <div>
           <label class="block text-xs font-black tracking-wide mb-1.5">Name</label>
-          <input name="name" type="text" :value="editData.name" required
+          <input name="name" type="text" x-model="editData.name" required
                  class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent">
         </div>
         <div>
           <label class="block text-xs font-black tracking-wide mb-1.5">osquery SQL</label>
           <textarea name="query" rows="3" required
-                    x-effect="$el.value = editData.query"
+                    x-model="editData.query"
                     class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
         </div>
         <div>
           <label class="block text-xs font-black tracking-wide mb-1.5">JEXL Expression</label>
           <textarea name="expectedExpression" rows="2" required
-                    x-effect="$el.value = editData.expectedExpression"
+                    x-model="editData.expectedExpression"
                     class="w-full px-3 py-2 text-sm font-mono border-2 border-black focus:outline-none focus:bg-accent resize-y"></textarea>
           <p class="text-xs font-medium text-stone-400 mt-1">
             Must return <code class="bg-stone-100 px-1 border border-stone-200">true</code> to pass.
@@ -309,7 +367,14 @@ function showGroupPage() {
     showCreate: false,
     showEdit: false,
     showDelete: false,
+    createData: { name: '', query: '', expectedExpression: '' },
+    createAiDescription: '',
+    createAiLoading: false,
+    createAiError: null,
     editData: { id: '', name: '', query: '', expectedExpression: '' },
+    editAiDescription: '',
+    editAiLoading: false,
+    editAiError: null,
     deleteItemId: '',
     showTest: false,
     testQuery: '',
@@ -318,6 +383,11 @@ function showGroupPage() {
     testPassed: null,
     testExpressionError: null,
     testError: null,
+    resetCreate() {
+      this.createData = { name: '', query: '', expectedExpression: '' };
+      this.createAiDescription = '';
+      this.createAiError = null;
+    },
     editItem(detail) {
       this.editData = {
         id: detail.id,
@@ -325,11 +395,57 @@ function showGroupPage() {
         query: detail.query,
         expectedExpression: detail.expectedExpression,
       };
+      this.editAiDescription = '';
+      this.editAiError = null;
       this.showEdit = true;
     },
     deleteItem(detail) {
       this.deleteItemId = detail.id;
       this.showDelete = true;
+    },
+    async generateCreate() {
+      const description = this.createAiDescription.trim();
+      if (!description) return;
+      this.createAiLoading = true;
+      this.createAiError = null;
+      try {
+        const res = await fetch('/ai/suggest-check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description }),
+        });
+        if (!res.ok) throw new Error('Server error: ' + res.status);
+        const data = await res.json();
+        this.createData.name = data.name || '';
+        this.createData.query = data.query || '';
+        this.createData.expectedExpression = data.expectedExpression || '';
+      } catch (e) {
+        this.createAiError = e.message;
+      } finally {
+        this.createAiLoading = false;
+      }
+    },
+    async generateEdit() {
+      const description = this.editAiDescription.trim();
+      if (!description) return;
+      this.editAiLoading = true;
+      this.editAiError = null;
+      try {
+        const res = await fetch('/ai/suggest-check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description }),
+        });
+        if (!res.ok) throw new Error('Server error: ' + res.status);
+        const data = await res.json();
+        this.editData.name = data.name || '';
+        this.editData.query = data.query || '';
+        this.editData.expectedExpression = data.expectedExpression || '';
+      } catch (e) {
+        this.editAiError = e.message;
+      } finally {
+        this.editAiLoading = false;
+      }
     },
     async testItem(query, expression) {
       this.testQuery = query;
