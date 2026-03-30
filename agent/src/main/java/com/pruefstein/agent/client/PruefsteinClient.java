@@ -15,7 +15,6 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public interface PruefsteinClient
 {
-
 	@GET
 	@Path("/api/checks")
 	List<CheckItem> getChecks();

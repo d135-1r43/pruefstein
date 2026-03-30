@@ -29,7 +29,6 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class ComplianceRunner
 {
-
 	private static final Logger LOG = Logger.getLogger(ComplianceRunner.class);
 	private static final JexlEngine JEXL = new JexlBuilder().strict(true).silent(false).create();
 
@@ -125,9 +124,9 @@ public class ComplianceRunner
 				output, new TypeReference<List<Map<String, Object>>>()
 				{
 				});
-			if (!rows.isEmpty() && rows.get(0).get("uuid") != null)
+			if (!rows.isEmpty() && rows.getFirst().get("uuid") != null)
 			{
-				return rows.get(0).get("uuid").toString();
+				return rows.getFirst().get("uuid").toString();
 			}
 		}
 		catch (Exception e)
