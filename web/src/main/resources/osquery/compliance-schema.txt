@@ -1,0 +1,57 @@
+## osquery table reference (macOS, compliance-relevant)
+
+account_policy_data: uid BIGINT, creation_time DOUBLE, failed_login_count BIGINT, failed_login_timestamp DOUBLE, password_last_set_time DOUBLE
+
+alf: allow_signed_enabled INTEGER, firewall_unload INTEGER, global_state INTEGER (0=off 1=on-with-exceptions 2=block-all), logging_enabled INTEGER, stealth_enabled INTEGER, version TEXT
+
+alf_exceptions: path TEXT, state INTEGER
+
+authorized_keys: uid BIGINT, algorithm TEXT, key TEXT, options TEXT, comment TEXT, key_file TEXT
+
+certificates: common_name TEXT, subject TEXT, issuer TEXT, ca INTEGER, self_signed INTEGER, not_valid_before TEXT, not_valid_after TEXT, signing_algorithm TEXT, key_algorithm TEXT, key_strength TEXT, key_usage TEXT, sha1 TEXT, path TEXT, serial TEXT
+
+disk_encryption: name TEXT, uuid TEXT, encrypted INTEGER, type TEXT, encryption_status TEXT (encrypted|not encrypted|undefined), uid TEXT, user_uuid TEXT, filevault_status TEXT (on|off|unknown)
+
+file: path TEXT, directory TEXT, filename TEXT, uid BIGINT, gid BIGINT, mode TEXT, size BIGINT, atime BIGINT, mtime BIGINT, ctime BIGINT, btime BIGINT, symlink INTEGER, type TEXT, bsd_flags TEXT
+
+gatekeeper: assessments_enabled INTEGER, dev_id_enabled INTEGER, version TEXT, opaque_version TEXT
+
+groups: gid BIGINT, groupname TEXT, is_hidden INTEGER
+
+hash: path TEXT, directory TEXT, md5 TEXT, sha1 TEXT, sha256 TEXT
+
+interface_addresses: interface TEXT, address TEXT, mask TEXT, broadcast TEXT, type TEXT (dhcp|manual|auto|other|unknown)
+
+kernel_extensions: idx INTEGER, name TEXT, version TEXT, size BIGINT, path TEXT
+
+kernel_info: version TEXT, arguments TEXT, path TEXT, device TEXT
+
+known_hosts: uid BIGINT, key TEXT, key_file TEXT
+
+launchd: path TEXT, name TEXT, label TEXT, program TEXT, run_at_load TEXT, keep_alive TEXT, disabled TEXT, username TEXT, program_arguments TEXT, start_interval TEXT
+
+listening_ports: pid INTEGER, port INTEGER, protocol INTEGER, family INTEGER, address TEXT, path TEXT
+
+logged_in_users: type TEXT, user TEXT, tty TEXT, host TEXT, time BIGINT, pid INTEGER
+
+os_version: name TEXT, version TEXT, major INTEGER, minor INTEGER, patch INTEGER, build TEXT, platform TEXT, arch TEXT
+
+plist: key TEXT, subkey TEXT, value TEXT, path TEXT (required)
+
+preferences: domain TEXT, key TEXT, subkey TEXT, value TEXT, forced INTEGER, username TEXT, host TEXT
+  Common domains: com.apple.SoftwareUpdate, com.apple.screensaver, com.apple.loginwindow, com.apple.security
+
+processes: pid BIGINT, name TEXT, path TEXT, cmdline TEXT, state TEXT, uid BIGINT, gid BIGINT, euid BIGINT, on_disk INTEGER, start_time BIGINT, parent BIGINT
+
+shadow: username TEXT, password_status TEXT, hash_alg TEXT, last_change BIGINT, min BIGINT, max BIGINT, warning BIGINT, expire BIGINT
+  (requires root; macOS uses account_policy_data instead)
+
+sip_config: config_flag TEXT, enabled INTEGER, enabled_nvram INTEGER
+
+startup_items: name TEXT, path TEXT, args TEXT, type TEXT, source TEXT, status TEXT (enabled|disabled), username TEXT
+
+system_info: hostname TEXT, uuid TEXT, cpu_brand TEXT, cpu_physical_cores INTEGER, cpu_logical_cores INTEGER, physical_memory BIGINT, hardware_vendor TEXT, hardware_model TEXT, hardware_serial TEXT, computer_name TEXT
+
+user_groups: uid BIGINT, gid BIGINT
+
+users: uid BIGINT, gid BIGINT, username TEXT, description TEXT, directory TEXT, shell TEXT, uuid TEXT, type TEXT (roaming|local|system), is_hidden INTEGER
