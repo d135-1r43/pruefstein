@@ -2,7 +2,7 @@ package com.pruefstein.agent.client;
 
 import java.util.List;
 
-import io.quarkus.oidc.client.filter.OidcClientFilter;
+import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import jakarta.ws.rs.Consumes;
@@ -13,7 +13,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
 @RegisterRestClient(configKey = "pruefstein-api")
-@OidcClientFilter
+@RegisterProvider(BearerTokenFilter.class)
 @Produces(MediaType.APPLICATION_JSON)
 public interface PruefsteinClient
 {
