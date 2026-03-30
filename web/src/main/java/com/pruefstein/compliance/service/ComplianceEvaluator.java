@@ -18,7 +18,6 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class ComplianceEvaluator
 {
-
 	private static final JexlEngine JEXL = new JexlBuilder().strict(true).silent(false).create();
 
 	@Inject
