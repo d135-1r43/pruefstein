@@ -83,7 +83,18 @@
       </nav>
 
       <div class="border-t-2 border-black px-5 py-3">
-        <p class="text-xs font-bold text-stone-400 tracking-wide">© 2026 Prüfstein</p>
+        {#if inject:currentUser.loggedIn}
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-xs font-bold text-black truncate">{inject:currentUser.displayName}</p>
+            <p class="text-[10px] text-stone-400">Signed in</p>
+          </div>
+          <a href="/oidc-logout"
+             class="flex-shrink-0 text-[10px] font-black tracking-wide border-2 border-transparent px-1.5 py-1 hover:border-black hover:bg-accent transition-none">
+            Sign out
+          </a>
+        </div>
+        {/if}
       </div>
     </aside>
 

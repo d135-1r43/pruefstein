@@ -9,6 +9,8 @@ import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.repository.ReportRepository;
+import io.quarkus.oidc.Tenant;
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
@@ -18,11 +20,12 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+@Tenant("api")
+@Authenticated
 @Path("/api")
 @Produces(MediaType.APPLICATION_JSON)
 public class AgentResource
 {
-
 	@Inject
 	ComplianceItemRepository itemRepository;
 
