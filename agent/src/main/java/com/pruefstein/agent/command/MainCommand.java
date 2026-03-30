@@ -13,12 +13,9 @@ import picocli.CommandLine;
 	mixinStandardHelpOptions = true)
 public class MainCommand implements Runnable
 {
-	@CommandLine.Spec
-	CommandLine.Model.CommandSpec spec;
-
 	@Override
 	public void run()
 	{
-		spec.commandLine().usage(System.out);
+		CommandLine.usage(this, System.out);
 	}
 }
