@@ -1,0 +1,70 @@
+{#include main.html}
+{#title}Reports — Prüfstein{/title}
+
+<div class="max-w-5xl">
+
+  <div class="mb-8">
+    <h1 class="text-4xl font-black tracking-tight">Reports</h1>
+    <p class="text-sm font-medium text-stone-500 mt-1">Agent compliance runs, newest first.</p>
+  </div>
+
+  <div class="bg-white border-2 border-black shadow-brutal overflow-hidden">
+    <table class="w-full border-collapse text-sm">
+      <thead>
+        <tr class="border-b-2 border-black bg-black text-white">
+          <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Device</th>
+          <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Host / User</th>
+          <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Status</th>
+          <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Checked</th>
+          <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Deadline</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {#for report in reports}
+        <tr class="border-b-2 border-black last:border-0 hover:bg-stone-50 transition-colors">
+          <td class="px-4 py-3 font-mono text-xs text-stone-500 max-w-[9rem] truncate" title="{report.deviceId}">
+            {report.deviceId.substring(0, 8)}…
+          </td>
+          <td class="px-4 py-3 font-medium">{report.userId}</td>
+          <td class="px-4 py-3">
+            {#if report.status.name() == "COMPLIANT"}
+            <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-emerald-400">COMPLIANT</span>
+            {#else if report.status.name() == "NON_COMPLIANT"}
+            <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-red-400 text-white">NON-COMPLIANT</span>
+            {#else}
+            <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-accent">OPEN</span>
+            {/if}
+          </td>
+          <td class="px-4 py-3 text-stone-500 text-xs tabular-nums">
+            {report.checkedAt.toString().substring(0, 16).replace('T', ' ')}
+          </td>
+          <td class="px-4 py-3 text-stone-500 text-xs tabular-nums">
+            {#if report.deadline != null}
+            {report.deadline.toString().substring(0, 10)}
+            {#else}
+            —
+            {/if}
+          </td>
+          <td class="px-4 py-3 text-right">
+            <a href="{uri:Reports.show(report.id)}"
+               class="text-xs font-bold border-2 border-black px-2.5 py-1 hover:bg-accent transition-none">
+              View →
+            </a>
+          </td>
+        </tr>
+        {/for}
+        {#if reports.isEmpty()}
+        <tr>
+          <td colspan="6" class="px-4 py-10 text-center text-sm text-stone-400 font-medium">
+            No reports yet. Run the agent on a device to see results here.
+          </td>
+        </tr>
+        {/if}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+{/include}
