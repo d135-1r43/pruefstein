@@ -28,7 +28,13 @@
 
     <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t-2 border-black">
       <div>
-        <p class="text-[10px] font-black tracking-widest text-stone-400">Host / User</p>
+        <p class="text-[10px] font-black tracking-widest text-stone-400">User</p>
+        <p class="text-sm font-bold mt-0.5">
+          {#if report.keycloakUser != null}{report.keycloakUser}{#else}<span class="text-stone-400">—</span>{/if}
+        </p>
+      </div>
+      <div>
+        <p class="text-[10px] font-black tracking-widest text-stone-400">Host</p>
         <p class="text-sm font-bold mt-0.5">{report.userId}</p>
       </div>
       <div>

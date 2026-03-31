@@ -18,6 +18,7 @@ import io.quarkus.oidc.Tenant;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -48,6 +49,9 @@ public class AgentResource
 
 	@Inject
 	Event<FlowTrigger> flowTrigger;
+
+	@Inject
+	JsonWebToken jwt;
 
 	@ConfigProperty(name = "pruefstein.compliance.remediation-days", defaultValue = "7")
 	int remediationDays;
@@ -99,6 +103,7 @@ public class AgentResource
 		Report report = new Report();
 		report.setDeviceId(payload.deviceId());
 		report.setUserId(payload.userId());
+		report.setKeycloakUser(jwt.<String> claim("preferred_username").orElse(jwt.getSubject()));
 		report.setCheckedAt(payload.checkedAt() != null ? payload.checkedAt() : Instant.now());
 		reportRepository.persist(report);
 

@@ -33,6 +33,8 @@ public class Report extends PanacheEntity
 	@Column(length = 64)
 	private String flowInstanceId;
 
+	private String keycloakUser;
+
 	@ManyToOne
 	private AppUser appUser;
 
@@ -107,6 +109,16 @@ public class Report extends PanacheEntity
 	public void setFlowInstanceId(String flowInstanceId)
 	{
 		this.flowInstanceId = flowInstanceId;
+	}
+
+	public String getKeycloakUser()
+	{
+		return keycloakUser;
+	}
+
+	public void setKeycloakUser(String keycloakUser)
+	{
+		this.keycloakUser = keycloakUser;
 	}
 
 	public AppUser getAppUser()
