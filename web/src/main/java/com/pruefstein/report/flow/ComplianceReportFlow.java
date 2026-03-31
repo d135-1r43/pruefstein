@@ -35,7 +35,7 @@ public class ComplianceReportFlow extends Flow
 		return FuncWorkflowBuilder.workflow("compliance-report")
 			.tasks(
 				listen("waitForOutcome", toOne("compliance.outcome.decided")),
-				call("finalize", http().POST().endpoint(finalizeUrl)))
+				call("finalize", http().POST().endpoint(finalizeUrl).body(".")))
 			.build();
 	}
 }
