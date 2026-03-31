@@ -7,7 +7,10 @@ import com.pruefstein.compliance.domain.ComplianceResult;
 import com.pruefstein.user.domain.AppUser;
 import io.quarkus.hibernate.panache.PanacheEntity;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
@@ -20,10 +23,20 @@ public class Report extends PanacheEntity
 
 	private Instant checkedAt;
 
+	@Enumerated(EnumType.STRING)
+	private ReportStatus status = ReportStatus.COMPLIANT;
+
+	private Instant deadline;
+
+	private Instant finalizedAt;
+
+	@Column(length = 64)
+	private String flowInstanceId;
+
 	@ManyToOne
 	private AppUser appUser;
 
-	@OneToMany(mappedBy = "report", cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "report", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<ComplianceResult> results;
 
 	public String getDeviceId()
@@ -54,6 +67,46 @@ public class Report extends PanacheEntity
 	public void setCheckedAt(Instant checkedAt)
 	{
 		this.checkedAt = checkedAt;
+	}
+
+	public ReportStatus getStatus()
+	{
+		return status;
+	}
+
+	public void setStatus(ReportStatus status)
+	{
+		this.status = status;
+	}
+
+	public Instant getDeadline()
+	{
+		return deadline;
+	}
+
+	public void setDeadline(Instant deadline)
+	{
+		this.deadline = deadline;
+	}
+
+	public Instant getFinalizedAt()
+	{
+		return finalizedAt;
+	}
+
+	public void setFinalizedAt(Instant finalizedAt)
+	{
+		this.finalizedAt = finalizedAt;
+	}
+
+	public String getFlowInstanceId()
+	{
+		return flowInstanceId;
+	}
+
+	public void setFlowInstanceId(String flowInstanceId)
+	{
+		this.flowInstanceId = flowInstanceId;
 	}
 
 	public AppUser getAppUser()
