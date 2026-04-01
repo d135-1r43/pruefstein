@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.pruefstein.compliance.domain.ComplianceResult;
 import com.pruefstein.user.domain.AppUser;
-import io.quarkus.hibernate.panache.PanacheEntity;
+import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

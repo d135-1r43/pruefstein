@@ -1,6 +1,6 @@
 package com.pruefstein.compliance.domain;
 
-import io.quarkus.hibernate.panache.PanacheEntity;
+import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 

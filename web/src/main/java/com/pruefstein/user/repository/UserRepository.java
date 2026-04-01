@@ -3,7 +3,7 @@ package com.pruefstein.user.repository;
 import java.util.Optional;
 
 import com.pruefstein.user.domain.AppUser;
-import io.quarkus.hibernate.panache.PanacheRepository;
+import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped

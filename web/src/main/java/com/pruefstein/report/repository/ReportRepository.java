@@ -6,7 +6,7 @@ import java.util.Optional;
 
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
-import io.quarkus.hibernate.panache.PanacheRepository;
+import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped

@@ -30,7 +30,14 @@
             <dependency>
                 <groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-langchain4j-bom</artifactId>
-                <version>3.34.1</version>
+                <version>${quarkus.platform.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.quarkus.platform</groupId>
+                <artifactId>quarkus-flow-bom</artifactId>
+                <version>${quarkus.platform.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -62,7 +69,7 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-hibernate-panache-next</artifactId>
+            <artifactId>quarkus-hibernate-orm-panache</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -81,10 +88,6 @@
             <artifactId>quarkus-oidc</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-hibernate-orm</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.quarkiverse.langchain4j</groupId>
             <artifactId>quarkus-langchain4j-openai</artifactId>
         </dependency>
@@ -96,12 +99,10 @@
         <dependency>
             <groupId>io.quarkiverse.flow</groupId>
             <artifactId>quarkus-flow</artifactId>
-            <version>0.7.1</version>
         </dependency>
         <dependency>
             <groupId>io.quarkiverse.flow</groupId>
-            <artifactId>quarkus-flow-mvstore</artifactId>
-            <version>0.7.1</version>
+            <artifactId>quarkus-flow-jpa</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

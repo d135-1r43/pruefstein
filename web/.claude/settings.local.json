@@ -6,7 +6,15 @@
       "WebSearch",
       "Bash(curl -s http://localhost:8080/q/health)",
       "Bash(curl -s http://localhost:8080/q/dev-mcp)",
-      "Bash(./mvnw formatter:format test)"
+      "Bash(./mvnw formatter:format test)",
+      "Bash(./mvnw quarkus:dev -Dquarkus.console.basic=true)",
+      "Bash(pkill -f \"quarkus:dev\")",
+      "Bash(pkill -f mvnw)",
+      "Bash(xargs sed:*)",
+      "Bash(./mvnw formatter:format:*)",
+      "Bash(pkill -f \"pruefstein-web-dev.jar\")",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)"
     ]
   }
 }
