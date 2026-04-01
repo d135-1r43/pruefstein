@@ -8,36 +8,9 @@ Prüfstein lets you define compliance checks as SQL queries, run them on every e
 
 ## How it works
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Web App (Quarkus)                                              │
-│                                                                 │
-│  Admin defines Compliance Items                                 │
-│    └── ComplianceGroup  (e.g. "A.8 Asset Management")          │
-│         └── ComplianceItem                                      │
-│              ├── name          "Disk encryption enabled"        │
-│              ├── query         SELECT * FROM disk_encryption ... │
-│              └── expectedResult  "1"                            │
-│                                                                 │
-│  Dashboard shows per-user/device compliance Reports             │
-│    └── Report (user + device + timestamp)                       │
-│         └── ComplianceResult (item + passed + actual value)     │
-└─────────────┬───────────────────────────────────────────────────┘
-              │  REST API
-              │  GET  /api/compliance/items        ← fetch checks
-              │  POST /api/compliance/reports      ← push results
-              │
-┌─────────────▼───────────────────────────────────────────────────┐
-│  Local Agent  (runs on each employee's machine)                 │
-│                                                                 │
-│  1. Fetches all ComplianceItems from the web app                │
-│  2. Executes each SQL query via osquery                         │
-│  3. Compares actual result to expectedResult                    │
-│  4. POSTs a Report with all ComplianceResults back              │
-│                                                                 │
-│  Runs periodically (cron / launchd / systemd)                   │
-└─────────────────────────────────────────────────────────────────┘
-```
+The web app (Quarkus) lets admins define Compliance Items: each item belongs to a ComplianceGroup (e.g. "A.8 Asset Management") and contains a SQL query and a JEXL pass/fail expression. The dashboard shows per-user/device compliance Reports, each containing a ComplianceResult per item.
+
+A lightweight local agent runs on each employee's machine. It fetches all ComplianceItems via `GET /api/checks`, executes each SQL query through osquery, evaluates the result against the expected expression, and POSTs a Report back via `POST /api/reports`. The agent runs periodically via cron, launchd, or systemd.
 
 ---
 
