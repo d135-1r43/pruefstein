@@ -13,6 +13,7 @@ import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.flow.ComplianceReportFlow;
 import com.pruefstein.report.flow.FlowTrigger;
+import com.pruefstein.report.flow.WorkflowStartTrigger;
 import com.pruefstein.report.repository.ReportRepository;
 import io.quarkus.oidc.Tenant;
 import io.quarkus.security.Authenticated;
@@ -49,6 +50,9 @@ public class AgentResource
 
 	@Inject
 	Event<FlowTrigger> flowTrigger;
+
+	@Inject
+	Event<WorkflowStartTrigger> workflowStartTrigger;
 
 	@Inject
 	JsonWebToken jwt;
@@ -119,11 +123,13 @@ public class AgentResource
 			report.setStatus(ReportStatus.OPEN);
 			report.setDeadline(Instant.now().plus(remediationDays, ChronoUnit.DAYS));
 
-			// Create and start the flow instance — the workflow immediately
-			// suspends at listen(), persisting its state via JPA.
+			// Create the flow instance and fire a CDI event to start it after
+			// the current transaction commits. Starting inside @Transactional
+			// causes ConcurrentModificationException because ManagedExecutor
+			// propagates the JTA context into the async workflow JPA writer.
 			var wi = complianceReportFlow.instance(java.util.Map.of("reportId", report.id));
 			report.setFlowInstanceId(wi.id());
-			wi.start();
+			workflowStartTrigger.fire(new WorkflowStartTrigger(wi));
 		}
 	}
 
