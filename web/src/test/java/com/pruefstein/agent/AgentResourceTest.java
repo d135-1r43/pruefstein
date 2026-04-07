@@ -77,11 +77,13 @@ class AgentResourceTest
 	@Test
 	void pushCompliantReportReturns204()
 	{
+		// given
 		String body = """
 			{"deviceId":"test-device","userId":"test-user","checkedAt":"%s",
 			 "results":[{"itemId":%d,"passed":true,"output":"ok"}]}
 			""".formatted(Instant.now(), itemId);
 
+		// when / then
 		given()
 			.contentType(JSON)
 			.body(body)
@@ -93,11 +95,13 @@ class AgentResourceTest
 	@Test
 	void pushNonCompliantReportStartsFlowAndReturns204()
 	{
+		// given
 		String body = """
 			{"deviceId":"test-device","userId":"test-user","checkedAt":"%s",
 			 "results":[{"itemId":%d,"passed":false,"output":"fail"}]}
 			""".formatted(Instant.now(), itemId);
 
+		// when / then
 		given()
 			.contentType(JSON)
 			.body(body)

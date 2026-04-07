@@ -15,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestTransaction
 class ComplianceItemRepositoryTest
 {
-
 	@Inject
 	ComplianceGroupRepository groupRepository;
 
@@ -25,6 +24,7 @@ class ComplianceItemRepositoryTest
 	@Test
 	void testPersistWithGroupAndFindById()
 	{
+		// given
 		ComplianceGroup group = new ComplianceGroup();
 		group.setName("A.10 Cryptography");
 		groupRepository.persist(group);
@@ -36,7 +36,10 @@ class ComplianceItemRepositoryTest
 		item.setGroup(group);
 		itemRepository.persist(item);
 
+		// when
 		ComplianceItem found = itemRepository.findById(item.id);
+
+		// then
 		assertNotNull(found);
 		assertEquals("Disk encryption enabled", found.getName());
 		assertEquals("SELECT encrypted FROM mounts WHERE path = '/';", found.getQuery());
@@ -47,12 +50,16 @@ class ComplianceItemRepositoryTest
 	@Test
 	void testFindByIdReturnsNullForUnknownId()
 	{
+		// given (empty DB)
+
+		// when / then
 		assertNull(itemRepository.findById(Long.MAX_VALUE));
 	}
 
 	@Test
 	void testListByGroup()
 	{
+		// given
 		ComplianceGroup group = new ComplianceGroup();
 		group.setName("A.12 Operations Security");
 		groupRepository.persist(group);
@@ -82,7 +89,10 @@ class ComplianceItemRepositoryTest
 		itemOther.setGroup(otherGroup);
 		itemRepository.persist(itemOther);
 
+		// when
 		List<ComplianceItem> items = itemRepository.list("group", group);
+
+		// then
 		assertEquals(2, items.size());
 		assertTrue(items.stream().anyMatch(i -> "Firewall enabled".equals(i.getName())));
 		assertTrue(items.stream().anyMatch(i -> "Auto-update enabled".equals(i.getName())));
@@ -91,6 +101,7 @@ class ComplianceItemRepositoryTest
 	@Test
 	void testDeleteById()
 	{
+		// given
 		ComplianceGroup group = new ComplianceGroup();
 		group.setName("Temp");
 		groupRepository.persist(group);
@@ -103,14 +114,17 @@ class ComplianceItemRepositoryTest
 		itemRepository.persist(item);
 		Long id = item.id;
 
+		// when
 		itemRepository.deleteById(id);
 
+		// then
 		assertNull(itemRepository.findById(id));
 	}
 
 	@Test
 	void testUpdateFields()
 	{
+		// given
 		ComplianceGroup group = new ComplianceGroup();
 		group.setName("Group");
 		groupRepository.persist(group);
@@ -122,10 +136,12 @@ class ComplianceItemRepositoryTest
 		item.setGroup(group);
 		itemRepository.persist(item);
 
+		// when
 		item.setName("Updated");
 		item.setQuery("SELECT 2;");
 		item.setExpectedExpression("results.size() == 1");
 
+		// then
 		ComplianceItem found = itemRepository.findById(item.id);
 		assertEquals("Updated", found.getName());
 		assertEquals("SELECT 2;", found.getQuery());

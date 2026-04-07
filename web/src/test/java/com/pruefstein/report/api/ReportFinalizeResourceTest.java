@@ -50,10 +50,12 @@ class ReportFinalizeResourceTest
 	@Test
 	void finalizeSetsCompliantWhenAllPassed()
 	{
+		// given
 		String body = """
 			{"reportId":%d,"allPassed":true}
 			""".formatted(reportId);
 
+		// when
 		given()
 			.contentType(JSON)
 			.body(body)
@@ -61,6 +63,7 @@ class ReportFinalizeResourceTest
 			.then()
 			.statusCode(200);
 
+		// then
 		QuarkusTransaction.requiringNew().run(() -> {
 			Report report = reportRepository.findById(reportId);
 			assertEquals(ReportStatus.COMPLIANT, report.getStatus());
@@ -71,10 +74,12 @@ class ReportFinalizeResourceTest
 	@Test
 	void finalizeSetsNonCompliantWhenNotAllPassed()
 	{
+		// given
 		String body = """
 			{"reportId":%d,"allPassed":false}
 			""".formatted(reportId);
 
+		// when
 		given()
 			.contentType(JSON)
 			.body(body)
@@ -82,6 +87,7 @@ class ReportFinalizeResourceTest
 			.then()
 			.statusCode(200);
 
+		// then
 		QuarkusTransaction.requiringNew().run(() -> {
 			Report report = reportRepository.findById(reportId);
 			assertEquals(ReportStatus.NON_COMPLIANT, report.getStatus());
@@ -92,10 +98,12 @@ class ReportFinalizeResourceTest
 	@Test
 	void finalizeReturns404ForUnknownReport()
 	{
+		// given
 		String body = """
 			{"reportId":%d,"allPassed":true}
 			""".formatted(Long.MAX_VALUE);
 
+		// when / then
 		given()
 			.contentType(JSON)
 			.body(body)

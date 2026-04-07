@@ -49,6 +49,9 @@ class ReportsTest
 	@Test
 	void indexReturns200()
 	{
+		// given (report seeded in setUp)
+
+		// when / then
 		given()
 			.when().get("/Reports/index")
 			.then()
@@ -59,6 +62,9 @@ class ReportsTest
 	@Test
 	void indexContainsReport()
 	{
+		// given (report seeded in setUp)
+
+		// when / then
 		given()
 			.when().get("/Reports/index")
 			.then()
@@ -69,6 +75,9 @@ class ReportsTest
 	@Test
 	void showReturns200ForExistingReport()
 	{
+		// given (report seeded in setUp)
+
+		// when / then
 		given()
 			.when().get("/Reports/show/" + reportId)
 			.then()
@@ -80,6 +89,9 @@ class ReportsTest
 	@Test
 	void showDisplaysCompliantStatus()
 	{
+		// given (report seeded in setUp with COMPLIANT status)
+
+		// when / then
 		given()
 			.when().get("/Reports/show/" + reportId)
 			.then()
@@ -90,8 +102,12 @@ class ReportsTest
 	@Test
 	void showReturns404ForUnknownReport()
 	{
+		// given
+		long unknownId = Long.MAX_VALUE;
+
+		// when / then
 		given()
-			.when().get("/Reports/show/" + Long.MAX_VALUE)
+			.when().get("/Reports/show/" + unknownId)
 			.then()
 			.statusCode(404);
 	}

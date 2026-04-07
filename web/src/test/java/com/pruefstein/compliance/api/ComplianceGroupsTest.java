@@ -17,7 +17,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 @QuarkusTest
 class ComplianceGroupsTest
 {
-
 	@Inject
 	ComplianceGroupRepository groupRepository;
 
@@ -58,12 +57,12 @@ class ComplianceGroupsTest
 		});
 	}
 
-	// ── Groups index
-	// ──────────────────────────────────────────────────────────
-
 	@Test
 	void testIndexReturns200()
 	{
+		// given (group seeded in setUp)
+
+		// when / then
 		given()
 			.when().get("/ComplianceGroups/index")
 			.then()
@@ -75,6 +74,9 @@ class ComplianceGroupsTest
 	@Test
 	void testIndexContainsExistingGroup()
 	{
+		// given (group seeded in setUp)
+
+		// when / then
 		given()
 			.when().get("/ComplianceGroups/index")
 			.then()
@@ -82,12 +84,12 @@ class ComplianceGroupsTest
 			.body(containsString("A.10 Cryptography"));
 	}
 
-	// ── Group show
-	// ────────────────────────────────────────────────────────────
-
 	@Test
 	void testShowReturns200ForExistingGroup()
 	{
+		// given (group seeded in setUp)
+
+		// when / then
 		given()
 			.when().get("/ComplianceGroups/show/" + groupId)
 			.then()
@@ -99,6 +101,9 @@ class ComplianceGroupsTest
 	@Test
 	void testShowContainsItem()
 	{
+		// given (group and item seeded in setUp)
+
+		// when / then
 		given()
 			.when().get("/ComplianceGroups/show/" + groupId)
 			.then()
@@ -110,8 +115,12 @@ class ComplianceGroupsTest
 	@Test
 	void testShowReturns404ForUnknownGroup()
 	{
+		// given
+		long unknownId = Long.MAX_VALUE;
+
+		// when / then
 		given()
-			.when().get("/ComplianceGroups/show/" + Long.MAX_VALUE)
+			.when().get("/ComplianceGroups/show/" + unknownId)
 			.then()
 			.statusCode(404);
 	}

@@ -13,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestTransaction
 class UserSyncServiceTest
 {
-
 	@Inject
 	UserSyncService userSyncService;
 
@@ -23,8 +22,12 @@ class UserSyncServiceTest
 	@Test
 	void createsNewUserWhenNotFound()
 	{
+		// given (no user with subject "sub-new" exists)
+
+		// when
 		userSyncService.syncUser("sub-new", "new@example.com", "Alice", "Smith");
 
+		// then
 		AppUser user = userRepository.findBySubject("sub-new").orElseThrow();
 		assertEquals("sub-new", user.getKeycloakSubject());
 		assertEquals("new@example.com", user.getMail());
@@ -35,9 +38,13 @@ class UserSyncServiceTest
 	@Test
 	void updatesExistingUserFields()
 	{
+		// given
 		userSyncService.syncUser("sub-existing", "old@example.com", "Bob", "Jones");
+
+		// when
 		userSyncService.syncUser("sub-existing", "new@example.com", "Robert", "Jones");
 
+		// then
 		AppUser user = userRepository.findBySubject("sub-existing").orElseThrow();
 		assertEquals("new@example.com", user.getMail());
 		assertEquals("Robert", user.getFirstname());
@@ -46,8 +53,12 @@ class UserSyncServiceTest
 	@Test
 	void usesSubjectAsFirstnameWhenFirstnameIsNull()
 	{
+		// given (no pre-existing user)
+
+		// when
 		userSyncService.syncUser("sub-nofirst", "x@example.com", null, "Doe");
 
+		// then
 		AppUser user = userRepository.findBySubject("sub-nofirst").orElseThrow();
 		assertEquals("sub-nofirst", user.getFirstname());
 		assertEquals("Doe", user.getLastname());
@@ -56,8 +67,12 @@ class UserSyncServiceTest
 	@Test
 	void usesEmptyStringAsLastnameWhenLastnameIsNull()
 	{
+		// given (no pre-existing user)
+
+		// when
 		userSyncService.syncUser("sub-nolast", "x@example.com", "Jane", null);
 
+		// then
 		AppUser user = userRepository.findBySubject("sub-nolast").orElseThrow();
 		assertEquals("Jane", user.getFirstname());
 		assertEquals("", user.getLastname());
@@ -66,9 +81,13 @@ class UserSyncServiceTest
 	@Test
 	void doesNotOverwriteFieldsWithNullOnUpdate()
 	{
+		// given
 		userSyncService.syncUser("sub-nullupdate", "orig@example.com", "Orig", "Name");
+
+		// when
 		userSyncService.syncUser("sub-nullupdate", null, null, null);
 
+		// then
 		AppUser user = userRepository.findBySubject("sub-nullupdate").orElseThrow();
 		assertEquals("orig@example.com", user.getMail());
 		assertEquals("Orig", user.getFirstname());
