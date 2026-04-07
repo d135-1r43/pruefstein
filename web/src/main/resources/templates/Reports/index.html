@@ -8,16 +8,132 @@
     <p class="text-sm font-medium text-stone-500 mt-1">Agent compliance runs, newest first.</p>
   </div>
 
+  <!-- ── Filters ──────────────────────────────────────────────────── -->
+  <div x-data="{
+    setStatus(s) {
+      document.getElementById('ff-status').value = s;
+      document.getElementById('ff').submit();
+    },
+    setSort(col) {
+      var sf = document.getElementById('ff-sort');
+      var df = document.getElementById('ff-dir');
+      if (sf.value === col) { df.value = (df.value === 'asc') ? 'desc' : 'asc'; }
+      else { sf.value = col; df.value = 'desc'; }
+      document.getElementById('ff').submit();
+    }
+  }" class="mb-5">
+
+    <form id="ff" method="GET" action="{uri:Reports.index}" class="flex flex-wrap items-stretch gap-3">
+      <input id="ff-status" type="hidden" name="status" value="{statusFilter}">
+      <input id="ff-sort"   type="hidden" name="sort"   value="{sort}">
+      <input id="ff-dir"    type="hidden" name="dir"    value="{dir}">
+
+      <!-- Status pills -->
+      <div class="flex gap-1.5 flex-wrap">
+
+        <button type="button" @click="setStatus('')"
+          class="px-3 py-1.5 text-[10px] font-black tracking-widest border-2 border-black transition-none
+          {#if statusFilter == ''}bg-black text-white{#else}bg-white hover:bg-stone-100{/if}">
+          ALL
+        </button>
+
+        <button type="button" @click="setStatus('NON_COMPLIANT')"
+          class="px-3 py-1.5 text-[10px] font-black tracking-widest border-2 border-black transition-none
+          {#if statusFilter == 'NON_COMPLIANT'}bg-red-400{#else}bg-white hover:bg-red-100{/if}">
+          NON-COMPLIANT
+        </button>
+
+        <button type="button" @click="setStatus('MISSING')"
+          class="px-3 py-1.5 text-[10px] font-black tracking-widest border-2 border-black transition-none
+          {#if statusFilter == 'MISSING'}bg-accent{#else}bg-white hover:bg-yellow-50{/if}">
+          MISSING
+        </button>
+
+        <button type="button" @click="setStatus('COMPLIANT')"
+          class="px-3 py-1.5 text-[10px] font-black tracking-widest border-2 border-black transition-none
+          {#if statusFilter == 'COMPLIANT'}bg-emerald-400{#else}bg-white hover:bg-emerald-50{/if}">
+          COMPLIANT
+        </button>
+
+        <button type="button" @click="setStatus('OPEN')"
+          class="px-3 py-1.5 text-[10px] font-black tracking-widest border-2 border-black transition-none
+          {#if statusFilter == 'OPEN'}bg-stone-200{#else}bg-white hover:bg-stone-50{/if}">
+          OPEN
+        </button>
+
+      </div>
+
+      <!-- Search -->
+      <div class="flex ml-auto">
+        <input type="text" name="q" value="{q}"
+          placeholder="Filter by device, user…"
+          class="border-2 border-black px-3 py-1.5 text-sm font-medium bg-white focus:outline-none focus:bg-yellow-50 w-64">
+        <button type="submit"
+          class="border-2 border-l-0 border-black px-3 py-1.5 text-[10px] font-black tracking-widest bg-white hover:bg-accent transition-none">
+          SEARCH
+        </button>
+      </div>
+    </form>
+
+  </div>
+
+  <!-- ── Table ─────────────────────────────────────────────────────── -->
   <div class="bg-white border-2 border-black shadow-brutal overflow-hidden">
     <table class="w-full border-collapse text-sm">
       <thead>
         <tr class="border-b-2 border-black bg-black text-white">
-          <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Device ID</th>
-          <th class="text-left px-4 py-3 font-black text-xs tracking-widest">User</th>
-          <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Host</th>
-          <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Status</th>
-          <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Checked</th>
-          <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Deadline</th>
+
+          <th class="text-left px-4 py-3">
+            <button type="button" @click="setSort('deviceId')"
+              class="text-[10px] font-black tracking-widest hover:text-accent flex items-center gap-1">
+              DEVICE ID
+              {#if sort == 'deviceId'}
+                {#if dir == 'asc'}↑{#else}↓{/if}
+              {#else}
+                <span class="opacity-30">↕</span>
+              {/if}
+            </button>
+          </th>
+
+          <th class="text-left px-4 py-3">
+            <button type="button" @click="setSort('user')"
+              class="text-[10px] font-black tracking-widest hover:text-accent flex items-center gap-1">
+              USER
+              {#if sort == 'user'}
+                {#if dir == 'asc'}↑{#else}↓{/if}
+              {#else}
+                <span class="opacity-30">↕</span>
+              {/if}
+            </button>
+          </th>
+
+          <th class="text-left px-4 py-3 text-[10px] font-black tracking-widest">HOST</th>
+
+          <th class="text-left px-4 py-3">
+            <button type="button" @click="setSort('status')"
+              class="text-[10px] font-black tracking-widest hover:text-accent flex items-center gap-1">
+              STATUS
+              {#if sort == 'status'}
+                {#if dir == 'asc'}↑{#else}↓{/if}
+              {#else}
+                <span class="opacity-30">↕</span>
+              {/if}
+            </button>
+          </th>
+
+          <th class="text-left px-4 py-3">
+            <button type="button" @click="setSort('checkedAt')"
+              class="text-[10px] font-black tracking-widest hover:text-accent flex items-center gap-1">
+              CHECKED
+              {#if sort == 'checkedAt'}
+                {#if dir == 'asc'}↑{#else}↓{/if}
+              {#else}
+                <span class="opacity-30">↕</span>
+              {/if}
+            </button>
+          </th>
+
+          <th class="text-left px-4 py-3 text-[10px] font-black tracking-widest">DEADLINE</th>
           <th class="px-4 py-3"></th>
         </tr>
       </thead>
@@ -65,7 +181,7 @@
         {#if reports.isEmpty()}
         <tr>
           <td colspan="7" class="px-4 py-10 text-center text-sm text-stone-400 font-medium">
-            No reports yet. Run the agent on a device to see results here.
+            No reports match the current filters.
           </td>
         </tr>
         {/if}

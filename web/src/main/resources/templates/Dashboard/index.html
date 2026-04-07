@@ -17,7 +17,7 @@
       <p class="text-5xl font-black mt-2">{nonCompliantCount}</p>
       {#if totalCount > 0}
       <p class="text-sm font-black mt-2 text-red-900">
-        {((nonCompliantCount * 100) / totalCount)}% of reports
+        {nonCompliantPct}% of reports
       </p>
       {#else}
       <p class="text-sm font-black mt-2 text-red-900">no reports yet</p>
@@ -30,7 +30,7 @@
       <p class="text-5xl font-black mt-2">{missingCount}</p>
       {#if totalCount > 0}
       <p class="text-sm font-black mt-2 text-stone-700">
-        {((missingCount * 100) / totalCount)}% of reports
+        {missingPct}% of reports
       </p>
       {#else}
       <p class="text-sm font-black mt-2 text-stone-700">no reports yet</p>
@@ -43,7 +43,7 @@
       <p class="text-5xl font-black mt-2">{compliantCount}</p>
       {#if totalCount > 0}
       <p class="text-sm font-black mt-2 text-emerald-900">
-        {((compliantCount * 100) / totalCount)}% of reports
+        {compliantPct}% of reports
       </p>
       {#else}
       <p class="text-sm font-black mt-2 text-emerald-900">no reports yet</p>

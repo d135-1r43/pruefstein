@@ -31,6 +31,9 @@ public class Dashboard extends Controller
 			long missingCount,
 			long openCount,
 			long totalCount,
+			long compliantPct,
+			long nonCompliantPct,
+			long missingPct,
 			long itemCount,
 			long userCount);
 	}
@@ -44,7 +47,12 @@ public class Dashboard extends Controller
 		long missing = reportRepository.count("status", ReportStatus.MISSING);
 		long open = reportRepository.count("status", ReportStatus.OPEN);
 
+		long compliantPct = total > 0 ? (compliant * 100) / total : 0;
+		long nonCompliantPct = total > 0 ? (nonCompliant * 100) / total : 0;
+		long missingPct = total > 0 ? (missing * 100) / total : 0;
+
 		return Templates.index(compliant, nonCompliant, missing, open, total,
+			compliantPct, nonCompliantPct, missingPct,
 			itemRepository.count(), userRepository.count());
 	}
 }
