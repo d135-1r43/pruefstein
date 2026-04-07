@@ -14,7 +14,49 @@
       "Bash(./mvnw formatter:format:*)",
       "Bash(pkill -f \"pruefstein-web-dev.jar\")",
       "Bash(git add:*)",
-      "Bash(git commit -m ':*)"
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(./mvnw dependency:tree -q)",
+      "Bash(./mvnw dependency:tree)",
+      "Read(//private/tmp/**)",
+      "Bash(jar -xf /Users/mhe/.m2/repository/io/quarkiverse/flow/quarkus-flow-jpa/0.7.1/quarkus-flow-jpa-0.7.1.jar io/quarkiverse/flow/persistence/jpa/WorkflowModelConverter.class)",
+      "Bash(javap -c io/quarkiverse/flow/persistence/jpa/WorkflowModelConverter.class)",
+      "Bash(jar -xf /Users/mhe/.m2/repository/io/serverlessworkflow/serverlessworkflow-impl-core/7.13.8.Final/serverlessworkflow-impl-core-7.13.8.Final.jar)",
+      "Bash(javap -p io/serverlessworkflow/impl/marshaller/AbstractOutputBuffer.class)",
+      "Bash(jar -tf /Users/mhe/.m2/repository/io/serverlessworkflow/serverlessworkflow-impl-core/7.13.8.Final/serverlessworkflow-impl-core-7.13.8.Final.jar)",
+      "Bash(jar -tf /Users/mhe/.m2/repository/io/serverlessworkflow/serverlessworkflow-persistence-api/7.13.8.Final/serverlessworkflow-persistence-api-7.13.8.Final.jar)",
+      "Bash(xargs -I{} sh -c 'jar -tf {} 2>/dev/null | grep -q \"JacksonModel\" && echo {}')",
+      "Bash(jar -tf /Users/mhe/.m2/repository/io/quarkiverse/flow/quarkus-flow-jpa/0.7.1/quarkus-flow-jpa-0.7.1.jar)",
+      "Bash(jar -tf /Users/mhe/.m2/repository/io/quarkiverse/flow/quarkus-flow-mvstore/0.7.1/quarkus-flow-mvstore-0.7.1.jar)",
+      "Bash(jar -tf /Users/mhe/.m2/repository/io/serverlessworkflow/serverlessworkflow-persistence-mvstore/7.13.8.Final/serverlessworkflow-persistence-mvstore-7.13.8.Final.jar)",
+      "Bash(javap -p -c io/quarkiverse/flow/persistence/jpa/JpaInstanceWriter.class)",
+      "Bash(mkdir -p /tmp/swf-mvstore)",
+      "Read(//tmp/**)",
+      "Bash(jar -xf /Users/mhe/.m2/repository/io/serverlessworkflow/serverlessworkflow-persistence-mvstore/7.13.8.Final/serverlessworkflow-persistence-mvstore-7.13.8.Final.jar)",
+      "Bash(javap -p -c io/serverlessworkflow/impl/persistence/mvstore/MVStorePersistenceStore.class)",
+      "Bash(mkdir -p /tmp/flow-main)",
+      "Bash(jar -xf /Users/mhe/.m2/repository/io/quarkiverse/flow/quarkus-flow/0.7.1/quarkus-flow-0.7.1.jar)",
+      "Bash(xargs -I{} sh -c 'javap -p \"{}\" 2>/dev/null | grep -l \"WorkflowBufferFactory\" 2>/dev/null')",
+      "Bash(xargs -I{} javap -p {})",
+      "Bash(javap -p -verbose io/quarkiverse/flow/persistence/jpa/WorkflowModelConverter.class)",
+      "Bash(mkdir -p /tmp/flow-deploy)",
+      "Bash(jar -xf /Users/mhe/.m2/repository/io/quarkiverse/flow/quarkus-flow-deployment/0.7.1/quarkus-flow-deployment-0.7.1.jar)",
+      "Bash(xargs -I{} bash -c 'javap -p \"{}\" 2>/dev/null | grep -q \"WorkflowBufferFactory\\\\|CustomObjectMarshaller\\\\|JacksonModel\" && echo \"{}\"')",
+      "Bash(mkdir -p /tmp/jpa-src)",
+      "Bash(jar -xf /Users/mhe/.m2/repository/io/quarkiverse/flow/quarkus-flow-jpa/0.7.1/quarkus-flow-jpa-0.7.1-sources.jar)",
+      "Bash(xargs -I{} sh -c 'jar -tf \"{}\" 2>/dev/null | grep -q \"WorkflowBufferFactory\\\\|BufferFactory\" && echo \"{}\"')",
+      "Bash(mkdir -p /tmp/flow-common-src)",
+      "Bash(jar -xf /Users/mhe/.m2/repository/io/quarkiverse/flow/quarkus-flow-persistence-common/0.7.1/quarkus-flow-persistence-common-0.7.1-sources.jar)",
+      "Bash(xargs -I{} bash -c 'jar -tf \"{}\" 2>/dev/null | grep -q \"WorkflowModel.class$\" && echo \"{}\"')",
+      "Bash(mkdir:*)",
+      "Bash(javap -p io/serverlessworkflow/impl/WorkflowModel.class)",
+      "Bash(javap -p io/serverlessworkflow/impl/WorkflowModelFactory.class)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "quarkus-dev"
+  ],
+  "disabledMcpjsonServers": [
+    "carbon-mcp"
+  ]
 }

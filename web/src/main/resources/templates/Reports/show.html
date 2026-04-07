@@ -87,7 +87,11 @@
             </button>
             {/if}
           </td>
-          <td class="px-4 py-3 font-medium">{result.item.name}</td>
+          <td class="px-4 py-3 font-medium">
+            <span>{result.item.name}</span>
+            <a href="{uri:ComplianceGroups.show(result.item.group.id)}"
+               class="ml-2 text-[10px] font-black tracking-widest border border-black px-1 py-0.5 hover:bg-accent transition-none align-middle">DEF</a>
+          </td>
           <td class="px-4 py-3 text-stone-500">{result.item.group.name}</td>
           <td class="px-4 py-3 text-right">
             {#if result.passed}
