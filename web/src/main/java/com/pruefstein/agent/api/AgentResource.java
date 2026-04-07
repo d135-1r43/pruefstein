@@ -30,7 +30,10 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -88,6 +91,10 @@ public class AgentResource
 	{
 	}
 
+	public record ReportResponse(String reportUrl)
+	{
+	}
+
 	@GET
 	@Path("/checks")
 	public List<CheckDto> getChecks()
@@ -101,26 +108,24 @@ public class AgentResource
 	@Path("/reports")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Transactional
-	public void pushReport(ReportPayload payload)
+	public Response pushReport(ReportPayload payload, @Context UriInfo uriInfo)
 	{
 		boolean allPassed = payload.results().stream().allMatch(ResultPayload::passed);
 
 		Optional<Report> existing = reportRepository.findOpenByDeviceAndUser(
 			payload.deviceId(), payload.userId());
 
-		if (existing.isPresent())
-		{
-			handleResubmission(existing.get(), payload, allPassed);
-		}
-		else
-		{
-			handleFirstSubmission(payload, allPassed);
-		}
+		Report report = existing.isPresent()
+			? handleResubmission(existing.get(), payload, allPassed)
+			: handleFirstSubmission(payload, allPassed);
 
 		upsertDevice(payload);
+
+		String reportUrl = uriInfo.getBaseUri().resolve("Reports/show/" + report.id).toString();
+		return Response.ok(new ReportResponse(reportUrl)).build();
 	}
 
-	private void handleFirstSubmission(ReportPayload payload, boolean allPassed)
+	private Report handleFirstSubmission(ReportPayload payload, boolean allPassed)
 	{
 		Report report = new Report();
 		report.setDeviceId(payload.deviceId());
@@ -149,9 +154,10 @@ public class AgentResource
 			report.setFlowInstanceId(wi.id());
 			workflowStartTrigger.fire(new WorkflowStartTrigger(wi));
 		}
+		return report;
 	}
 
-	private void handleResubmission(Report report, ReportPayload payload, boolean allPassed)
+	private Report handleResubmission(Report report, ReportPayload payload, boolean allPassed)
 	{
 		// Replace results with the new run
 		resultRepository.delete("report", report);
@@ -161,6 +167,7 @@ public class AgentResource
 		// The flow is waiting for this event; FlowEventEmitter sends it after
 		// commit
 		flowTrigger.fire(new FlowTrigger(report.id, report.getFlowInstanceId(), allPassed));
+		return report;
 	}
 
 	private void persistResults(Report report, List<ResultPayload> results)

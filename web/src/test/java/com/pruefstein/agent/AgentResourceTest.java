@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
+import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 @TestSecurity(user = "testuser", roles = "user")
@@ -80,7 +81,7 @@ class AgentResourceTest
 	}
 
 	@Test
-	void pushCompliantReportReturns204()
+	void pushCompliantReportReturnsReportUrl()
 	{
 		// given
 		String body = """
@@ -88,17 +89,22 @@ class AgentResourceTest
 			 "results":[{"itemId":%d,"passed":true,"output":"ok"}]}
 			""".formatted(Instant.now(), itemId);
 
-		// when / then
-		given()
+		// when
+		String reportUrl = given()
 			.contentType(JSON)
 			.body(body)
 			.when().post("/api/reports")
 			.then()
-			.statusCode(204);
+			.statusCode(200)
+			.extract().path("reportUrl");
+
+		// then
+		assertNotNull(reportUrl);
+		assertTrue(reportUrl.contains("/Reports/show/"), "reportUrl should contain /Reports/show/");
 	}
 
 	@Test
-	void pushNonCompliantReportStartsFlowAndReturns204()
+	void pushNonCompliantReportStartsFlowAndReturnsReportUrl()
 	{
 		// given
 		String body = """
@@ -106,12 +112,17 @@ class AgentResourceTest
 			 "results":[{"itemId":%d,"passed":false,"output":"fail"}]}
 			""".formatted(Instant.now(), itemId);
 
-		// when / then
-		given()
+		// when
+		String reportUrl = given()
 			.contentType(JSON)
 			.body(body)
 			.when().post("/api/reports")
 			.then()
-			.statusCode(204);
+			.statusCode(200)
+			.extract().path("reportUrl");
+
+		// then
+		assertNotNull(reportUrl);
+		assertTrue(reportUrl.contains("/Reports/show/"), "reportUrl should contain /Reports/show/");
 	}
 }

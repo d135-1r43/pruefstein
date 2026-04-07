@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pruefstein.agent.client.CheckItem;
 import com.pruefstein.agent.client.PruefsteinClient;
 import com.pruefstein.agent.client.ReportPayload;
+import com.pruefstein.agent.client.ReportResponse;
 import com.pruefstein.agent.client.ResultPayload;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -58,10 +59,11 @@ public class ComplianceRunner
 			results.add(runCheck(check));
 		}
 
-		client.pushReport(new ReportPayload(deviceId, userId, Instant.now(), results));
+		ReportResponse response = client.pushReport(new ReportPayload(deviceId, userId, Instant.now(), results));
 
 		long passed = results.stream().filter(ResultPayload::passed).count();
 		LOG.infof("Done: %d/%d checks passed", passed, results.size());
+		LOG.infof("View report: %s", response.reportUrl());
 	}
 
 	private ResultPayload runCheck(CheckItem check)

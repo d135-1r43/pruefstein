@@ -24,5 +24,5 @@ public interface PruefsteinClient
 	@POST
 	@Path("/api/reports")
 	@Consumes(MediaType.APPLICATION_JSON)
-	void pushReport(ReportPayload report);
+	ReportResponse pushReport(ReportPayload report);
 }
