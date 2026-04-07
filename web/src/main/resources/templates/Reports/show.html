@@ -108,11 +108,18 @@
             {/if}
           </td>
         </tr>
-        <!-- Expanded: osquery output -->
+        <!-- Expanded: osquery output + constraint -->
         {#if result.output != null && !result.output.isEmpty()}
         <tr x-show="expanded[{result_index}]" x-cloak>
-          <td colspan="4" class="px-4 py-3 bg-stone-900 border-b-2 border-black">
-            <pre class="text-xs text-emerald-400 font-mono whitespace-pre-wrap break-all">{result.output}</pre>
+          <td colspan="4" class="px-4 py-3 bg-stone-900 border-b-2 border-black space-y-2">
+            <div>
+              <p class="text-[10px] font-black tracking-widest text-stone-500 mb-1">OUTPUT</p>
+              <pre class="text-xs text-emerald-400 font-mono whitespace-pre-wrap break-all">{result.output}</pre>
+            </div>
+            <div>
+              <p class="text-[10px] font-black tracking-widest text-stone-500 mb-1">MUST SATISFY</p>
+              <pre class="text-xs text-yellow-400 font-mono">{result.item.expectedExpression}</pre>
+            </div>
           </td>
         </tr>
         {/if}
