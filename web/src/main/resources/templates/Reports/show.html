@@ -96,7 +96,10 @@
                  class="ml-2 text-[10px] font-black tracking-widest border border-black px-1 py-0.5 hover:bg-accent transition-none align-middle">DEF</a>
             </div>
             {#if !result.passed && result.aiShortDescription != null}
-            <p class="text-xs text-stone-400 font-normal mt-0.5">{result.aiShortDescription}</p>
+            <p class="text-xs text-stone-400 font-normal mt-0.5">
+              {result.aiShortDescription}
+              <span class="ml-1 text-[9px] font-black tracking-widest border border-stone-300 px-1 py-0.5 text-stone-400 align-middle">✦ AI</span>
+            </p>
             {/if}
           </td>
           <td class="px-4 py-3 text-stone-500">{result.item.group.name}</td>
@@ -159,7 +162,10 @@
         class="absolute top-3 right-3 text-xs font-black border-2 border-black px-2 py-1 hover:bg-accent transition-none">
         ✕
       </button>
-      <p class="text-[10px] font-black tracking-widest text-stone-400 mb-4">HOW TO FIX</p>
+      <div class="flex items-center gap-2 mb-4">
+        <p class="text-[10px] font-black tracking-widest text-stone-400">HOW TO FIX</p>
+        <span class="text-[9px] font-black tracking-widest border border-stone-300 px-1 py-0.5 text-stone-400">✦ AI</span>
+      </div>
       {#for result in results}
       <div x-show="modal === {result_index}" x-cloak>
         <p class="text-sm font-black mb-3">{result.item.name}</p>
