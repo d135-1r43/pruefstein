@@ -114,10 +114,20 @@ public class Startup
 		nonCompliant.setFinalizedAt(Instant.now().minus(1, ChronoUnit.HOURS).plusSeconds(5));
 		reportRepository.persist(nonCompliant);
 
-		addResult(nonCompliant, fileVault, false, "[]");
-		addResult(nonCompliant, firewall, true, "[{\"global_state\":\"1\"}]");
-		addResult(nonCompliant, autoUpdates, false, "[{\"value\":\"0\"}]");
-		addResult(nonCompliant, screenLock, true, "[{\"value\":\"240\"}]");
+		addResult(nonCompliant, fileVault, false, "[]",
+			"FileVault encryption not enabled",
+			"The osquery result returned no rows, which means FileVault is off on this device. "
+				+ "Without disk encryption, data on the drive is readable if the device is lost or stolen.\n\n"
+				+ "To fix: System Settings → Privacy & Security → FileVault → Turn On FileVault. "
+				+ "You will need to restart the device and save the recovery key in a secure location.");
+		addResult(nonCompliant, firewall, true, "[{\"global_state\":\"1\"}]", null, null);
+		addResult(nonCompliant, autoUpdates, false, "[{\"value\":\"0\"}]",
+			"Automatic software updates disabled",
+			"The AutomaticCheckEnabled preference is set to 0, meaning macOS will not check for or install updates automatically. "
+				+ "Missing security patches leaves the device exposed to known vulnerabilities.\n\n"
+				+ "To fix: System Settings → General → Software Update → Automatic Updates → enable all options. "
+				+ "Alternatively, run: sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true");
+		addResult(nonCompliant, screenLock, true, "[{\"value\":\"240\"}]", null, null);
 
 		// Device registry — no periodic flow in dev seed (flow needs Kafka)
 		Device alice = new Device();
@@ -148,11 +158,19 @@ public class Startup
 
 	private void addResult(Report report, ComplianceItem item, boolean passed, String output)
 	{
+		addResult(report, item, passed, output, null, null);
+	}
+
+	private void addResult(Report report, ComplianceItem item, boolean passed, String output,
+		String aiShortDescription, String aiLongExplanation)
+	{
 		ComplianceResult result = new ComplianceResult();
 		result.setReport(report);
 		result.setItem(item);
 		result.setPassed(passed);
 		result.setOutput(output);
+		result.setAiShortDescription(aiShortDescription);
+		result.setAiLongExplanation(aiLongExplanation);
 		resultRepository.persist(result);
 	}
 }
