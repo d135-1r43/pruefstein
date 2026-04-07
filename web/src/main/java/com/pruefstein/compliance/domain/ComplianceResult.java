@@ -20,6 +20,12 @@ public class ComplianceResult extends PanacheEntity
 	@Column(columnDefinition = "TEXT")
 	private String output;
 
+	@Column(columnDefinition = "TEXT")
+	private String aiShortDescription;
+
+	@Column(columnDefinition = "TEXT")
+	private String aiLongExplanation;
+
 	public ComplianceItem getItem()
 	{
 		return item;
@@ -58,5 +64,25 @@ public class ComplianceResult extends PanacheEntity
 	public void setOutput(String output)
 	{
 		this.output = output;
+	}
+
+	public String getAiShortDescription()
+	{
+		return aiShortDescription;
+	}
+
+	public void setAiShortDescription(String aiShortDescription)
+	{
+		this.aiShortDescription = aiShortDescription;
+	}
+
+	public String getAiLongExplanation()
+	{
+		return aiLongExplanation;
+	}
+
+	public void setAiLongExplanation(String aiLongExplanation)
+	{
+		this.aiLongExplanation = aiLongExplanation;
 	}
 }

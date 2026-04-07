@@ -1,7 +1,7 @@
 {#include main.html}
 {#title}Report {report.id} — Prüfstein{/title}
 
-<div class="max-w-4xl" x-data="{ expanded: {} }">
+<div class="max-w-4xl" x-data="{ expanded: {}, modal: null }">
 
   <!-- Back link -->
   <a href="{uri:Reports.index}" class="inline-flex items-center gap-1 text-xs font-bold hover:underline mb-6">
@@ -79,9 +79,9 @@
         {#for result in results}
         <tr class="border-b-2 border-black last:border-0"
             :class="expanded[{result_index}] ? 'bg-stone-50' : 'hover:bg-stone-50 transition-colors'">
-          <!-- Expand toggle (only if there's output) -->
+          <!-- Expand toggle (only if there's output or AI enrichment) -->
           <td class="px-4 py-3">
-            {#if result.output != null && !result.output.isEmpty()}
+            {#if (result.output != null && !result.output.isEmpty()) || (!result.passed && result.aiShortDescription != null)}
             <button @click="expanded[{result_index}] = !expanded[{result_index}]"
                     class="w-5 h-5 flex items-center justify-center border-2 border-black hover:bg-accent transition-none font-bold text-xs"
                     :title="expanded[{result_index}] ? 'Collapse' : 'Expand output'">
@@ -99,7 +99,18 @@
             {#if result.passed}
             <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-emerald-400">PASS</span>
             {#else}
-            <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-red-400 text-white">FAIL</span>
+            <div class="flex items-center justify-end gap-2 flex-wrap">
+              <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-red-400 text-white">FAIL</span>
+              {#if result.aiShortDescription != null}
+              <span class="text-xs text-stone-600">{result.aiShortDescription}</span>
+              {/if}
+              {#if result.aiLongExplanation != null}
+              <button @click="modal = {result_index}"
+                class="text-[10px] font-black tracking-widest border border-black px-1.5 py-0.5 hover:bg-accent transition-none">
+                HOW TO FIX
+              </button>
+              {/if}
+            </div>
             {/if}
           </td>
         </tr>
@@ -125,6 +136,27 @@
         {/if}
       </tbody>
     </table>
+  </div>
+
+  <!-- ── AI explanation modal ─────────────────────────────────────── -->
+  <div x-show="modal !== null" x-cloak
+       class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-6"
+       @click.self="modal = null">
+    <div class="bg-white border-2 border-black shadow-brutal-lg max-w-lg w-full p-6 relative">
+      <button @click="modal = null"
+        class="absolute top-3 right-3 text-xs font-black border-2 border-black px-2 py-1 hover:bg-accent transition-none">
+        ✕
+      </button>
+      <p class="text-[10px] font-black tracking-widest text-stone-400 mb-4">HOW TO FIX</p>
+      {#for result in results}
+      <div x-show="modal === {result_index}" x-cloak>
+        <p class="text-sm font-black mb-3">{result.item.name}</p>
+        {#if result.aiLongExplanation != null}
+        <p class="text-sm leading-relaxed whitespace-pre-wrap">{result.aiLongExplanation}</p>
+        {/if}
+      </div>
+      {/for}
+    </div>
   </div>
 
 </div>

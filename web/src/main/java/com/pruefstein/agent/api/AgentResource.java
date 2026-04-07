@@ -9,6 +9,8 @@ import com.pruefstein.compliance.domain.ComplianceItem;
 import com.pruefstein.compliance.domain.ComplianceResult;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
+import com.pruefstein.compliance.service.ComplianceResultAiService;
+import com.pruefstein.compliance.service.ComplianceResultExplanation;
 import com.pruefstein.device.domain.Device;
 import com.pruefstein.device.repository.DeviceRepository;
 import com.pruefstein.report.domain.Report;
@@ -21,6 +23,7 @@ import com.pruefstein.report.flow.WorkflowStartTrigger;
 import com.pruefstein.report.repository.ReportRepository;
 import io.quarkus.oidc.Tenant;
 import io.quarkus.security.Authenticated;
+import org.jboss.logging.Logger;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.jwt.JsonWebToken;
@@ -43,6 +46,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Produces(MediaType.APPLICATION_JSON)
 public class AgentResource
 {
+	private static final Logger LOG = Logger.getLogger(AgentResource.class);
+
+	@Inject
+	ComplianceResultAiService aiService;
+
 	@Inject
 	ComplianceItemRepository itemRepository;
 
@@ -185,6 +193,21 @@ public class AgentResource
 			result.setPassed(rp.passed());
 			result.setOutput(rp.output());
 			resultRepository.persist(result);
+
+			if (!rp.passed())
+			{
+				try
+				{
+					ComplianceResultExplanation exp = aiService.explain(
+						item.getName(), item.getQuery(), item.getExpectedExpression(), rp.output());
+					result.setAiShortDescription(exp.shortDescription());
+					result.setAiLongExplanation(exp.longExplanation());
+				}
+				catch (Exception e)
+				{
+					LOG.warnf("AI enrichment skipped for '%s': %s", item.getName(), e.getMessage());
+				}
+			}
 		}
 	}
 
