@@ -9,10 +9,14 @@ import com.pruefstein.compliance.domain.ComplianceItem;
 import com.pruefstein.compliance.domain.ComplianceResult;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
+import com.pruefstein.device.domain.Device;
+import com.pruefstein.device.repository.DeviceRepository;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.flow.ComplianceReportFlow;
 import com.pruefstein.report.flow.FlowTrigger;
+import com.pruefstein.report.flow.PeriodicFlowTrigger;
+import com.pruefstein.report.flow.PeriodicReportingFlow;
 import com.pruefstein.report.flow.WorkflowStartTrigger;
 import com.pruefstein.report.repository.ReportRepository;
 import io.quarkus.oidc.Tenant;
@@ -46,10 +50,19 @@ public class AgentResource
 	ReportRepository reportRepository;
 
 	@Inject
+	DeviceRepository deviceRepository;
+
+	@Inject
 	ComplianceReportFlow complianceReportFlow;
 
 	@Inject
+	PeriodicReportingFlow periodicReportingFlow;
+
+	@Inject
 	Event<FlowTrigger> flowTrigger;
+
+	@Inject
+	Event<PeriodicFlowTrigger> periodicFlowTrigger;
 
 	@Inject
 	Event<WorkflowStartTrigger> workflowStartTrigger;
@@ -59,6 +72,9 @@ public class AgentResource
 
 	@ConfigProperty(name = "pruefstein.compliance.remediation-days", defaultValue = "7")
 	int remediationDays;
+
+	@ConfigProperty(name = "pruefstein.compliance.reporting-interval-days", defaultValue = "7")
+	int reportingIntervalDays;
 
 	public record CheckDto(Long id, String name, String query, String expectedExpression)
 	{
@@ -100,6 +116,8 @@ public class AgentResource
 		{
 			handleFirstSubmission(payload, allPassed);
 		}
+
+		upsertDevice(payload);
 	}
 
 	private void handleFirstSubmission(ReportPayload payload, boolean allPassed)
@@ -160,6 +178,50 @@ public class AgentResource
 			result.setPassed(rp.passed());
 			result.setOutput(rp.output());
 			resultRepository.persist(result);
+		}
+	}
+
+	/**
+	 * Creates or updates the {@link Device} row for the reporting device and
+	 * manages its periodic reporting flow:
+	 * <ul>
+	 * <li>First report: persists a new Device and starts the first
+	 * {@link PeriodicReportingFlow} instance.</li>
+	 * <li>Subsequent reports: updates {@code lastReportAt} and fires a
+	 * {@link PeriodicFlowTrigger} to notify the waiting flow that the device
+	 * reported on time. The flow's internal callback will then restart the flow
+	 * for the next cycle.</li>
+	 * </ul>
+	 */
+	private void upsertDevice(ReportPayload payload)
+	{
+		String keycloakUser = jwt.<String> claim("preferred_username").orElse(jwt.getSubject());
+		Device device = deviceRepository.findByDeviceId(payload.deviceId()).orElse(null);
+
+		if (device == null)
+		{
+			// First time we've seen this device — create it and start the
+			// periodic flow
+			device = new Device();
+			device.setDeviceId(payload.deviceId());
+			device.setUserId(payload.userId());
+			device.setKeycloakUser(keycloakUser);
+			device.setLastReportAt(Instant.now());
+			deviceRepository.persist(device);
+
+			var wi = periodicReportingFlow.instance(java.util.Map.of("deviceId", payload.deviceId()));
+			device.setPeriodicFlowInstanceId(wi.id());
+			workflowStartTrigger.fire(new WorkflowStartTrigger(wi));
+		}
+		else
+		{
+			// Device already known — notify the waiting flow and let its
+			// callback restart it
+			device.setLastReportAt(Instant.now());
+			device.setUserId(payload.userId());
+			device.setKeycloakUser(keycloakUser);
+			periodicFlowTrigger.fire(
+				new PeriodicFlowTrigger(device.getDeviceId(), device.getPeriodicFlowInstanceId(), true));
 		}
 	}
 }

@@ -38,8 +38,10 @@
             <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-emerald-400">COMPLIANT</span>
             {#else if report.status.name() == "NON_COMPLIANT"}
             <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-red-400 text-white">NON-COMPLIANT</span>
+            {#else if report.status.name() == "MISSING"}
+            <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-accent">MISSING</span>
             {#else}
-            <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-accent">OPEN</span>
+            <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-stone-200">OPEN</span>
             {/if}
           </td>
           <td class="px-4 py-3 text-stone-500 text-xs tabular-nums">

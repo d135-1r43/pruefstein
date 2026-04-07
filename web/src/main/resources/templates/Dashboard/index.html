@@ -8,30 +8,69 @@
     <p class="text-sm font-medium text-stone-500 mt-1">Fleet compliance overview.</p>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+  <!-- ── Primary KPIs ─────────────────────────────────────────── -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
 
-    <div class="bg-white border-2 border-black shadow-brutal p-6">
-      <p class="text-[10px] font-black tracking-widest text-stone-400">Users</p>
-      <p class="text-5xl font-black mt-2">{userCount}</p>
-      <p class="text-xs font-medium text-stone-400 mt-2">registered accounts</p>
+    <!-- Non-compliant -->
+    <a href="{uri:Reports.index}" class="block bg-red-400 border-2 border-black shadow-brutal p-6 hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+      <p class="text-[10px] font-black tracking-widest text-red-900">NON-COMPLIANT</p>
+      <p class="text-5xl font-black mt-2">{nonCompliantCount}</p>
+      {#if totalCount > 0}
+      <p class="text-sm font-black mt-2 text-red-900">
+        {((nonCompliantCount * 100) / totalCount)}% of reports
+      </p>
+      {#else}
+      <p class="text-sm font-black mt-2 text-red-900">no reports yet</p>
+      {/if}
+    </a>
+
+    <!-- Missing -->
+    <a href="{uri:Reports.index}" class="block bg-accent border-2 border-black shadow-brutal p-6 hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+      <p class="text-[10px] font-black tracking-widest text-stone-700">MISSING</p>
+      <p class="text-5xl font-black mt-2">{missingCount}</p>
+      {#if totalCount > 0}
+      <p class="text-sm font-black mt-2 text-stone-700">
+        {((missingCount * 100) / totalCount)}% of reports
+      </p>
+      {#else}
+      <p class="text-sm font-black mt-2 text-stone-700">no reports yet</p>
+      {/if}
+    </a>
+
+    <!-- Compliant -->
+    <a href="{uri:Reports.index}" class="block bg-emerald-400 border-2 border-black shadow-brutal p-6 hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+      <p class="text-[10px] font-black tracking-widest text-emerald-900">COMPLIANT</p>
+      <p class="text-5xl font-black mt-2">{compliantCount}</p>
+      {#if totalCount > 0}
+      <p class="text-sm font-black mt-2 text-emerald-900">
+        {((compliantCount * 100) / totalCount)}% of reports
+      </p>
+      {#else}
+      <p class="text-sm font-black mt-2 text-emerald-900">no reports yet</p>
+      {/if}
+    </a>
+
+  </div>
+
+  <!-- ── Secondary stats ──────────────────────────────────────── -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+
+    <div class="bg-white border-2 border-black shadow-brutal p-5">
+      <p class="text-[10px] font-black tracking-widest text-stone-400">PENDING</p>
+      <p class="text-3xl font-black mt-1">{openCount}</p>
+      <p class="text-xs font-medium text-stone-400 mt-1">awaiting finalization</p>
     </div>
 
-    <div class="bg-white border-2 border-black shadow-brutal p-6">
-      <p class="text-[10px] font-black tracking-widest text-stone-400">Reports</p>
-      <p class="text-5xl font-black mt-2">{reportCount}</p>
-      <p class="text-xs font-medium text-stone-400 mt-2">agent runs received</p>
+    <div class="bg-white border-2 border-black shadow-brutal p-5">
+      <p class="text-[10px] font-black tracking-widest text-stone-400">CHECKS DEFINED</p>
+      <p class="text-3xl font-black mt-1">{itemCount}</p>
+      <p class="text-xs font-medium text-stone-400 mt-1">across all groups</p>
     </div>
 
-    <div class="bg-white border-2 border-black shadow-brutal p-6">
-      <p class="text-[10px] font-black tracking-widest text-stone-400">Checks</p>
-      <p class="text-5xl font-black mt-2">{itemCount}</p>
-      <p class="text-xs font-medium text-stone-400 mt-2">items tracked</p>
-    </div>
-
-    <div class="bg-accent border-2 border-black shadow-brutal p-6">
-      <p class="text-[10px] font-black tracking-widest text-stone-700">Issues</p>
-      <p class="text-5xl font-black mt-2">{issueCount}</p>
-      <p class="text-xs font-bold text-stone-700 mt-2">failing checks</p>
+    <div class="bg-white border-2 border-black shadow-brutal p-5">
+      <p class="text-[10px] font-black tracking-widest text-stone-400">USERS</p>
+      <p class="text-3xl font-black mt-1">{userCount}</p>
+      <p class="text-xs font-medium text-stone-400 mt-1">registered accounts</p>
     </div>
 
   </div>

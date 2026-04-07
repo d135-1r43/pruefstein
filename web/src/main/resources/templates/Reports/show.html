@@ -20,8 +20,10 @@
         <span class="inline-block px-3 py-1 text-xs font-black tracking-widest border-2 border-black bg-emerald-400">COMPLIANT</span>
         {#else if report.status.name() == "NON_COMPLIANT"}
         <span class="inline-block px-3 py-1 text-xs font-black tracking-widest border-2 border-black bg-red-400 text-white">NON-COMPLIANT</span>
+        {#else if report.status.name() == "MISSING"}
+        <span class="inline-block px-3 py-1 text-xs font-black tracking-widest border-2 border-black bg-accent">MISSING</span>
         {#else}
-        <span class="inline-block px-3 py-1 text-xs font-black tracking-widest border-2 border-black bg-accent">OPEN</span>
+        <span class="inline-block px-3 py-1 text-xs font-black tracking-widest border-2 border-black bg-stone-200">OPEN</span>
         {/if}
       </div>
     </div>
@@ -113,7 +115,11 @@
         {#if results.isEmpty()}
         <tr>
           <td colspan="4" class="px-4 py-10 text-center text-sm text-stone-400 font-medium">
+            {#if report.status.name() == "MISSING"}
+            Device did not submit a report within the required interval.
+            {#else}
             No check results recorded for this report.
+            {/if}
           </td>
         </tr>
         {/if}

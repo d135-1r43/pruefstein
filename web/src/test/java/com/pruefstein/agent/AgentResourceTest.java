@@ -7,6 +7,7 @@ import com.pruefstein.compliance.domain.ComplianceItem;
 import com.pruefstein.compliance.repository.ComplianceGroupRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
+import com.pruefstein.device.repository.DeviceRepository;
 import com.pruefstein.report.repository.ReportRepository;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
@@ -37,6 +38,9 @@ class AgentResourceTest
 
 	@Inject
 	ReportRepository reportRepository;
+
+	@Inject
+	DeviceRepository deviceRepository;
 
 	private Long itemId;
 	private Long groupId;
@@ -69,6 +73,7 @@ class AgentResourceTest
 		QuarkusTransaction.requiringNew().run(() -> {
 			resultRepository.delete("report.deviceId", "test-device");
 			reportRepository.delete("deviceId", "test-device");
+			deviceRepository.delete("deviceId", "test-device");
 			itemRepository.deleteById(itemId);
 			groupRepository.deleteById(groupId);
 		});

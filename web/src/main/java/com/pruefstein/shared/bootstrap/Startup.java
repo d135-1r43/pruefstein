@@ -9,6 +9,8 @@ import com.pruefstein.compliance.domain.ComplianceResult;
 import com.pruefstein.compliance.repository.ComplianceGroupRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
+import com.pruefstein.device.domain.Device;
+import com.pruefstein.device.repository.DeviceRepository;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.repository.ReportRepository;
@@ -33,6 +35,9 @@ public class Startup
 
 	@Inject
 	ReportRepository reportRepository;
+
+	@Inject
+	DeviceRepository deviceRepository;
 
 	@Transactional
 	public void start(@Observes StartupEvent evt)
@@ -113,6 +118,21 @@ public class Startup
 		addResult(nonCompliant, firewall, true, "[{\"global_state\":\"1\"}]");
 		addResult(nonCompliant, autoUpdates, false, "[{\"value\":\"0\"}]");
 		addResult(nonCompliant, screenLock, true, "[{\"value\":\"240\"}]");
+
+		// Device registry — no periodic flow in dev seed (flow needs Kafka)
+		Device alice = new Device();
+		alice.setDeviceId("MacBook-Pro-Alice.local");
+		alice.setUserId("alice");
+		alice.setKeycloakUser("alice");
+		alice.setLastReportAt(compliant.getCheckedAt());
+		deviceRepository.persist(alice);
+
+		Device bob = new Device();
+		bob.setDeviceId("MacBook-Air-Bob.local");
+		bob.setUserId("bob");
+		bob.setKeycloakUser("bob");
+		bob.setLastReportAt(nonCompliant.getCheckedAt());
+		deviceRepository.persist(bob);
 	}
 
 	private ComplianceItem addItem(ComplianceGroup group, String name, String query, String expectedExpression)

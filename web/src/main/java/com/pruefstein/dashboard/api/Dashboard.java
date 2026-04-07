@@ -1,7 +1,7 @@
 package com.pruefstein.dashboard.api;
 
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
-import com.pruefstein.compliance.repository.ComplianceResultRepository;
+import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.repository.ReportRepository;
 import com.pruefstein.user.repository.UserRepository;
 import io.quarkiverse.renarde.Controller;
@@ -22,22 +22,29 @@ public class Dashboard extends Controller
 	@Inject
 	ReportRepository reportRepository;
 
-	@Inject
-	ComplianceResultRepository resultRepository;
-
 	@CheckedTemplate
 	public static class Templates
 	{
-		public static native TemplateInstance index(long userCount, long itemCount, long reportCount, long issueCount);
+		public static native TemplateInstance index(
+			long compliantCount,
+			long nonCompliantCount,
+			long missingCount,
+			long openCount,
+			long totalCount,
+			long itemCount,
+			long userCount);
 	}
 
 	@Path("/")
 	public TemplateInstance index()
 	{
-		return Templates.index(
-			userRepository.count(),
-			itemRepository.count(),
-			reportRepository.count(),
-			resultRepository.count("passed = ?1", Boolean.FALSE));
+		long total = reportRepository.count();
+		long compliant = reportRepository.count("status", ReportStatus.COMPLIANT);
+		long nonCompliant = reportRepository.count("status", ReportStatus.NON_COMPLIANT);
+		long missing = reportRepository.count("status", ReportStatus.MISSING);
+		long open = reportRepository.count("status", ReportStatus.OPEN);
+
+		return Templates.index(compliant, nonCompliant, missing, open, total,
+			itemRepository.count(), userRepository.count());
 	}
 }
