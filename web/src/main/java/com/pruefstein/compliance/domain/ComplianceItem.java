@@ -4,7 +4,8 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
+import java.util.List;
+import jakarta.persistence.OneToMany;
 
 @Entity
 public class ComplianceItem extends PanacheEntity
@@ -20,8 +21,8 @@ public class ComplianceItem extends PanacheEntity
 	@ManyToOne
 	private ComplianceGroup group;
 
-	@OneToOne(mappedBy = "item")
-	private ComplianceResult result;
+	@OneToMany(mappedBy = "item")
+	private List<ComplianceResult> results;
 
 	public String getName()
 	{
@@ -63,13 +64,13 @@ public class ComplianceItem extends PanacheEntity
 		this.group = group;
 	}
 
-	public ComplianceResult getResult()
+	public List<ComplianceResult> getResults()
 	{
-		return result;
+		return results;
 	}
 
-	public void setResult(ComplianceResult result)
+	public void setResults(List<ComplianceResult> results)
 	{
-		this.result = result;
+		this.results = results;
 	}
 }
