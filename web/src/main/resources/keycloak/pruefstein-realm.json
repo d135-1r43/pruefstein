@@ -44,6 +44,21 @@
         }
       ],
       "realmRoles": ["admin"]
+    },
+    {
+      "username": "user",
+      "email": "user@example.com",
+      "firstName": "Regular",
+      "lastName": "User",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user",
+          "temporary": false
+        }
+      ],
+      "realmRoles": []
     }
   ]
 }

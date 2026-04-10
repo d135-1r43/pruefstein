@@ -129,6 +129,21 @@ public class Startup
 				+ "Alternatively, run: sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true");
 		addResult(nonCompliant, screenLock, true, "[{\"value\":\"240\"}]", null, null);
 
+		// Report 3: compliant, for the "user" Keycloak test account
+		Report userReport = new Report();
+		userReport.setDeviceId("MacBook-Pro-User.local");
+		userReport.setUserId("user");
+		userReport.setKeycloakUser("user");
+		userReport.setCheckedAt(Instant.now().minus(2, ChronoUnit.HOURS));
+		userReport.setStatus(ReportStatus.COMPLIANT);
+		userReport.setFinalizedAt(Instant.now().minus(2, ChronoUnit.HOURS).plusSeconds(5));
+		reportRepository.persist(userReport);
+
+		addResult(userReport, fileVault, true, "[{\"filevault_status\":\"on\"}]");
+		addResult(userReport, firewall, true, "[{\"global_state\":\"1\"}]");
+		addResult(userReport, autoUpdates, true, "[{\"value\":\"1\"}]");
+		addResult(userReport, screenLock, true, "[{\"value\":\"180\"}]");
+
 		// Device registry — no periodic flow in dev seed (flow needs Kafka)
 		Device alice = new Device();
 		alice.setDeviceId("MacBook-Pro-Alice.local");
@@ -143,6 +158,13 @@ public class Startup
 		bob.setKeycloakUser("bob");
 		bob.setLastReportAt(nonCompliant.getCheckedAt());
 		deviceRepository.persist(bob);
+
+		Device user = new Device();
+		user.setDeviceId("MacBook-Pro-User.local");
+		user.setUserId("user");
+		user.setKeycloakUser("user");
+		user.setLastReportAt(userReport.getCheckedAt());
+		deviceRepository.persist(user);
 	}
 
 	private ComplianceItem addItem(ComplianceGroup group, String name, String query, String expectedExpression)
