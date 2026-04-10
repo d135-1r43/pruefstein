@@ -11,6 +11,7 @@ import com.pruefstein.report.flow.PeriodicReportingFlow;
 import com.pruefstein.report.flow.WorkflowStartTrigger;
 import com.pruefstein.report.repository.ReportRepository;
 
+import jakarta.annotation.security.PermitAll;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -27,6 +28,7 @@ import jakarta.ws.rs.core.Response;
  */
 @Path("/internal/reporting")
 @Consumes(MediaType.APPLICATION_JSON)
+@PermitAll
 public class PeriodicReportingResource
 {
 	@Inject

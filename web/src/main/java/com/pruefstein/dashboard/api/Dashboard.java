@@ -7,10 +7,12 @@ import com.pruefstein.user.repository.UserRepository;
 import io.quarkiverse.renarde.Controller;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
 
 @SuppressWarnings("unused")
+@RolesAllowed("**")
 public class Dashboard extends Controller
 {
 	@Inject

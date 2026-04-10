@@ -5,6 +5,7 @@ import com.pruefstein.user.repository.UserRepository;
 import io.quarkiverse.renarde.Controller;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.Email;
@@ -15,6 +16,7 @@ import org.jboss.resteasy.reactive.RestForm;
 import java.util.List;
 
 @SuppressWarnings("unused")
+@RolesAllowed("${pruefstein.security.admin-role:admin}")
 public class Users extends Controller
 {
 	@Inject

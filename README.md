@@ -120,6 +120,18 @@ Compliance Groups map to ISO 27001 Annex A control families. Suggested groups:
 |---|---|
 | Local agent | Java (single distributable JAR) |
 | Authentication | OIDC — employee logs in once, token stored by the agent |
+| Authorization | Two-tier RBAC via Keycloak realm roles (see below) |
 | Pass/fail logic | JEXL expression evaluated against full osquery JSON output |
 | Result payload | Full JSON string from `osqueryi --json` stored as `actualResult` |
 | Multi-device | One `AppUser` → many `Report`s, differentiated by `deviceHostname` |
+
+### Authorization (RBAC)
+
+Every endpoint requires an explicit security annotation (`quarkus.security.jaxrs.deny-unannotated-endpoints=true`). Two roles are recognized:
+
+| Role | Permissions |
+|---|---|
+| Regular user | Read compliance groups/items; view own reports (filtered by `keycloakUser`) |
+| Admin | All of the above, plus full CRUD for Users/Compliance Groups/Items, view all reports, access AI suggest |
+
+The admin role name defaults to `admin` and is configurable via `pruefstein.security.admin-role` in `application.properties`. The Keycloak dev realm (`keycloak/pruefstein-realm.json`) ships with the `admin` realm role pre-assigned to the `admin` user. Templates hide admin controls (Add/Edit/Delete buttons, Users nav link) for non-admin users.

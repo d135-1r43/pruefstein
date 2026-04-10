@@ -28,6 +28,11 @@ public class ReportRepository implements PanacheRepository<Report>
 
 	public List<Report> listFiltered(ReportStatus status, String q, String sort, String dir)
 	{
+		return listFiltered(status, q, sort, dir, null);
+	}
+
+	public List<Report> listFiltered(ReportStatus status, String q, String sort, String dir, String keycloakUser)
+	{
 		StringBuilder query = new StringBuilder();
 		List<Object> params = new ArrayList<>();
 		int p = 1;
@@ -47,6 +52,13 @@ public class ReportRepository implements PanacheRepository<Report>
 				.append(" or lower(keycloakUser) like ?").append(p).append(")");
 			params.add(like);
 			p++;
+		}
+
+		if (keycloakUser != null)
+		{
+			if (!query.isEmpty()) query.append(" and ");
+			query.append("keycloakUser = ?").append(p++);
+			params.add(keycloakUser);
 		}
 
 		Sort panacheSort = buildSort(sort, dir);

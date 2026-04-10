@@ -8,6 +8,7 @@ import io.quarkiverse.renarde.Controller;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.runtime.LaunchMode;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotBlank;
@@ -17,6 +18,7 @@ import org.jboss.resteasy.reactive.RestPath;
 
 import java.util.List;
 
+@RolesAllowed("**")
 public class ComplianceGroups extends Controller
 {
 
@@ -57,6 +59,7 @@ public class ComplianceGroups extends Controller
 
 	@POST
 	@Transactional
+	@RolesAllowed("${pruefstein.security.admin-role:admin}")
 	public void create(@RestForm @NotBlank String name)
 	{
 		if (validationFailed())
@@ -72,6 +75,7 @@ public class ComplianceGroups extends Controller
 
 	@POST
 	@Transactional
+	@RolesAllowed("${pruefstein.security.admin-role:admin}")
 	public void update(@RestForm Long id, @RestForm @NotBlank String name)
 	{
 		if (validationFailed())
@@ -91,6 +95,7 @@ public class ComplianceGroups extends Controller
 
 	@POST
 	@Transactional
+	@RolesAllowed("${pruefstein.security.admin-role:admin}")
 	public void delete(@RestForm Long id)
 	{
 		groupRepository.deleteById(id);
@@ -102,6 +107,7 @@ public class ComplianceGroups extends Controller
 
 	@POST
 	@Transactional
+	@RolesAllowed("${pruefstein.security.admin-role:admin}")
 	public void createItem(
 		@RestForm Long groupId,
 		@RestForm @NotBlank String name,
@@ -130,6 +136,7 @@ public class ComplianceGroups extends Controller
 
 	@POST
 	@Transactional
+	@RolesAllowed("${pruefstein.security.admin-role:admin}")
 	public void updateItem(
 		@RestForm Long id,
 		@RestForm @NotBlank String name,
@@ -155,6 +162,7 @@ public class ComplianceGroups extends Controller
 
 	@POST
 	@Transactional
+	@RolesAllowed("${pruefstein.security.admin-role:admin}")
 	public void deleteItem(@RestForm Long id)
 	{
 		ComplianceItem item = itemRepository.findById(id);

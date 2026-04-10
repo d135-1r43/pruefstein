@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.pruefstein.compliance.service.ComplianceEvaluator;
 import io.quarkus.runtime.LaunchMode;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.NotFoundException;
@@ -16,6 +17,7 @@ import jakarta.ws.rs.core.MediaType;
 
 @Path("/dev/osquery")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("${pruefstein.security.admin-role:admin}")
 public class DevOsqueryResource
 {
 	@Inject

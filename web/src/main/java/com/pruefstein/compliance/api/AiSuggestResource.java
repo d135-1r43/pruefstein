@@ -8,6 +8,7 @@ import com.pruefstein.compliance.service.ComplianceItemAiService;
 import com.pruefstein.compliance.service.ComplianceItemSuggestion;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.InternalServerErrorException;
@@ -18,6 +19,7 @@ import jakarta.ws.rs.core.MediaType;
 
 @Path("/ai")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("${pruefstein.security.admin-role:admin}")
 public class AiSuggestResource
 {
 	@Inject

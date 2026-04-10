@@ -76,6 +76,7 @@
           </a>
         </div>
 
+        {#if inject:currentUser.admin}
         <div class="pt-4">
           <p class="px-3 pb-2 text-[10px] font-black tracking-widest text-stone-400">Management</p>
           <a href="{uri:Users.index}"
@@ -86,6 +87,7 @@
             Users
           </a>
         </div>
+        {/if}
 
       </nav>
 

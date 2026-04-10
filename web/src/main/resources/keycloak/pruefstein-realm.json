@@ -3,6 +3,11 @@
   "enabled": true,
   "accessTokenLifespan": 300,
   "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      { "name": "admin", "description": "Prüfstein administrator — full CRUD and all reports" }
+    ]
+  },
   "clients": [
     {
       "clientId": "pruefstein-web",
@@ -37,7 +42,8 @@
           "value": "admin",
           "temporary": false
         }
-      ]
+      ],
+      "realmRoles": ["admin"]
     }
   ]
 }
