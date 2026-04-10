@@ -114,6 +114,14 @@
 
   </div>
 
+  <!-- Decorative stone: random pick, fixed bottom-right -->
+  <img id="stone-deco" src="" alt=""
+       class="hidden lg:block fixed bottom-0 right-0 pointer-events-none select-none"
+       style="height:70vh;width:auto;mix-blend-mode:multiply">
+  <script>
+    document.getElementById('stone-deco').src = '/static/stone-' + (Math.floor(Math.random() * 4) + 1) + '.jpg';
+  </script>
+
   <script>
     document.querySelectorAll('#sidebar-nav .nav-link').forEach(link => {
       try {
