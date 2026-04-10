@@ -41,27 +41,37 @@ public class DevOsqueryResource
 			return OsqueryResult.error("query is required");
 		}
 
-		String output;
+		OsqueryResult execResult = executeOsquery(query);
+		if (execResult.error() != null)
+		{
+			return execResult;
+		}
+
+		return evaluateExpression(execResult.output(), expression);
+	}
+
+	private OsqueryResult executeOsquery(String query)
+	{
 		try
 		{
 			ProcessBuilder pb = new ProcessBuilder("osqueryi", "--json", query);
 			pb.redirectErrorStream(true);
 			Process process = pb.start();
 
-			boolean finished = process.waitFor(10, TimeUnit.SECONDS);
-			if (!finished)
+			if (!process.waitFor(10, TimeUnit.SECONDS))
 			{
 				process.destroyForcibly();
 				return OsqueryResult.error("osqueryi timed out after 10 seconds");
 			}
 
-			output = new String(process.getInputStream().readAllBytes()).strip();
+			String output = new String(process.getInputStream().readAllBytes()).strip();
 			int exitCode = process.exitValue();
 
 			if (exitCode != 0)
 			{
 				return OsqueryResult.error(output.isEmpty() ? "osqueryi exited with code " + exitCode : output);
 			}
+			return OsqueryResult.withOutput(output, null);
 		}
 		catch (IOException e)
 		{
@@ -77,12 +87,14 @@ public class DevOsqueryResource
 			Thread.currentThread().interrupt();
 			return OsqueryResult.error("Interrupted");
 		}
+	}
 
+	private OsqueryResult evaluateExpression(String output, String expression)
+	{
 		if (expression == null || expression.isBlank())
 		{
 			return OsqueryResult.withOutput(output, null);
 		}
-
 		try
 		{
 			boolean passed = evaluator.evaluate(output, expression);
