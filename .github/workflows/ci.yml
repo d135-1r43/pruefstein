@@ -18,16 +18,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up JDK 25
-        uses: actions/setup-java@v4
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
         with:
-          java-version: 25
-          distribution: temurin
+          java-version: '25'
+          distribution: graalvm-community
           cache: maven
 
-      - name: Build
+      - name: Test
         working-directory: web
         run: ./mvnw verify -B
+
+      - name: Package native
+        working-directory: web
+        run: ./mvnw package -Dnative -DskipTests
 
       - name: Log in to GHCR
         if: github.event_name == 'push'
@@ -41,7 +45,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./web
-          file: ./web/src/main/docker/Dockerfile.jvm
+          file: ./web/src/main/docker/Dockerfile.native-micro
           push: ${{ github.event_name == 'push' }}
           tags: |
             ghcr.io/d135-1r43/pruefstein-web:latest
