@@ -32,7 +32,7 @@ public class UserSyncService
 			},
 			() -> {
 				AppUser user = new AppUser();
-				user.setKeycloakSubject(subject);
+				user.setOidcSubject(subject);
 				user.setMail(email);
 				user.setFirstname(firstName != null ? firstName : subject);
 				user.setLastname(lastName != null ? lastName : "");

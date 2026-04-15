@@ -9,8 +9,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class UserRepository implements PanacheRepository<AppUser>
 {
-	public Optional<AppUser> findBySubject(String keycloakSubject)
+	public Optional<AppUser> findBySubject(String oidcSubject)
 	{
-		return find("keycloakSubject", keycloakSubject).firstResultOptional();
+		return find("oidcSubject", oidcSubject).firstResultOptional();
 	}
 }

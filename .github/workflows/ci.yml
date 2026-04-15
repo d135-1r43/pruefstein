@@ -8,6 +8,10 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,3 +28,21 @@ jobs:
       - name: Build
         working-directory: web
         run: ./mvnw verify -B
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web
+          file: ./web/src/main/docker/Dockerfile.jvm
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ghcr.io/d135-1r43/pruefstein-web:latest
+            ghcr.io/d135-1r43/pruefstein-web:${{ github.sha }}

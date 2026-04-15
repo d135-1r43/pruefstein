@@ -29,7 +29,7 @@ class UserSyncServiceTest
 
 		// then
 		AppUser user = userRepository.findBySubject("sub-new").orElseThrow();
-		assertEquals("sub-new", user.getKeycloakSubject());
+		assertEquals("sub-new", user.getOidcSubject());
 		assertEquals("new@example.com", user.getMail());
 		assertEquals("Alice", user.getFirstname());
 		assertEquals("Smith", user.getLastname());

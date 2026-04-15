@@ -1,6 +1,9 @@
 ### Example appUser template template
 ### Example appUser template
 
+# Secrets
+**/.env
+
 # IntelliJ project files
 .idea
 *.iml

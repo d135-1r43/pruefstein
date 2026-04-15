@@ -12,7 +12,7 @@ import java.util.List;
 public class AppUser extends PanacheEntity
 {
 	@Column(unique = true)
-	private String keycloakSubject;
+	private String oidcSubject;
 
 	private String firstname;
 	private String lastname;
@@ -21,14 +21,14 @@ public class AppUser extends PanacheEntity
 	@OneToMany(mappedBy = "appUser")
 	private List<Report> reports;
 
-	public String getKeycloakSubject()
+	public String getOidcSubject()
 	{
-		return keycloakSubject;
+		return oidcSubject;
 	}
 
-	public void setKeycloakSubject(String keycloakSubject)
+	public void setOidcSubject(String oidcSubject)
 	{
-		this.keycloakSubject = keycloakSubject;
+		this.oidcSubject = oidcSubject;
 	}
 
 	public String getFirstname()

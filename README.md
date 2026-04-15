@@ -98,6 +98,15 @@ cd web
 
 Quarkus Dev Services starts a PostgreSQL container automatically. The app is available at `http://localhost:8080`.
 
+### Production
+
+A ready-to-use Compose stack (Postgres, Kafka, and the web image from `ghcr.io/d135-1r43/pruefstein-web`) lives in `deploy/`. Copy `deploy/.env.example` to `deploy/.env`, fill in the required values (database credentials, Entra tenant/client IDs, OpenAI key), then run:
+
+```bash
+cd deploy
+docker compose up -d
+```
+
 ---
 
 ## ISO 27001 mapping
@@ -120,7 +129,7 @@ Compliance Groups map to ISO 27001 Annex A control families. Suggested groups:
 |---|---|
 | Local agent | Java (single distributable JAR) |
 | Authentication | OIDC — employee logs in once, token stored by the agent |
-| Authorization | Two-tier RBAC via Keycloak realm roles (see below) |
+| Authorization | Two-tier RBAC via configured OIDC provider roles (see below) |
 | Pass/fail logic | JEXL expression evaluated against full osquery JSON output |
 | Result payload | Full JSON string from `osqueryi --json` stored as `actualResult` |
 | Multi-device | One `AppUser` → many `Report`s, differentiated by `deviceHostname` |
@@ -131,7 +140,7 @@ Every endpoint requires an explicit security annotation (`quarkus.security.jaxrs
 
 | Role | Permissions |
 |---|---|
-| Regular user | Read compliance groups/items; view own reports (filtered by `keycloakUser`) |
+| Regular user | Read compliance groups/items; view own reports (filtered by `oidcSubject`) |
 | Admin | All of the above, plus full CRUD for Users/Compliance Groups/Items, view all reports, access AI suggest |
 
-The admin role name defaults to `admin` and is configurable via `pruefstein.security.admin-role` in `application.properties`. The Keycloak dev realm (`keycloak/pruefstein-realm.json`) ships with the `admin` realm role pre-assigned to the `admin` user. Templates hide admin controls (Add/Edit/Delete buttons, Users nav link) for non-admin users.
+The admin role name defaults to `admin` and is configurable via `pruefstein.security.admin-role` in `application.properties`. The OIDC claim path from which roles are read is configurable via `quarkus.oidc.roles.role-claim-path` — use `realm_access/roles` for Keycloak and `roles` for Microsoft Entra ID. In dev mode, Quarkus Dev Services starts a Keycloak container using the realm definition in `keycloak/pruefstein-realm.json`, which ships with the `admin` realm role pre-assigned to the `admin` user. In production, Microsoft Entra ID is used as the OIDC provider. Templates hide admin controls (Add/Edit/Delete buttons, Users nav link) for non-admin users.
