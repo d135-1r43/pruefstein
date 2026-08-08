@@ -25,7 +25,6 @@ import org.jboss.resteasy.reactive.RestPath;
 @RolesAllowed("**")
 public class ComplianceGroups extends Controller
 {
-
 	@Inject
 	ComplianceGroupRepository groupRepository;
 

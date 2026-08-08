@@ -104,9 +104,6 @@ public class AgentResource
 	@ConfigProperty(name = "pruefstein.compliance.remediation-days", defaultValue = "7")
 	int remediationDays;
 
-	@ConfigProperty(name = "pruefstein.compliance.reporting-interval-days", defaultValue = "7")
-	int reportingIntervalDays;
-
 	public record CheckDto(Long id, String name, String query, String expectedExpression)
 	{
 	}
@@ -155,9 +152,8 @@ public class AgentResource
 		Optional<Report> existing = reportRepository.findOpenByDeviceAndUser(
 			payload.deviceId(), payload.userId());
 
-		Report report = existing.isPresent()
-			? handleResubmission(existing.get(), payload, allPassed)
-			: handleFirstSubmission(payload, allPassed);
+		Report report = existing.map(value -> handleResubmission(value, payload, allPassed))
+			.orElseGet(() -> handleFirstSubmission(payload, allPassed));
 
 		replaceInventory(report, payload.installedApps());
 		upsertDevice(payload);
