@@ -1,10 +1,10 @@
 package com.pruefstein.report.flow;
 
-import static io.serverlessworkflow.fluent.func.dsl.FuncDSL.*;
+import static io.quarkiverse.flow.dsl.FlowDSL.*;
 
 import io.quarkiverse.flow.Flow;
+import io.quarkiverse.flow.dsl.FlowWorkflowBuilder;
 import io.serverlessworkflow.api.types.Workflow;
-import io.serverlessworkflow.fluent.func.FuncWorkflowBuilder;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -32,7 +32,7 @@ public class ComplianceReportFlow extends Flow
 	{
 		String finalizeUrl = internalBaseUrl + "/internal/reports/finalize";
 
-		return FuncWorkflowBuilder.workflow("compliance-report")
+		return FlowWorkflowBuilder.workflow("compliance-report")
 			.tasks(
 				listen("waitForOutcome", toOne("compliance.outcome.decided")),
 				call("finalize", http().POST().endpoint(finalizeUrl).body(".")))

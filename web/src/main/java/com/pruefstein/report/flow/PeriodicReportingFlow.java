@@ -1,10 +1,10 @@
 package com.pruefstein.report.flow;
 
-import static io.serverlessworkflow.fluent.func.dsl.FuncDSL.*;
+import static io.quarkiverse.flow.dsl.FlowDSL.*;
 
 import io.quarkiverse.flow.Flow;
+import io.quarkiverse.flow.dsl.FlowWorkflowBuilder;
 import io.serverlessworkflow.api.types.Workflow;
-import io.serverlessworkflow.fluent.func.FuncWorkflowBuilder;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -41,7 +41,7 @@ public class PeriodicReportingFlow extends Flow
 	{
 		String cycleUrl = internalBaseUrl + "/internal/reporting/cycle";
 
-		return FuncWorkflowBuilder.workflow("periodic-reporting")
+		return FlowWorkflowBuilder.workflow("periodic-reporting")
 			.tasks(
 				listen("waitForCycle", toOne("reporting.cycle.completed")),
 				call("handleCycle", http().POST().endpoint(cycleUrl).body(".")))
