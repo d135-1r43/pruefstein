@@ -4,6 +4,9 @@
 # Secrets
 **/.env
 
+# Claude Code — personal settings (.claude/settings.json stays shared)
+.claude/settings.local.json
+
 # IntelliJ project files
 .idea
 *.iml
