@@ -2,13 +2,20 @@ package com.pruefstein.report.api;
 
 import java.util.List;
 
+import com.pruefstein.compliance.domain.AppBlacklistCheck;
+import com.pruefstein.compliance.domain.BlockedApp;
+import com.pruefstein.compliance.domain.ComplianceItem;
 import com.pruefstein.compliance.domain.ComplianceResult;
+import com.pruefstein.compliance.domain.InstalledApp;
+import com.pruefstein.compliance.repository.BlockedAppRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
+import com.pruefstein.compliance.repository.InstalledAppRepository;
+import com.pruefstein.compliance.service.BlacklistMatcher;
+import com.pruefstein.compliance.service.CheckResolver;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.repository.ReportRepository;
 import com.pruefstein.user.web.CurrentUserBean;
-
 import io.quarkiverse.renarde.Controller;
 import io.quarkus.panache.common.Sort;
 import io.quarkus.qute.CheckedTemplate;
@@ -32,6 +39,18 @@ public class Reports extends Controller
 	@Inject
 	CurrentUserBean currentUser;
 
+	@Inject
+	CheckResolver checkResolver;
+
+	@Inject
+	InstalledAppRepository installedAppRepository;
+
+	@Inject
+	BlockedAppRepository blockedAppRepository;
+
+	@Inject
+	BlacklistMatcher blacklistMatcher;
+
 	@CheckedTemplate
 	public static class Templates
 	{
@@ -42,7 +61,130 @@ public class Reports extends Controller
 			String sort,
 			String dir);
 
-		public static native TemplateInstance show(Report report, List<ComplianceResult> results);
+		public static native TemplateInstance show(Report report, List<ResultRow> results,
+			ResultRow blacklistResult, List<InventoryRow> inventory, long blockedCount);
+	}
+
+	/**
+	 * A result plus the pass condition its check was evaluated against —
+	 * resolved here because generated checks hold no expression of their own.
+	 */
+	/**
+	 * One installed application paired with the rule that forbids it, if any.
+	 */
+	public record InventoryRow(InstalledApp app, BlockedApp rule)
+	{
+		public String getSource()
+		{
+			return app.getSource();
+		}
+
+		public String getName()
+		{
+			return app.getName();
+		}
+
+		public String getIdentifier()
+		{
+			return app.getIdentifier();
+		}
+
+		public String getVersion()
+		{
+			return app.getVersion();
+		}
+
+		public String getPath()
+		{
+			return app.getPath();
+		}
+
+		public boolean isBlocked()
+		{
+			return rule != null;
+		}
+
+		public String getRuleLabel()
+		{
+			return rule == null ? null : rule.getLabel();
+		}
+
+		/** Lowercased haystack for the client-side filter box. */
+		public String getSearchText()
+		{
+			return (blank(app.getName()) + " " + blank(app.getIdentifier()) + " " + blank(app.getPath()))
+				.toLowerCase(java.util.Locale.ROOT);
+		}
+
+		public String getSubtitle()
+		{
+			String identifier = app.getIdentifier();
+			if (identifier != null && !identifier.isBlank())
+			{
+				return identifier;
+			}
+			return blank(app.getPath());
+		}
+
+		public String getDisplayVersion()
+		{
+			return app.getVersion() == null || app.getVersion().isBlank() ? "—" : app.getVersion();
+		}
+
+		private static String blank(String value)
+		{
+			return value == null ? "" : value;
+		}
+
+		/** Pre-filled matcher for the one-click block action. */
+		public String getSuggestedPattern()
+		{
+			if (app.isFromHomebrew())
+			{
+				return app.getName();
+			}
+			return app.getIdentifier() != null && !app.getIdentifier().isBlank()
+				? app.getIdentifier()
+				: app.getName();
+		}
+
+		public String getSuggestedMatcherType()
+		{
+			return app.isFromHomebrew() ? "HOMEBREW" : "BUNDLE_ID";
+		}
+	}
+
+	public record ResultRow(ComplianceResult result, String expression)
+	{
+		public ComplianceItem getItem()
+		{
+			return result.getItem();
+		}
+
+		public String getOutput()
+		{
+			return result.getOutput();
+		}
+
+		public boolean isPassed()
+		{
+			return result.isPassed();
+		}
+
+		public String getAiShortDescription()
+		{
+			return result.getAiShortDescription();
+		}
+
+		public String getAiLongExplanation()
+		{
+			return result.getAiLongExplanation();
+		}
+
+		public String getExpression()
+		{
+			return expression;
+		}
 	}
 
 	public TemplateInstance index(
@@ -89,7 +231,27 @@ public class Reports extends Controller
 				throw new ForbiddenException();
 			}
 		}
-		List<ComplianceResult> results = resultRepository.list("report", Sort.by("item.name").ascending(), report);
-		return Templates.show(report, results);
+		List<ResultRow> rows = resultRepository.list("report", Sort.by("item.name").ascending(), report).stream()
+			.map(r -> new ResultRow(r, checkResolver.resolve(r.getItem()).expression()))
+			.toList();
+
+		// The blacklist check gets its own section next to the inventory rather
+		// than a row in the per-group table
+		ResultRow blacklistResult = rows.stream()
+			.filter(r -> r.getItem() instanceof AppBlacklistCheck)
+			.findFirst()
+			.orElse(null);
+		List<ResultRow> results = rows.stream()
+			.filter(r -> !(r.getItem() instanceof AppBlacklistCheck))
+			.toList();
+
+		List<BlockedApp> rules = blockedAppRepository.listEnabled();
+		List<InventoryRow> inventory = installedAppRepository.listForReport(report).stream()
+			.map(app -> new InventoryRow(app,
+				blacklistMatcher.ruleFor(app.getSource(), app.getName(), app.getIdentifier(), rules)))
+			.toList();
+
+		long blockedCount = inventory.stream().filter(InventoryRow::isBlocked).count();
+		return Templates.show(report, results, blacklistResult, inventory, blockedCount);
 	}
 }

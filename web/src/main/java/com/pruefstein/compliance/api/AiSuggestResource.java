@@ -4,9 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
+import com.pruefstein.compliance.service.BlockedAppAiService;
+import com.pruefstein.compliance.service.BlockedAppSuggestion;
 import com.pruefstein.compliance.service.ComplianceItemAiService;
 import com.pruefstein.compliance.service.ComplianceItemSuggestion;
-
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -24,6 +25,9 @@ public class AiSuggestResource
 {
 	@Inject
 	ComplianceItemAiService aiService;
+
+	@Inject
+	BlockedAppAiService blockedAppAiService;
 
 	private String schema;
 
@@ -59,5 +63,27 @@ public class AiSuggestResource
 			throw new InternalServerErrorException("description is required");
 		}
 		return aiService.suggest(request.description(), schema);
+	}
+
+	public record BlockedAppRequest(String description, String knownFacts)
+	{
+	}
+
+	/**
+	 * Expands an application name into every identifier that recognises it —
+	 * bundle IDs, Homebrew names, bundle filenames — so one rule catches the
+	 * app however it was installed.
+	 */
+	@POST
+	@Path("/suggest-blocked-app")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public BlockedAppSuggestion suggestBlockedApp(BlockedAppRequest request)
+	{
+		if (request == null || request.description() == null || request.description().isBlank())
+		{
+			throw new InternalServerErrorException("description is required");
+		}
+		return blockedAppAiService.suggest(request.description(),
+			request.knownFacts() == null ? "" : request.knownFacts());
 	}
 }

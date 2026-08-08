@@ -1,9 +1,15 @@
 package com.pruefstein.compliance.api;
 
+import java.util.List;
+
+import com.pruefstein.compliance.domain.AppBlacklistCheck;
 import com.pruefstein.compliance.domain.ComplianceGroup;
 import com.pruefstein.compliance.domain.ComplianceItem;
+import com.pruefstein.compliance.domain.ExpressionCheck;
 import com.pruefstein.compliance.repository.ComplianceGroupRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
+import com.pruefstein.compliance.service.CheckResolver;
+import com.pruefstein.compliance.service.CheckResolver.ResolvedCheck;
 import io.quarkiverse.renarde.Controller;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
@@ -16,8 +22,6 @@ import jakarta.ws.rs.POST;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.RestPath;
 
-import java.util.List;
-
 @RolesAllowed("**")
 public class ComplianceGroups extends Controller
 {
@@ -28,12 +32,47 @@ public class ComplianceGroups extends Controller
 	@Inject
 	ComplianceItemRepository itemRepository;
 
+	@Inject
+	CheckResolver checkResolver;
+
 	@CheckedTemplate
 	public static class Templates
 	{
 		public static native TemplateInstance index(List<ComplianceGroup> groups);
 
-		public static native TemplateInstance show(ComplianceGroup group, List<ComplianceItem> items, boolean devMode);
+		public static native TemplateInstance show(ComplianceGroup group, List<CheckRow> items, boolean devMode);
+	}
+
+	/**
+	 * A check paired with its resolved query and expression, so the template
+	 * does not have to know which checks store their SQL and which generate it.
+	 */
+	public record CheckRow(ComplianceItem check, String query, String expression)
+	{
+		public Long getId()
+		{
+			return check.id;
+		}
+
+		public String getName()
+		{
+			return check.getName();
+		}
+
+		public boolean isEditable()
+		{
+			return check.isEditable();
+		}
+
+		public String getQuery()
+		{
+			return query;
+		}
+
+		public String getExpression()
+		{
+			return expression;
+		}
 	}
 
 	// ── Groups
@@ -52,7 +91,13 @@ public class ComplianceGroups extends Controller
 			notFound();
 			return null;
 		}
-		List<ComplianceItem> items = itemRepository.list("group", group);
+		List<CheckRow> items = itemRepository.list("group", group).stream()
+			.filter(check -> !(check instanceof AppBlacklistCheck))
+			.map(check -> {
+				ResolvedCheck resolved = checkResolver.resolve(check);
+				return new CheckRow(check, resolved.query(), resolved.expression());
+			})
+			.toList();
 		boolean devMode = LaunchMode.current() == LaunchMode.DEVELOPMENT;
 		return Templates.show(group, items, devMode);
 	}
@@ -125,7 +170,7 @@ public class ComplianceGroups extends Controller
 			notFound();
 			return;
 		}
-		ComplianceItem item = new ComplianceItem();
+		ExpressionCheck item = new ExpressionCheck();
 		item.setName(name);
 		item.setQuery(query);
 		item.setExpectedExpression(expectedExpression);
@@ -154,9 +199,16 @@ public class ComplianceGroups extends Controller
 			notFound();
 			return;
 		}
-		item.setName(name);
-		item.setQuery(query);
-		item.setExpectedExpression(expectedExpression);
+		// Generated checks own their SQL; editing them here would be silently
+		// overwritten on the next run.
+		if (!(item instanceof ExpressionCheck expressionCheck))
+		{
+			badRequest();
+			return;
+		}
+		expressionCheck.setName(name);
+		expressionCheck.setQuery(query);
+		expressionCheck.setExpectedExpression(expectedExpression);
 		show(item.getGroup().id);
 	}
 

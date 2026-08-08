@@ -16,4 +16,14 @@ public interface ComplianceResultAiService
 		""")
 	ComplianceResultExplanation explain(String checkName, String query,
 		String expectedExpression, String output);
+
+	@SystemMessage(fromResource = "prompts/blacklist-explanation-system.txt")
+	@UserMessage("""
+		Forbidden applications detected on the device (osquery JSON):
+		{output}
+
+		Why these applications are not permitted:
+		{reasons}
+		""")
+	ComplianceResultExplanation explainBlacklist(String output, String reasons);
 }

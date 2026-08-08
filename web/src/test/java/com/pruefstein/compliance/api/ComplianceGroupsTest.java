@@ -1,7 +1,7 @@
 package com.pruefstein.compliance.api;
 
 import com.pruefstein.compliance.domain.ComplianceGroup;
-import com.pruefstein.compliance.domain.ComplianceItem;
+import com.pruefstein.compliance.domain.ExpressionCheck;
 import com.pruefstein.compliance.repository.ComplianceGroupRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import io.quarkus.narayana.jta.QuarkusTransaction;
@@ -38,7 +38,7 @@ class ComplianceGroupsTest
 			groupRepository.persist(group);
 			ids[0] = group.id;
 
-			ComplianceItem item = new ComplianceItem();
+			ExpressionCheck item = new ExpressionCheck();
 			item.setName("Disk encryption enabled");
 			item.setQuery("SELECT encrypted FROM mounts WHERE path = '/';");
 			item.setExpectedExpression("results[0].encrypted == \"1\"");

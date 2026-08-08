@@ -44,19 +44,28 @@
       <tbody>
         {#for item in items}
         <tr class="border-b-2 border-black last:border-0 hover:bg-accent transition-colors">
-          <td class="px-4 py-3 font-bold">{item.name}</td>
+          <td class="px-4 py-3 font-bold">
+            {item.name}
+            {#if !item.editable}
+            <a href="{uri:BlockedApps.index}"
+               class="block text-[10px] font-black tracking-widest text-stone-400 hover:text-black mt-1">
+              GENERATED — MANAGE IN BLOCKED APPS
+            </a>
+            {/if}
+          </td>
           <td class="px-4 py-3">
             <code class="block text-xs font-mono text-stone-500 whitespace-pre-wrap break-all line-clamp-2">{item.query}</code>
           </td>
           <td class="px-4 py-3">
-            <code class="block text-xs font-mono text-stone-500 whitespace-pre-wrap break-all line-clamp-2">{item.expectedExpression}</code>
+            <code class="block text-xs font-mono text-stone-500 whitespace-pre-wrap break-all line-clamp-2">{item.expression}</code>
           </td>
           <td class="px-4 py-3 text-right flex items-center justify-end gap-1">
             {#if devMode}
             <button
-              @click="testItem($el.dataset.query, $el.dataset.expression)"
+              @click="testItem($el.dataset.query, $el.dataset.expression, $el.dataset.name)"
               data-query="{item.query}"
-              data-expression="{item.expectedExpression}"
+              data-expression="{item.expression}"
+              data-name="{item.name}"
               title="Test locally with osquery"
               class="p-1.5 border-2 border-transparent hover:border-black hover:bg-accent transition-none text-stone-400 hover:text-black">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -85,15 +94,22 @@
                    x-transition:enter="transition ease-out duration-100"
                    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                    class="z-50 w-32 bg-white border-2 border-black shadow-brutal py-1 origin-top-right">
+                {#if !item.editable}
+                <a href="{uri:BlockedApps.index}"
+                   class="block px-3 py-1.5 text-sm font-medium hover:bg-accent transition-none">
+                  Manage list
+                </a>
+                {#else}
                 <button
                   @click="$dispatch('open-edit-item', $el.dataset); open = false"
                   data-id="{item.id}"
                   data-name="{item.name}"
                   data-query="{item.query}"
-                  data-expected-expression="{item.expectedExpression}"
+                  data-expected-expression="{item.expression}"
                   class="w-full text-left px-3 py-1.5 text-sm font-medium hover:bg-accent transition-none">
                   Edit
                 </button>
+                {/if}
                 <button
                   @click="$dispatch('open-delete-item', $el.dataset); open = false"
                   data-id="{item.id}"
@@ -291,7 +307,7 @@
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
             </svg>
-            Running osquery…
+            Running osquery — on failure a tip is generated…
           </div>
         </template>
         <template x-if="!testLoading && testError">
@@ -316,6 +332,13 @@
               <div>
                 <p class="text-xs font-black text-red-600 mb-1">Expression error</p>
                 <code class="block text-xs font-mono text-red-600 whitespace-pre-wrap break-all" x-text="testExpressionError"></code>
+              </div>
+            </template>
+            <template x-if="testTipShort">
+              <div class="border-2 border-black bg-accent p-3">
+                <p class="text-xs font-black text-stone-500 mb-1.5">How to fix</p>
+                <p class="text-sm font-bold" x-text="testTipShort"></p>
+                <p class="text-sm leading-relaxed whitespace-pre-wrap mt-1.5" x-text="testTipLong"></p>
               </div>
             </template>
             <div>
@@ -387,6 +410,8 @@ function showGroupPage() {
     testPassed: null,
     testExpressionError: null,
     testError: null,
+    testTipShort: null,
+    testTipLong: null,
     resetCreate() {
       this.createData = { name: '', query: '', expectedExpression: '' };
       this.createAiDescription = '';
@@ -451,19 +476,21 @@ function showGroupPage() {
         this.editAiLoading = false;
       }
     },
-    async testItem(query, expression) {
+    async testItem(query, expression, name) {
       this.testQuery = query;
       this.testOutput = null;
       this.testPassed = null;
       this.testExpressionError = null;
       this.testError = null;
+      this.testTipShort = null;
+      this.testTipLong = null;
       this.testLoading = true;
       this.showTest = true;
       try {
         const res = await fetch('/dev/osquery/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, expression }),
+          body: JSON.stringify({ query, expression, name }),
         });
         const data = await res.json();
         if (data.error) {
@@ -472,6 +499,8 @@ function showGroupPage() {
           this.testOutput = JSON.stringify(JSON.parse(data.output), null, 2);
           this.testPassed = data.passed;
           this.testExpressionError = data.expressionError;
+          this.testTipShort = data.tipShortDescription;
+          this.testTipLong = data.tipLongExplanation;
         }
       } catch (e) {
         this.testError = e.message;

@@ -1,7 +1,7 @@
 package com.pruefstein.compliance.api;
 
 import com.pruefstein.compliance.domain.ComplianceGroup;
-import com.pruefstein.compliance.domain.ComplianceItem;
+import com.pruefstein.compliance.domain.ExpressionCheck;
 import com.pruefstein.compliance.repository.ComplianceGroupRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import io.quarkus.narayana.jta.QuarkusTransaction;
@@ -37,7 +37,7 @@ class ComplianceGroupsAccessTest
 			groupRepository.persist(group);
 			ids[0] = group.id;
 
-			ComplianceItem item = new ComplianceItem();
+			ExpressionCheck item = new ExpressionCheck();
 			item.setName("Access Test Item");
 			item.setQuery("SELECT 1;");
 			item.setExpectedExpression("results.size() > 0");

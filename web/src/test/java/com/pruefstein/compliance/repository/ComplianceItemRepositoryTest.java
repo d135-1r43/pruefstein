@@ -1,13 +1,14 @@
 package com.pruefstein.compliance.repository;
 
+import java.util.List;
+
 import com.pruefstein.compliance.domain.ComplianceGroup;
 import com.pruefstein.compliance.domain.ComplianceItem;
+import com.pruefstein.compliance.domain.ExpressionCheck;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,7 +30,7 @@ class ComplianceItemRepositoryTest
 		group.setName("A.10 Cryptography");
 		groupRepository.persist(group);
 
-		ComplianceItem item = new ComplianceItem();
+		ExpressionCheck item = new ExpressionCheck();
 		item.setName("Disk encryption enabled");
 		item.setQuery("SELECT encrypted FROM mounts WHERE path = '/';");
 		item.setExpectedExpression("results[0].encrypted == \"1\"");
@@ -37,7 +38,7 @@ class ComplianceItemRepositoryTest
 		itemRepository.persist(item);
 
 		// when
-		ComplianceItem found = itemRepository.findById(item.id);
+		ExpressionCheck found = (ExpressionCheck)itemRepository.findById(item.id);
 
 		// then
 		assertNotNull(found);
@@ -68,21 +69,21 @@ class ComplianceItemRepositoryTest
 		otherGroup.setName("Other");
 		groupRepository.persist(otherGroup);
 
-		ComplianceItem item1 = new ComplianceItem();
+		ExpressionCheck item1 = new ExpressionCheck();
 		item1.setName("Firewall enabled");
 		item1.setQuery("SELECT global_state FROM alf;");
 		item1.setExpectedExpression("results[0].global_state == \"1\"");
 		item1.setGroup(group);
 		itemRepository.persist(item1);
 
-		ComplianceItem item2 = new ComplianceItem();
+		ExpressionCheck item2 = new ExpressionCheck();
 		item2.setName("Auto-update enabled");
 		item2.setQuery("SELECT value FROM preferences WHERE key = 'AutomaticCheckEnabled';");
 		item2.setExpectedExpression("results[0].value == \"1\"");
 		item2.setGroup(group);
 		itemRepository.persist(item2);
 
-		ComplianceItem itemOther = new ComplianceItem();
+		ExpressionCheck itemOther = new ExpressionCheck();
 		itemOther.setName("Other group item");
 		itemOther.setQuery("SELECT 1;");
 		itemOther.setExpectedExpression("results.size() > 0");
@@ -106,7 +107,7 @@ class ComplianceItemRepositoryTest
 		group.setName("Temp");
 		groupRepository.persist(group);
 
-		ComplianceItem item = new ComplianceItem();
+		ExpressionCheck item = new ExpressionCheck();
 		item.setName("Temp Item");
 		item.setQuery("SELECT 1;");
 		item.setExpectedExpression("results.size() > 0");
@@ -129,7 +130,7 @@ class ComplianceItemRepositoryTest
 		group.setName("Group");
 		groupRepository.persist(group);
 
-		ComplianceItem item = new ComplianceItem();
+		ExpressionCheck item = new ExpressionCheck();
 		item.setName("Original");
 		item.setQuery("SELECT 1;");
 		item.setExpectedExpression("results.size() > 0");
@@ -142,7 +143,7 @@ class ComplianceItemRepositoryTest
 		item.setExpectedExpression("results.size() == 1");
 
 		// then
-		ComplianceItem found = itemRepository.findById(item.id);
+		ExpressionCheck found = (ExpressionCheck)itemRepository.findById(item.id);
 		assertEquals("Updated", found.getName());
 		assertEquals("SELECT 2;", found.getQuery());
 		assertEquals("results.size() == 1", found.getExpectedExpression());

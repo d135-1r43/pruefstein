@@ -1,0 +1,431 @@
+{#include main.html}
+{#title}Blocked Apps — Prüfstein{/title}
+
+<div x-data="blockedAppsPage()"
+     @open-edit.window="editApp($event.detail)"
+     @open-delete.window="deleteApp($event.detail)"
+     class="max-w-4xl">
+
+  <!-- Page header -->
+  <div class="flex items-start justify-between mb-8">
+    <div>
+      <h1 class="text-4xl font-black tracking-tight">Blocked Apps</h1>
+      <p class="text-sm font-medium text-stone-500 mt-1">
+        Applications that must not be installed. One entry per application — add every way it can be installed.
+      </p>
+    </div>
+    {#if inject:currentUser.admin}
+    <button @click="resetCreate(); showCreate = true"
+            class="inline-flex items-center gap-2 bg-black text-white text-sm font-bold px-4 py-2.5 border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+      </svg>
+      Block App
+    </button>
+    {/if}
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white border-2 border-black shadow-brutal overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b-2 border-black bg-black text-white">
+          <th class="text-left px-4 py-3 font-black tracking-wide text-xs w-3/12">Application</th>
+          <th class="text-left px-4 py-3 font-black tracking-wide text-xs w-4/12">Matchers</th>
+          <th class="text-left px-4 py-3 font-black tracking-wide text-xs w-4/12">Reason</th>
+          <th class="px-4 py-3 w-10"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {#for app in blockedApps}
+        <tr class="border-b-2 border-black last:border-0 hover:bg-accent transition-colors {#if !app.enabled}opacity-40{/if}">
+          <td class="px-4 py-3">
+            <span class="font-bold">{app.label}</span>
+            {#if !app.enabled}
+            <span class="ml-2 text-[10px] font-black tracking-widest border-2 border-black px-1.5 py-0.5">OFF</span>
+            {/if}
+            {#if app.incomplete}
+            <p class="text-xs font-bold text-red-600 mt-1">No matchers — this entry blocks nothing</p>
+            {/if}
+          </td>
+          <td class="px-4 py-3 space-y-1">
+            {#for matcher in app.matchers}
+            <div class="flex items-start gap-1.5">
+              <span class="text-[10px] font-black tracking-wide border-2 border-black px-1 py-0.5 bg-accent flex-shrink-0">
+                {#if matcher.type.name() == 'BUNDLE_ID'}ID{#else if matcher.type.name() == 'APP_NAME'}NAME{#else}BREW{/if}
+              </span>
+              <code class="text-xs font-mono break-all">{matcher.pattern}</code>
+            </div>
+            {/for}
+          </td>
+          <td class="px-4 py-3 text-xs text-stone-600 leading-relaxed">{app.reason ?: '—'}</td>
+          <td class="px-4 py-3 text-right">
+            {#if inject:currentUser.admin}
+            <div class="inline-block"
+                 x-data="{ open: false, pos: 'position:fixed',
+                   toggle(btn) {
+                     if (!this.open) {
+                       const r = btn.getBoundingClientRect();
+                       this.pos = 'position:fixed;top:' + (r.bottom + 4) + 'px;right:' + (window.innerWidth - r.right) + 'px';
+                     }
+                     this.open = !this.open;
+                   } }">
+              <button @click="toggle($el)" @click.outside="open = false" @keydown.escape.window="open = false"
+                      class="p-1.5 border-2 border-transparent hover:border-black hover:bg-accent transition-none">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                </svg>
+              </button>
+              <div x-show="open" x-cloak
+                   :style="pos"
+                   x-transition:enter="transition ease-out duration-100"
+                   x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                   class="z-50 w-32 bg-white border-2 border-black shadow-brutal py-1 origin-top-right">
+                <button
+                  @click="$dispatch('open-edit', $el.dataset); open = false"
+                  data-id="{app.id}"
+                  data-label="{app.label}"
+                  data-reason="{app.reason ?: ''}"
+                  data-enabled="{app.enabled}"
+                  data-bundleids="{app.bundleIdPatterns}"
+                  data-appnames="{app.appNamePatterns}"
+                  data-homebrew="{app.homebrewPatterns}"
+                  class="w-full text-left px-3 py-1.5 text-sm font-medium hover:bg-accent transition-none">
+                  Edit
+                </button>
+                <button
+                  @click="$dispatch('open-delete', $el.dataset); open = false"
+                  data-id="{app.id}"
+                  class="w-full text-left px-3 py-1.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-none">
+                  Delete
+                </button>
+              </div>
+            </div>
+            {/if}
+          </td>
+        </tr>
+        {#else}
+        <tr>
+          <td colspan="4" class="px-4 py-16 text-center text-sm font-medium text-stone-400">
+            Nothing blocked yet — click <span class="font-bold text-black">Block App</span> to add the first entry.
+          </td>
+        </tr>
+        {/for}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- The check itself -->
+  <div class="mt-8 bg-white border-2 border-black shadow-brutal">
+    <div class="px-4 py-3 border-b-2 border-black flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-sm font-black" id="check-name">{checkName ?: 'No blacklisted applications installed'}</p>
+        <p class="text-xs font-medium text-stone-400 mt-0.5">
+          Runs on every device. Rebuilt from the list above on every agent run — never edited by hand.
+        </p>
+      </div>
+      <div class="flex items-center gap-1 flex-shrink-0">
+        {#if devMode}
+        <button
+          @click="testCheck()"
+          title="Test locally with osquery"
+          class="p-1.5 border-2 border-black hover:bg-accent transition-none">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"/>
+          </svg>
+        </button>
+        {/if}
+        <button @click="showQuery = !showQuery"
+                class="px-2 py-1.5 text-xs font-black border-2 border-black hover:bg-accent transition-none"
+                x-text="showQuery ? 'SQL −' : 'SQL +'"></button>
+      </div>
+    </div>
+    <div x-show="showQuery" x-cloak class="px-4 py-3 space-y-2">
+      <pre class="text-xs font-mono bg-stone-50 border-2 border-black p-3 overflow-x-auto whitespace-pre-wrap break-all" id="generated-query">{generatedQuery}</pre>
+      <div>
+        <p class="text-[10px] font-black tracking-widest text-stone-400 mb-1">MUST SATISFY</p>
+        <code class="text-xs font-mono" id="generated-expression">{generatedExpression}</code>
+      </div>
+    </div>
+  </div>
+
+  {#if devMode}
+  <!-- ── Test locally Modal (dev mode only) ───────────────── -->
+  <div x-show="showTest" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+       @click.self="showTest = false" @keydown.escape.window="showTest = false">
+    <div class="bg-white border-2 border-black shadow-brutal-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto" @click.stop>
+      <div class="px-6 pt-5 pb-4 border-b-2 border-black flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-black">Test locally</h2>
+          <p class="text-xs font-medium text-stone-400 mt-0.5">Runs against osquery on this machine</p>
+        </div>
+        <span class="text-[10px] font-black tracking-widest border-2 border-black px-2 py-1 bg-accent">DEV</span>
+      </div>
+      <div class="px-6 py-4 min-h-[8rem] space-y-4">
+        <template x-if="testLoading">
+          <div class="flex items-center gap-2 text-sm font-medium text-stone-400">
+            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            Running osquery — on failure a tip is generated…
+          </div>
+        </template>
+        <template x-if="!testLoading && testError">
+          <div>
+            <p class="text-xs font-black text-red-600 mb-1.5">Error</p>
+            <code class="block text-xs font-mono text-red-600 whitespace-pre-wrap break-all" x-text="testError"></code>
+          </div>
+        </template>
+        <template x-if="!testLoading && testOutput !== null">
+          <div class="space-y-3">
+            <template x-if="testPassed !== null">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-black tracking-wide">Result</span>
+                <span x-text="testPassed ? 'PASS — nothing blocked is installed' : 'FAIL — blocked apps found'"
+                      :class="testPassed
+                        ? 'bg-green-100 text-green-800 border-green-800'
+                        : 'bg-red-100 text-red-800 border-red-800'"
+                      class="text-xs font-black px-2 py-0.5 border-2"></span>
+              </div>
+            </template>
+            <template x-if="testTipShort">
+              <div class="border-2 border-black bg-accent p-3">
+                <p class="text-xs font-black text-stone-500 mb-1.5">How to fix</p>
+                <p class="text-sm font-bold" x-text="testTipShort"></p>
+                <p class="text-sm leading-relaxed whitespace-pre-wrap mt-1.5" x-text="testTipLong"></p>
+              </div>
+            </template>
+            <div>
+              <p class="text-xs font-black text-stone-400 mb-1.5">Matches</p>
+              <pre class="text-xs font-mono bg-stone-50 border-2 border-black p-3 overflow-x-auto whitespace-pre-wrap break-all" x-text="testOutput"></pre>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="px-6 pb-6 flex justify-end">
+        <button @click="showTest = false"
+                class="px-4 py-2 text-sm font-bold border-2 border-black hover:bg-stone-100">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+  {/if}
+
+  <!-- ── Create Modal ──────────────────────────────────────── -->
+  <div x-show="showCreate" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+       @click.self="showCreate = false" @keydown.escape.window="showCreate = false">
+    <div class="bg-white border-2 border-black shadow-brutal-lg w-full max-w-lg max-h-[90vh] overflow-y-auto" @click.stop>
+      <div class="px-6 pt-5 pb-4 border-b-2 border-black">
+        <h2 class="text-xl font-black">Block Application</h2>
+      </div>
+      <form method="post" action="{uri:BlockedApps.create}" class="px-6 pt-4 pb-6 space-y-4">
+        {#authenticityToken /}
+        <div>
+          <label class="block text-xs font-black tracking-wide mb-1.5">Application</label>
+          <input name="label" type="text" x-model="editData.label" placeholder="e.g. Nextcloud Desktop" required
+                 class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent">
+        </div>
+        <div>
+          <label class="block text-xs font-black tracking-wide mb-1.5">Reason</label>
+          <textarea name="reason" rows="2" x-model="editData.reason" placeholder="Why this application is not permitted — shown to the user in the remediation tip"
+                    class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent"></textarea>
+        </div>
+        {#include BlockedApps/_matcher-fields.html /}
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="showCreate = false"
+                  class="px-4 py-2 text-sm font-bold border-2 border-black hover:bg-stone-100">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="px-4 py-2 text-sm font-bold bg-black text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+            Block App
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Edit Modal ────────────────────────────────────────── -->
+  <div x-show="showEdit" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+       @click.self="showEdit = false" @keydown.escape.window="showEdit = false">
+    <div class="bg-white border-2 border-black shadow-brutal-lg w-full max-w-lg max-h-[90vh] overflow-y-auto" @click.stop>
+      <div class="px-6 pt-5 pb-4 border-b-2 border-black">
+        <h2 class="text-xl font-black">Edit Blocked Application</h2>
+      </div>
+      <form method="post" action="{uri:BlockedApps.update}" class="px-6 pt-4 pb-6 space-y-4">
+        {#authenticityToken /}
+        <input type="hidden" name="id" :value="editData.id">
+        <div>
+          <label class="block text-xs font-black tracking-wide mb-1.5">Application</label>
+          <input name="label" type="text" x-model="editData.label" required
+                 class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent">
+        </div>
+        <div>
+          <label class="block text-xs font-black tracking-wide mb-1.5">Reason</label>
+          <textarea name="reason" rows="2" x-model="editData.reason"
+                    class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent"></textarea>
+        </div>
+        {#include BlockedApps/_matcher-fields.html /}
+        <label class="flex items-center gap-2 text-sm font-bold">
+          <input type="checkbox" name="enabled" value="true" :checked="editData.enabled"
+                 class="w-4 h-4 border-2 border-black">
+          Enabled
+        </label>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="showEdit = false"
+                  class="px-4 py-2 text-sm font-bold border-2 border-black hover:bg-stone-100">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="px-4 py-2 text-sm font-bold bg-black text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+            Save
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Delete Confirmation ───────────────────────────────── -->
+  <div x-show="showDelete" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+       @click.self="showDelete = false" @keydown.escape.window="showDelete = false">
+    <div class="bg-white border-2 border-black shadow-brutal-lg w-full max-w-sm" @click.stop>
+      <div class="px-6 pt-5 pb-4 border-b-2 border-black">
+        <h2 class="text-xl font-black">Unblock Application</h2>
+      </div>
+      <div class="px-6 pt-4 pb-2">
+        <p class="text-sm font-medium text-stone-600">
+          Devices will stop being checked for this application on their next run. Existing reports keep their findings.
+        </p>
+      </div>
+      <form method="post" action="{uri:BlockedApps.delete}" class="px-6 pb-6">
+        {#authenticityToken /}
+        <input type="hidden" name="id" :value="deleteId">
+        <div class="flex justify-end gap-2 pt-4">
+          <button type="button" @click="showDelete = false"
+                  class="px-4 py-2 text-sm font-bold border-2 border-black hover:bg-stone-100">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="px-4 py-2 text-sm font-bold bg-red-600 text-white border-2 border-black shadow-brutal-sm hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+            Delete
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function blockedAppsPage() {
+  return {
+    showCreate: false,
+    showEdit: false,
+    showDelete: false,
+    showQuery: false,
+    aiDescription: '',
+    aiLoading: false,
+    aiError: null,
+    showTest: false,
+    testLoading: false,
+    testOutput: null,
+    testPassed: null,
+    testError: null,
+    testTipShort: null,
+    testTipLong: null,
+    editData: { id: '', label: '', reason: '', enabled: false, bundleids: '', appnames: '', homebrew: '' },
+    deleteId: '',
+    resetCreate() {
+      this.editData = { id: '', label: '', reason: '', enabled: true, bundleids: '', appnames: '', homebrew: '' };
+      this.aiDescription = '';
+      this.aiError = null;
+    },
+    async findIdentifiers() {
+      const description = (this.aiDescription || this.editData.label || '').trim();
+      if (!description) { this.aiError = 'Name the application first.'; return; }
+      this.aiLoading = true;
+      this.aiError = null;
+      try {
+        const res = await fetch('/ai/suggest-blocked-app', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description, knownFacts: '' }),
+        });
+        if (!res.ok) throw new Error('Server error: ' + res.status);
+        const data = await res.json();
+        if (data.label && !this.editData.label) this.editData.label = data.label;
+        if (data.reason && !this.editData.reason) this.editData.reason = data.reason;
+        this.editData.bundleids = (data.bundleIds || []).join('\n');
+        this.editData.homebrew = (data.homebrewNames || []).join('\n');
+        this.editData.appnames = (data.appNames || []).join('\n');
+        if (!data.bundleIds?.length && !data.homebrewNames?.length && !data.appNames?.length) {
+          this.aiError = 'No identifiers found — add them by hand.';
+        }
+      } catch (e) {
+        this.aiError = e.message;
+      } finally {
+        this.aiLoading = false;
+      }
+    },
+    editApp(detail) {
+      this.aiDescription = '';
+      this.aiError = null;
+      this.editData = {
+        id: detail.id,
+        label: detail.label,
+        reason: detail.reason || '',
+        enabled: detail.enabled === 'true',
+        bundleids: detail.bundleids || '',
+        appnames: detail.appnames || '',
+        homebrew: detail.homebrew || '',
+      };
+      this.showEdit = true;
+    },
+    deleteApp(detail) {
+      this.deleteId = detail.id;
+      this.showDelete = true;
+    },
+    async testCheck() {
+      this.testOutput = null;
+      this.testPassed = null;
+      this.testError = null;
+      this.testTipShort = null;
+      this.testTipLong = null;
+      this.testLoading = true;
+      this.showTest = true;
+      try {
+        const res = await fetch('/dev/osquery/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: document.getElementById('generated-query').textContent,
+            expression: document.getElementById('generated-expression').textContent,
+            name: document.getElementById('check-name').textContent.trim(),
+          }),
+        });
+        const data = await res.json();
+        if (data.error) {
+          this.testError = data.error;
+        } else {
+          this.testOutput = JSON.stringify(JSON.parse(data.output), null, 2);
+          this.testPassed = data.passed;
+          this.testTipShort = data.tipShortDescription;
+          this.testTipLong = data.tipLongExplanation;
+        }
+      } catch (e) {
+        this.testError = e.message;
+      } finally {
+        this.testLoading = false;
+      }
+    },
+  }
+}
+</script>
+
+{/include}

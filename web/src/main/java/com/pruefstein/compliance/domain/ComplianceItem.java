@@ -1,22 +1,32 @@
 package com.pruefstein.compliance.domain;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
 import java.util.List;
+
+import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
+/**
+ * A check that belongs to a compliance group and produces one
+ * {@link ComplianceResult} per report.
+ * <p>
+ * Everything shared by every kind of check lives here — a name, its group, and
+ * its history. What a check actually asks the device is left to the subclass:
+ * {@link ExpressionCheck} carries admin-authored osquery SQL, while
+ * {@link AppBlacklistCheck} derives its SQL from the {@link BlockedApp} list.
+ * Use {@code CheckResolver} to obtain the query and expression for any check
+ * rather than branching on the type at the call site.
+ */
 @Entity
-public class ComplianceItem extends PanacheEntity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "check_type")
+public abstract class ComplianceItem extends PanacheEntity
 {
 	private String name;
-
-	@Column(columnDefinition = "TEXT")
-	private String query;
-
-	@Column(columnDefinition = "TEXT")
-	private String expectedExpression;
 
 	@ManyToOne
 	private ComplianceGroup group;
@@ -32,26 +42,6 @@ public class ComplianceItem extends PanacheEntity
 	public void setName(String name)
 	{
 		this.name = name;
-	}
-
-	public String getQuery()
-	{
-		return query;
-	}
-
-	public void setQuery(String query)
-	{
-		this.query = query;
-	}
-
-	public String getExpectedExpression()
-	{
-		return expectedExpression;
-	}
-
-	public void setExpectedExpression(String expectedExpression)
-	{
-		this.expectedExpression = expectedExpression;
 	}
 
 	public ComplianceGroup getGroup()
@@ -72,5 +62,14 @@ public class ComplianceItem extends PanacheEntity
 	public void setResults(List<ComplianceResult> results)
 	{
 		this.results = results;
+	}
+
+	/**
+	 * Whether an admin can edit this check's query and expression directly.
+	 * Generated checks are managed through their own screen instead.
+	 */
+	public boolean isEditable()
+	{
+		return true;
 	}
 }

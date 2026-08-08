@@ -4,8 +4,8 @@ import java.time.Instant;
 import java.util.List;
 
 import com.pruefstein.compliance.domain.ComplianceGroup;
-import com.pruefstein.compliance.domain.ComplianceItem;
 import com.pruefstein.compliance.domain.ComplianceResult;
+import com.pruefstein.compliance.domain.ExpressionCheck;
 import com.pruefstein.compliance.repository.ComplianceGroupRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
@@ -69,7 +69,7 @@ class ComplianceResultAiEnrichmentTest
 			groupRepository.persist(group);
 			ids[0] = group.id;
 
-			ComplianceItem item = new ComplianceItem();
+			ExpressionCheck item = new ExpressionCheck();
 			item.setName("FileVault Enabled");
 			item.setQuery("SELECT encrypted FROM disk_encryption WHERE name = 'disk0s2';");
 			item.setExpectedExpression("results.size() > 0 && results[0].encrypted == '1'");

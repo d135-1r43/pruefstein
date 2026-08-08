@@ -5,10 +5,18 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
+import com.pruefstein.compliance.domain.AppBlacklistCheck;
+import com.pruefstein.compliance.domain.BlockedApp;
 import com.pruefstein.compliance.domain.ComplianceItem;
 import com.pruefstein.compliance.domain.ComplianceResult;
+import com.pruefstein.compliance.domain.InstalledApp;
+import com.pruefstein.compliance.repository.BlockedAppRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
+import com.pruefstein.compliance.repository.InstalledAppRepository;
+import com.pruefstein.compliance.service.BlacklistMatcher;
+import com.pruefstein.compliance.service.CheckResolver;
+import com.pruefstein.compliance.service.CheckResolver.ResolvedCheck;
 import com.pruefstein.compliance.service.ComplianceResultAiService;
 import com.pruefstein.compliance.service.ComplianceResultExplanation;
 import com.pruefstein.device.domain.Device;
@@ -23,10 +31,8 @@ import com.pruefstein.report.flow.WorkflowStartTrigger;
 import com.pruefstein.report.repository.ReportRepository;
 import io.quarkus.oidc.Tenant;
 import io.quarkus.security.Authenticated;
-import org.jboss.logging.Logger;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -37,8 +43,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Tenant("api")
 @Authenticated
@@ -46,13 +54,25 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Produces(MediaType.APPLICATION_JSON)
 public class AgentResource
 {
-	private static final Logger LOG = Logger.getLogger(AgentResource.class);
+	private static final Logger LOG = LoggerFactory.getLogger(AgentResource.class);
 
 	@Inject
 	ComplianceResultAiService aiService;
 
 	@Inject
 	ComplianceItemRepository itemRepository;
+
+	@Inject
+	BlockedAppRepository blockedAppRepository;
+
+	@Inject
+	CheckResolver checkResolver;
+
+	@Inject
+	BlacklistMatcher blacklistMatcher;
+
+	@Inject
+	InstalledAppRepository installedAppRepository;
 
 	@Inject
 	ComplianceResultRepository resultRepository;
@@ -95,7 +115,12 @@ public class AgentResource
 	{
 	}
 
-	public record ReportPayload(String deviceId, String userId, Instant checkedAt, List<ResultPayload> results)
+	public record InstalledAppPayload(String source, String name, String identifier, String version, String path)
+	{
+	}
+
+	public record ReportPayload(String deviceId, String userId, Instant checkedAt, List<ResultPayload> results,
+		List<InstalledAppPayload> installedApps)
 	{
 	}
 
@@ -105,10 +130,17 @@ public class AgentResource
 
 	@GET
 	@Path("/checks")
+	@Transactional
 	public List<CheckDto> getChecks()
 	{
+		// Generated checks are rendered per request rather than stored, so a
+		// blacklist edit takes effect on the next agent run with nothing to
+		// resync.
 		return itemRepository.listAll().stream()
-			.map(i -> new CheckDto(i.id, i.getName(), i.getQuery(), i.getExpectedExpression()))
+			.map(item -> {
+				ResolvedCheck resolved = checkResolver.resolve(item);
+				return new CheckDto(item.id, item.getName(), resolved.query(), resolved.expression());
+			})
 			.toList();
 	}
 
@@ -127,6 +159,7 @@ public class AgentResource
 			? handleResubmission(existing.get(), payload, allPassed)
 			: handleFirstSubmission(payload, allPassed);
 
+		replaceInventory(report, payload.installedApps());
 		upsertDevice(payload);
 
 		String reportUrl = uriInfo.getBaseUri().resolve("Reports/show/" + report.id).toString();
@@ -198,17 +231,55 @@ public class AgentResource
 			{
 				try
 				{
-					ComplianceResultExplanation exp = aiService.explain(
-						item.getName(), item.getQuery(), item.getExpectedExpression(), rp.output());
+					ComplianceResultExplanation exp = explain(item, rp.output());
 					result.setAiShortDescription(exp.shortDescription());
 					result.setAiLongExplanation(exp.longExplanation());
 				}
 				catch (Exception e)
 				{
-					LOG.warnf("AI enrichment skipped for '%s': %s", item.getName(), e.getMessage());
+					LOG.warn("AI enrichment skipped for '{}': {}", item.getName(), e.getMessage());
 				}
 			}
 		}
+	}
+
+	/**
+	 * The inventory is a snapshot, so a resubmission replaces it wholesale
+	 * rather than accumulating stale rows.
+	 */
+	private void replaceInventory(Report report, List<InstalledAppPayload> apps)
+	{
+		installedAppRepository.delete("report", report);
+		if (apps == null)
+		{
+			return;
+		}
+		for (InstalledAppPayload payload : apps)
+		{
+			InstalledApp app = new InstalledApp();
+			app.setReport(report);
+			app.setSource(payload.source());
+			app.setName(payload.name());
+			app.setIdentifier(payload.identifier());
+			app.setVersion(payload.version());
+			app.setPath(payload.path());
+			installedAppRepository.persist(app);
+		}
+	}
+
+	/**
+	 * A blacklist failure gets its own prompt: the useful context is which
+	 * policy each detected app violates, not the SQL that found it.
+	 */
+	private ComplianceResultExplanation explain(ComplianceItem item, String output)
+	{
+		if (item instanceof AppBlacklistCheck)
+		{
+			List<BlockedApp> matched = blacklistMatcher.match(output, blockedAppRepository.listEnabled());
+			return aiService.explainBlacklist(output, blacklistMatcher.reasons(matched));
+		}
+		ResolvedCheck resolved = checkResolver.resolve(item);
+		return aiService.explain(item.getName(), resolved.query(), resolved.expression(), output);
 	}
 
 	/**

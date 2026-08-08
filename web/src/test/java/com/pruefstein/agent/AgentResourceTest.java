@@ -3,7 +3,7 @@ package com.pruefstein.agent;
 import java.time.Instant;
 
 import com.pruefstein.compliance.domain.ComplianceGroup;
-import com.pruefstein.compliance.domain.ComplianceItem;
+import com.pruefstein.compliance.domain.ExpressionCheck;
 import com.pruefstein.compliance.repository.ComplianceGroupRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
@@ -56,7 +56,7 @@ class AgentResourceTest
 			groupRepository.persist(group);
 			ids[0] = group.id;
 
-			ComplianceItem item = new ComplianceItem();
+			ExpressionCheck item = new ExpressionCheck();
 			item.setName("Test Check");
 			item.setQuery("SELECT 1;");
 			item.setExpectedExpression("results[0] == 1");
