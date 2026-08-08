@@ -47,7 +47,7 @@ class SmokeTest
 	}
 
 	@Test
-	void logoutClearsCredentials() throws Exception
+	void logoutClearsCredentials()
 	{
 		Path credFile = Path.of(System.getProperty("user.home"), ".config", "pruefstein", "credentials.json");
 		tokenStore.save(new StoredToken("tok", "ref", Instant.now().plusSeconds(300)));

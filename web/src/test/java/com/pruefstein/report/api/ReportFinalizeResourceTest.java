@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @QuarkusTest
 class ReportFinalizeResourceTest
 {
-
 	@Inject
 	ReportRepository reportRepository;
 

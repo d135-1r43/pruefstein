@@ -98,7 +98,7 @@ public class ComplianceRunner
 		}
 		catch (Exception e)
 		{
-			LOG.warn("  [ERROR] {} — {}", check.name(), e.getMessage());
+			LOG.warn("  [ERROR] {}", check.name(), e);
 			return new ResultPayload(check.id(), false, null);
 		}
 	}
@@ -114,7 +114,7 @@ public class ComplianceRunner
 		{
 			String output = osquery(INVENTORY_QUERY);
 			List<Map<String, Object>> rows = objectMapper.readValue(
-				output, new TypeReference<List<Map<String, Object>>>()
+				output, new TypeReference<>()
 				{
 				});
 			return rows.stream()
@@ -126,7 +126,7 @@ public class ComplianceRunner
 		catch (Exception e)
 		{
 			// A missing inventory must not cost us the compliance results
-			LOG.warn("Could not collect installed-app inventory: {}", e.getMessage());
+			LOG.warn("Could not collect installed-app inventory.", e);
 			return List.of();
 		}
 	}
@@ -187,7 +187,7 @@ public class ComplianceRunner
 		}
 		catch (Exception e)
 		{
-			LOG.warn("Could not fetch device UUID from osquery, falling back to hostname: " + e.getMessage());
+			LOG.warn("Could not fetch device UUID from osquery, falling back to hostname", e);
 		}
 		return hostname();
 	}

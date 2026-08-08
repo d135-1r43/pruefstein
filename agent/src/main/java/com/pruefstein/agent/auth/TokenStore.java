@@ -8,12 +8,17 @@ import java.util.Optional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.slf4j.Logger;
+
+import static org.slf4j.LoggerFactory.getLogger;
 
 @ApplicationScoped
 public class TokenStore
 {
 	private static final Path TOKEN_FILE = Path.of(
 		System.getProperty("user.home"), ".config", "pruefstein", "credentials.json");
+
+	private static final Logger LOG = getLogger(TokenStore.class);
 
 	@Inject
 	ObjectMapper objectMapper;
@@ -30,6 +35,7 @@ public class TokenStore
 		}
 		catch (IOException e)
 		{
+			LOG.warn("Error while loading token", e);
 			return Optional.empty();
 		}
 	}

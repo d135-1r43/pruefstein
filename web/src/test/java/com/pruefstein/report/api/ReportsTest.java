@@ -23,7 +23,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 @JwtSecurity(claims = { @Claim(key = "preferred_username", value = "admin") })
 class ReportsTest
 {
-
 	@Inject
 	ReportRepository reportRepository;
 

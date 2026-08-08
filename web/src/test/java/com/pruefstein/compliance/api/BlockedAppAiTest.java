@@ -15,13 +15,15 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 class BlockedAppAiTest
@@ -35,7 +37,7 @@ class BlockedAppAiTest
 	@BeforeEach
 	void setUp()
 	{
-		Mockito.when(aiService.suggest(any(), any())).thenReturn(new BlockedAppSuggestion(
+		when(aiService.suggest(any(), any())).thenReturn(new BlockedAppSuggestion(
 			"Nextcloud Desktop",
 			"Company data must stay in the approved tenant.",
 			List.of("com.nextcloud.desktopclient"),
@@ -122,7 +124,7 @@ class BlockedAppAiTest
 			.statusCode(lessThan(400));
 
 		// then
-		Mockito.verify(aiService, Mockito.never()).suggest(any(), any());
+		verify(aiService, never()).suggest(any(), any());
 		QuarkusTransaction.requiringNew().run(() -> {
 			BlockedApp app = repository.find("label", "ZZ Ai Plain").firstResult();
 			assertEquals(1, app.getMatchers().size());
@@ -134,7 +136,7 @@ class BlockedAppAiTest
 	void anAiFailureStillLeavesAWorkingRule()
 	{
 		// given — the model is unreachable
-		Mockito.when(aiService.suggest(any(), any())).thenThrow(new RuntimeException("model unavailable"));
+		when(aiService.suggest(any(), any())).thenThrow(new RuntimeException("model unavailable"));
 
 		// when
 		given()

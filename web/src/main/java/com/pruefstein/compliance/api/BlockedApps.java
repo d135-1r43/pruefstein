@@ -190,7 +190,7 @@ public class BlockedApps extends Controller
 		}
 		catch (Exception e)
 		{
-			LOG.warn("AI expansion skipped for '{}': {}", label, e.getMessage());
+			LOG.warn("AI expansion skipped for '{}'.", label, e);
 		}
 	}
 

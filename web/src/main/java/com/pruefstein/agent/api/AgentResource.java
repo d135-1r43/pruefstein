@@ -233,7 +233,7 @@ public class AgentResource
 				}
 				catch (Exception e)
 				{
-					LOG.warn("AI enrichment skipped for '{}': {}", item.getName(), e.getMessage());
+					LOG.warn("AI enrichment skipped for '{}'.", item.getName(), e);
 				}
 			}
 		}

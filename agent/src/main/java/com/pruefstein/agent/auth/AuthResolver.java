@@ -50,7 +50,7 @@ public class AuthResolver
 				}
 				catch (Exception e)
 				{
-					LOG.debug("Token refresh failed, re-authenticating: " + e.getMessage());
+					LOG.debug("Token refresh failed, re-authenticating. ", e);
 				}
 			}
 		}

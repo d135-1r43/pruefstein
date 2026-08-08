@@ -380,7 +380,7 @@ public class Startup
 		}
 		catch (Exception e)
 		{
-			LOG.warn("AI tip for seeded result '{}' fell back to static text: {}", item.getName(), e.getMessage());
+			LOG.warn("AI tip for seeded result '{}' fell back to static text.", item.getName(), e);
 			return fallback != null ? fallback : new ComplianceResultExplanation(null, null);
 		}
 	}

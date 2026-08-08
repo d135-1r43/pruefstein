@@ -21,12 +21,14 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @TestSecurity(user = "testuser", roles = "user")
@@ -57,7 +59,7 @@ class ComplianceResultAiEnrichmentTest
 	@BeforeEach
 	void setUp()
 	{
-		Mockito.when(aiService.explain(any(), any(), any(), any()))
+		when(aiService.explain(any(), any(), any(), any()))
 			.thenReturn(new ComplianceResultExplanation(
 				"Disk encryption not enabled",
 				"FileVault is disabled on this device. Enable it via System Settings → Privacy & Security → FileVault → Turn On."));
@@ -142,7 +144,7 @@ class ComplianceResultAiEnrichmentTest
 			.statusCode(200);
 
 		// then — AI was never called and fields are null
-		Mockito.verify(aiService, Mockito.never()).explain(any(), any(), any(), any());
+		verify(aiService, never()).explain(any(), any(), any(), any());
 		QuarkusTransaction.requiringNew().run(() -> {
 			List<ComplianceResult> results = resultRepository.list("report.deviceId", "ai-test-device");
 			assertFalse(results.isEmpty());

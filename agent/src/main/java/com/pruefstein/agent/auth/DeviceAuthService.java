@@ -15,13 +15,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class DeviceAuthService
 {
-	private static final Logger LOG = LoggerFactory.getLogger(DeviceAuthService.class);
 	private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>()
 	{
 	};

@@ -79,7 +79,7 @@ public class DevOsqueryResource
 		}
 		catch (Exception e)
 		{
-			LOG.warn("AI tip skipped for local test run: {}", e.getMessage());
+			LOG.warn("AI tip skipped for local test run.", e);
 			return result;
 		}
 	}
