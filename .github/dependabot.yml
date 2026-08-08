@@ -1,0 +1,66 @@
+version: 2
+
+updates:
+  # GitHub Actions used by .github/workflows/ci.yml
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "⬆️ chore"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # Maven — web/ and agent/ are independent projects (no aggregator pom)
+  - package-ecosystem: maven
+    directories:
+      - /web
+      - /agent
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "⬆️ chore"
+    groups:
+      # Keep the platform BOMs in lockstep. quarkus-bom, quarkus-langchain4j-bom
+      # and quarkus-flow-bom all import ${quarkus.platform.version}; splitting
+      # them across PRs would mix incompatible platform versions.
+      # Renarde and Web Bundler track the platform version too, so they belong
+      # in the same PR — a mismatch there is what broke the 3.38.1 upgrade.
+      quarkus:
+        patterns:
+          - "io.quarkus:*"
+          - "io.quarkus.platform:*"
+          - "io.quarkiverse.*:*"
+
+  # Base images in web/ and agent/ Dockerfiles
+  - package-ecosystem: docker
+    directories:
+      - /web/src/main/docker
+      - /agent/src/main/docker
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "🐳 chore"
+    groups:
+      docker-base-images:
+        patterns:
+          - "*"
+
+  # postgres/kafka images in deploy/docker-compose.yml
+  - package-ecosystem: docker-compose
+    directory: /deploy
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "🐳 chore"
+    groups:
+      compose-images:
+        patterns:
+          - "*"
