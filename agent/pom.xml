@@ -110,6 +110,28 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>net.revelc.code</groupId>
+                <artifactId>impsort-maven-plugin</artifactId>
+                <version>1.13.0</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <!-- java.* first, then everything else alphabetically, statics
+                     last — the order the codebase already mostly followed. -->
+                <configuration>
+                    <groups>java.,*</groups>
+                    <staticGroups>*</staticGroups>
+                    <staticAfter>true</staticAfter>
+                    <removeUnused>true</removeUnused>
+                    <lineEnding>LF</lineEnding>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

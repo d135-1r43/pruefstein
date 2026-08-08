@@ -8,13 +8,11 @@ import com.pruefstein.agent.auth.StoredToken;
 import com.pruefstein.agent.auth.TokenStore;
 import com.pruefstein.agent.command.LogoutCommand;
 import com.pruefstein.agent.command.MainCommand;
-
 import io.quarkus.picocli.runtime.annotations.TopCommand;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import picocli.CommandLine;
-
 import org.junit.jupiter.api.Test;
+import picocli.CommandLine;
 
 import static org.junit.jupiter.api.Assertions.*;
 

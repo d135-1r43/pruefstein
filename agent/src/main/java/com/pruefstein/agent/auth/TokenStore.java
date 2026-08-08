@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 

@@ -1,7 +1,6 @@
 package com.pruefstein.agent.client;
 
 import com.pruefstein.agent.auth.TokenHolder;
-
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;

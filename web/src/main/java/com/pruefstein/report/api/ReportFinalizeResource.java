@@ -5,7 +5,6 @@ import java.time.Instant;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.repository.ReportRepository;
-
 import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;

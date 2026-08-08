@@ -1,7 +1,6 @@
 package com.pruefstein.agent.command;
 
 import com.pruefstein.agent.auth.AuthResolver;
-
 import jakarta.inject.Inject;
 import picocli.CommandLine;
 

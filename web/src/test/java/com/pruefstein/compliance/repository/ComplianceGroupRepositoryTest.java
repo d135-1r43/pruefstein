@@ -1,12 +1,12 @@
 package com.pruefstein.compliance.repository;
 
+import java.util.List;
+
 import com.pruefstein.compliance.domain.ComplianceGroup;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 

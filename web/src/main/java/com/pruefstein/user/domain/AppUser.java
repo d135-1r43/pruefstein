@@ -1,12 +1,12 @@
 package com.pruefstein.user.domain;
 
+import java.util.List;
+
 import com.pruefstein.report.domain.Report;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
-
-import java.util.List;
 
 @Entity
 public class AppUser extends PanacheEntity

@@ -1,5 +1,7 @@
 package com.pruefstein.user.api;
 
+import java.util.List;
+
 import com.pruefstein.user.domain.AppUser;
 import com.pruefstein.user.repository.UserRepository;
 import io.quarkiverse.renarde.Controller;
@@ -12,8 +14,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.POST;
 import org.jboss.resteasy.reactive.RestForm;
-
-import java.util.List;
 
 @SuppressWarnings("unused")
 @RolesAllowed("${pruefstein.security.admin-role:admin}")

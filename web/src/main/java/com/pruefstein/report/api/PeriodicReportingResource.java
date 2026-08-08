@@ -10,7 +10,6 @@ import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.flow.PeriodicReportingFlow;
 import com.pruefstein.report.flow.WorkflowStartTrigger;
 import com.pruefstein.report.repository.ReportRepository;
-
 import jakarta.annotation.security.PermitAll;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;

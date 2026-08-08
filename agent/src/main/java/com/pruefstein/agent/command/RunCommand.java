@@ -2,7 +2,6 @@ package com.pruefstein.agent.command;
 
 import com.pruefstein.agent.auth.AuthResolver;
 import com.pruefstein.agent.runner.ComplianceRunner;
-
 import jakarta.inject.Inject;
 import picocli.CommandLine;
 

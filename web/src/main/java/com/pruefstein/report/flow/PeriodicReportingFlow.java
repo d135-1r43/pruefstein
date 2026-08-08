@@ -1,12 +1,12 @@
 package com.pruefstein.report.flow;
 
-import static io.quarkiverse.flow.dsl.FlowDSL.*;
-
 import io.quarkiverse.flow.Flow;
 import io.quarkiverse.flow.dsl.FlowWorkflowBuilder;
 import io.serverlessworkflow.api.types.Workflow;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+import static io.quarkiverse.flow.dsl.FlowDSL.*;
 
 /**
  * Periodic device reporting workflow.

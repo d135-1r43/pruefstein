@@ -1,10 +1,10 @@
 package com.pruefstein.compliance.domain;
 
+import java.util.List;
+
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
-
-import java.util.List;
 
 @Entity
 public class ComplianceGroup extends PanacheEntity
