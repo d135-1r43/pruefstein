@@ -5,14 +5,13 @@ import java.util.List;
 
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.repository.ReportRepository;
-
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Fires every hour to close any {@code OPEN} reports whose deadline has passed.
@@ -23,7 +22,7 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class DeadlineJob
 {
-	private static final Logger LOG = Logger.getLogger(DeadlineJob.class);
+	private static final Logger LOG = LoggerFactory.getLogger(DeadlineJob.class);
 
 	@Inject
 	ReportRepository reportRepository;
@@ -40,7 +39,7 @@ public class DeadlineJob
 		{
 			return;
 		}
-		LOG.infof("Closing %d expired OPEN report(s)", expired.size());
+		LOG.info("Closing {} expired OPEN report(s)", expired.size());
 		for (Report report : expired)
 		{
 			flowTrigger.fire(new FlowTrigger(report.id, report.getFlowInstanceId(), false));

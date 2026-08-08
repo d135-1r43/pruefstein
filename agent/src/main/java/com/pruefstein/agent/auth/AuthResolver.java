@@ -5,13 +5,13 @@ import java.util.Optional;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class AuthResolver
 {
-	private static final Logger LOG = Logger.getLogger(AuthResolver.class);
+	private static final Logger LOG = LoggerFactory.getLogger(AuthResolver.class);
 
 	@Inject
 	TokenStore tokenStore;

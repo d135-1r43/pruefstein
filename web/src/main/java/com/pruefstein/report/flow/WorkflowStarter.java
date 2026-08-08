@@ -3,8 +3,8 @@ package com.pruefstein.report.flow;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.TransactionPhase;
-
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Starts a workflow instance after the triggering transaction has committed.
@@ -20,7 +20,7 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 class WorkflowStarter
 {
-	private static final Logger LOG = Logger.getLogger(WorkflowStarter.class);
+	private static final Logger LOG = LoggerFactory.getLogger(WorkflowStarter.class);
 
 	void startAfterCommit(@Observes(during = TransactionPhase.AFTER_SUCCESS) WorkflowStartTrigger trigger)
 	{
@@ -30,7 +30,7 @@ class WorkflowStarter
 		}
 		catch (Exception e)
 		{
-			LOG.errorf(e, "Failed to start workflow instance %s", trigger.instance().id());
+			LOG.error("Failed to start workflow instance {}", trigger.instance().id(), e);
 		}
 	}
 }

@@ -4,15 +4,14 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.TransactionPhase;
 import jakarta.inject.Inject;
-
 import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Emits {@code compliance.outcome.decided} CloudEvents to the Kafka
@@ -26,7 +25,7 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class FlowEventEmitter
 {
-	private static final Logger LOG = Logger.getLogger(FlowEventEmitter.class);
+	private static final Logger LOG = LoggerFactory.getLogger(FlowEventEmitter.class);
 
 	@Channel("flow-events-out")
 	MutinyEmitter<String> emitter;
@@ -42,12 +41,12 @@ public class FlowEventEmitter
 				new OutcomeData(trigger.reportId(), trigger.allPassed()));
 			String cloudEvent = buildCloudEvent(trigger.flowInstanceId(), dataJson);
 			emitter.sendAndAwait(cloudEvent);
-			LOG.debugf("Emitted compliance.outcome.decided for report %d (allPassed=%b)",
+			LOG.debug("Emitted compliance.outcome.decided for report {} (allPassed={})",
 				(Object)trigger.reportId(), trigger.allPassed());
 		}
 		catch (Exception e)
 		{
-			LOG.errorf(e, "Failed to emit flow event for report %d", trigger.reportId());
+			LOG.error("Failed to emit flow event for report {}", trigger.reportId(), e);
 		}
 	}
 

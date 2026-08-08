@@ -4,15 +4,14 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.smallrye.reactive.messaging.MutinyEmitter;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.TransactionPhase;
 import jakarta.inject.Inject;
-
 import org.eclipse.microprofile.reactive.messaging.Channel;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Emits {@code reporting.cycle.completed} CloudEvents to the Kafka
@@ -21,7 +20,7 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class PeriodicFlowEventEmitter
 {
-	private static final Logger LOG = Logger.getLogger(PeriodicFlowEventEmitter.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PeriodicFlowEventEmitter.class);
 
 	@Channel("flow-events-out")
 	MutinyEmitter<String> emitter;
@@ -37,12 +36,12 @@ public class PeriodicFlowEventEmitter
 				new CycleData(trigger.deviceId(), trigger.reported()));
 			String cloudEvent = buildCloudEvent(trigger.flowInstanceId(), dataJson);
 			emitter.sendAndAwait(cloudEvent);
-			LOG.debugf("Emitted reporting.cycle.completed for device %s (reported=%b)",
+			LOG.debug("Emitted reporting.cycle.completed for device {} (reported={})",
 				trigger.deviceId(), trigger.reported());
 		}
 		catch (Exception e)
 		{
-			LOG.errorf(e, "Failed to emit periodic flow event for device %s", trigger.deviceId());
+			LOG.error("Failed to emit periodic flow event for device {}", trigger.deviceId(), e);
 		}
 	}
 

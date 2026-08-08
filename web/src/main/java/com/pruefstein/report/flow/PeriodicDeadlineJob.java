@@ -6,15 +6,14 @@ import java.util.List;
 
 import com.pruefstein.device.domain.Device;
 import com.pruefstein.device.repository.DeviceRepository;
-
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Fires every hour to detect devices that have not submitted a report within
@@ -27,7 +26,7 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class PeriodicDeadlineJob
 {
-	private static final Logger LOG = Logger.getLogger(PeriodicDeadlineJob.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PeriodicDeadlineJob.class);
 
 	@Inject
 	DeviceRepository deviceRepository;
@@ -48,7 +47,7 @@ public class PeriodicDeadlineJob
 		{
 			return;
 		}
-		LOG.infof("Marking %d overdue device(s) as missing", overdue.size());
+		LOG.info("Marking {} overdue device(s) as missing", overdue.size());
 		for (Device device : overdue)
 		{
 			periodicFlowTrigger.fire(
