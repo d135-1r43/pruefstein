@@ -12,11 +12,16 @@ public class UserSyncService
 	@Inject
 	UserRepository userRepository;
 
+	/**
+	 * Creates or refreshes the local record for an OIDC identity and returns
+	 * it, so callers that need the user — a mail address, for instance — do not
+	 * have to look it up again.
+	 */
 	@Transactional
-	public void syncUser(String subject, String email, String firstName, String lastName)
+	public AppUser syncUser(String subject, String email, String firstName, String lastName)
 	{
-		userRepository.findBySubject(subject).ifPresentOrElse(
-			user -> {
+		return userRepository.findBySubject(subject)
+			.map(user -> {
 				if (email != null)
 				{
 					user.setMail(email);
@@ -29,14 +34,16 @@ public class UserSyncService
 				{
 					user.setLastname(lastName);
 				}
-			},
-			() -> {
+				return user;
+			})
+			.orElseGet(() -> {
 				AppUser user = new AppUser();
 				user.setOidcSubject(subject);
 				user.setMail(email);
 				user.setFirstname(firstName != null ? firstName : subject);
 				user.setLastname(lastName != null ? lastName : "");
 				userRepository.persist(user);
+				return user;
 			});
 	}
 }

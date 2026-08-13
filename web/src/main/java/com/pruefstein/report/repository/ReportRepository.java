@@ -26,6 +26,17 @@ public class ReportRepository implements PanacheRepository<Report>
 			ReportStatus.OPEN, now);
 	}
 
+	/**
+	 * Open reports whose deadline falls inside the reminder window and that
+	 * have not been reminded yet. Already-expired reports are excluded — those
+	 * are closed by {@code DeadlineJob} rather than reminded about.
+	 */
+	public List<Report> findDueForReminder(Instant now, Instant threshold)
+	{
+		return list("status = ?1 and reminderSentAt is null and deadline > ?2 and deadline <= ?3",
+			ReportStatus.OPEN, now, threshold);
+	}
+
 	public List<Report> listFiltered(ReportStatus status, String q, String sort, String dir)
 	{
 		return listFiltered(status, q, sort, dir, null);
