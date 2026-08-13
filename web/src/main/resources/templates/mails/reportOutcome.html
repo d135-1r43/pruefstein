@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prüfstein report {report.id}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f5f4;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background-color:#f5f5f4;padding:32px 12px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+             style="width:100%;max-width:600px;background-color:#ffffff;border:2px solid #000000;font-family:'Space Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif;color:#000000;">
+
+        <!-- Brand bar -->
+        <tr>
+          <td style="background-color:#000000;padding:16px 24px;">
+            <span style="color:#ffffff;font-size:18px;font-weight:bold;letter-spacing:-0.5px;">Prüfstein</span>
+          </td>
+        </tr>
+
+        <!-- Status -->
+        <tr>
+          <td style="padding:28px 24px 20px 24px;border-bottom:2px solid #000000;">
+            {#if report.compliant}
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="background-color:#34d399;border:2px solid #000000;padding:6px 12px;font-size:11px;font-weight:bold;letter-spacing:2px;">COMPLIANT</td>
+              </tr>
+            </table>
+            <p style="margin:18px 0 0 0;font-size:22px;font-weight:bold;line-height:1.3;letter-spacing:-0.5px;">
+              All checks passed.
+            </p>
+            <p style="margin:10px 0 0 0;font-size:15px;line-height:1.6;color:#44403c;">
+              Hi {report.name ?: 'there'}, your device came out clean — nothing to do.
+            </p>
+            {#else if report.nonCompliant}
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="background-color:#f87171;border:2px solid #000000;padding:6px 12px;font-size:11px;font-weight:bold;letter-spacing:2px;color:#ffffff;">NON-COMPLIANT</td>
+              </tr>
+            </table>
+            <p style="margin:18px 0 0 0;font-size:22px;font-weight:bold;line-height:1.3;letter-spacing:-0.5px;">
+              The deadline has passed.
+            </p>
+            <p style="margin:10px 0 0 0;font-size:15px;line-height:1.6;color:#44403c;">
+              Hi {report.name ?: 'there'}, this report was closed as non-compliant because
+              {report.failureLabel} were still failing when the remediation window ran out.
+            </p>
+            {#else}
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="background-color:#facc15;border:2px solid #000000;padding:6px 12px;font-size:11px;font-weight:bold;letter-spacing:2px;">ACTION REQUIRED</td>
+              </tr>
+            </table>
+            <p style="margin:18px 0 0 0;font-size:22px;font-weight:bold;line-height:1.3;letter-spacing:-0.5px;">
+              {report.failureLabel} did not pass.
+            </p>
+            <p style="margin:10px 0 0 0;font-size:15px;line-height:1.6;color:#44403c;">
+              Hi {report.name ?: 'there'}, your report is open until you fix the issues below.
+              Run the agent again once you have — it closes as soon as everything passes.
+            </p>
+            {/if}
+          </td>
+        </tr>
+
+        <!-- Deadline callout -->
+        {#if report.deadline && !report.compliant && !report.nonCompliant}
+        <tr>
+          <td style="padding:20px 24px;border-bottom:2px solid #000000;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="background-color:#fef9c3;border:2px solid #000000;">
+              <tr>
+                <td style="padding:16px 18px;">
+                  <p style="margin:0;font-size:10px;font-weight:bold;letter-spacing:2px;color:#57534e;">DEADLINE</p>
+                  <p style="margin:6px 0 0 0;font-size:18px;font-weight:bold;">{report.deadline}</p>
+                  <p style="margin:6px 0 0 0;font-size:13px;line-height:1.5;color:#44403c;">
+                    {report.dayLabel} left. If the checks are still failing then, the report is
+                    closed automatically and recorded as non-compliant.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {/if}
+
+        <!-- Failing checks -->
+        {#if report.failureCount > 0}
+        <tr>
+          <td style="padding:22px 24px 8px 24px;">
+            <p style="margin:0 0 12px 0;font-size:10px;font-weight:bold;letter-spacing:2px;color:#57534e;">WHAT FAILED</p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="border:2px solid #000000;">
+              {#for failure in report.failures}
+              <tr>
+                <td style="padding:14px 16px;border-bottom:{failure_hasNext ? '2px solid #000000' : '0'};">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="font-size:15px;font-weight:bold;line-height:1.4;">{failure.name}</td>
+                      <td align="right" style="width:60px;">
+                        <span style="display:inline-block;background-color:#f87171;border:2px solid #000000;padding:2px 8px;font-size:10px;font-weight:bold;letter-spacing:2px;color:#ffffff;">FAIL</span>
+                      </td>
+                    </tr>
+                  </table>
+                  {#if failure.group}
+                  <p style="margin:4px 0 0 0;font-size:12px;color:#78716c;">{failure.group}</p>
+                  {/if}
+                  {#if failure.description}
+                  <p style="margin:8px 0 0 0;font-size:13px;line-height:1.6;color:#44403c;">{failure.description}</p>
+                  {/if}
+                </td>
+              </tr>
+              {/for}
+            </table>
+          </td>
+        </tr>
+        {/if}
+
+        <!-- Call to action -->
+        <tr>
+          <td style="padding:24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="background-color:#facc15;border:2px solid #000000;">
+                  <a href="{report.url}"
+                     style="display:inline-block;padding:12px 22px;font-size:13px;font-weight:bold;letter-spacing:1px;color:#000000;text-decoration:none;">
+                    {#if report.compliant}VIEW REPORT →{#else}SEE HOW TO FIX IT →{/if}
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Meta -->
+        <tr>
+          <td style="padding:16px 24px 22px 24px;border-top:2px solid #000000;">
+            <p style="margin:0;font-size:12px;line-height:1.7;color:#78716c;">
+              Report #{report.id}<br>
+              Device {report.deviceId}<br>
+              {#if report.checkedAt}Checked {report.checkedAt}{/if}
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+      <p style="max-width:600px;margin:16px auto 0 auto;font-size:11px;line-height:1.6;color:#a8a29e;font-family:'Space Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif;">
+        Automated message from Prüfstein compliance monitoring.
+      </p>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

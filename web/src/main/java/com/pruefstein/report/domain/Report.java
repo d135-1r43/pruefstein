@@ -30,6 +30,12 @@ public class Report extends PanacheEntity
 
 	private Instant finalizedAt;
 
+	/**
+	 * Set once the pre-deadline reminder mail went out, so it is sent only
+	 * once.
+	 */
+	private Instant reminderSentAt;
+
 	@Column(length = 64)
 	private String flowInstanceId;
 
@@ -99,6 +105,16 @@ public class Report extends PanacheEntity
 	public void setFinalizedAt(Instant finalizedAt)
 	{
 		this.finalizedAt = finalizedAt;
+	}
+
+	public Instant getReminderSentAt()
+	{
+		return reminderSentAt;
+	}
+
+	public void setReminderSentAt(Instant reminderSentAt)
+	{
+		this.reminderSentAt = reminderSentAt;
 	}
 
 	public String getFlowInstanceId()

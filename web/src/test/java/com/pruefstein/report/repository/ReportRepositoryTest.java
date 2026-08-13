@@ -126,6 +126,71 @@ class ReportRepositoryTest
 		assertFalse(expired.stream().anyMatch(r -> "future-device".equals(r.getDeviceId())));
 	}
 
+	@Test
+	void findDueForReminderReturnsReportsInsideTheWindow()
+	{
+		// given
+		Report report = openReport("reminder-device", "reminder-user");
+		report.setDeadline(Instant.now().plusSeconds(36 * 3600));
+		reportRepository.persist(report);
+
+		// when
+		List<Report> due = reportRepository.findDueForReminder(
+			Instant.now(), Instant.now().plusSeconds(48 * 3600));
+
+		// then
+		assertTrue(due.stream().anyMatch(r -> "reminder-device".equals(r.getDeviceId())));
+	}
+
+	@Test
+	void findDueForReminderIgnoresAlreadyRemindedReports()
+	{
+		// given
+		Report report = openReport("reminded-device", "reminded-user");
+		report.setDeadline(Instant.now().plusSeconds(36 * 3600));
+		report.setReminderSentAt(Instant.now().minusSeconds(3600));
+		reportRepository.persist(report);
+
+		// when
+		List<Report> due = reportRepository.findDueForReminder(
+			Instant.now(), Instant.now().plusSeconds(48 * 3600));
+
+		// then
+		assertFalse(due.stream().anyMatch(r -> "reminded-device".equals(r.getDeviceId())));
+	}
+
+	@Test
+	void findDueForReminderIgnoresDeadlinesBeyondTheWindow()
+	{
+		// given
+		Report report = openReport("far-device", "far-user");
+		report.setDeadline(Instant.now().plusSeconds(6 * 24 * 3600));
+		reportRepository.persist(report);
+
+		// when
+		List<Report> due = reportRepository.findDueForReminder(
+			Instant.now(), Instant.now().plusSeconds(48 * 3600));
+
+		// then
+		assertFalse(due.stream().anyMatch(r -> "far-device".equals(r.getDeviceId())));
+	}
+
+	@Test
+	void findDueForReminderIgnoresExpiredDeadlines()
+	{
+		// given
+		Report report = openReport("past-device", "past-user");
+		report.setDeadline(Instant.now().minusSeconds(60));
+		reportRepository.persist(report);
+
+		// when
+		List<Report> due = reportRepository.findDueForReminder(
+			Instant.now(), Instant.now().plusSeconds(48 * 3600));
+
+		// then
+		assertFalse(due.stream().anyMatch(r -> "past-device".equals(r.getDeviceId())));
+	}
+
 	private Report openReport(String deviceId, String userId)
 	{
 		Report report = new Report();

@@ -21,6 +21,7 @@ import com.pruefstein.compliance.service.ComplianceResultAiService;
 import com.pruefstein.compliance.service.ComplianceResultExplanation;
 import com.pruefstein.device.domain.Device;
 import com.pruefstein.device.repository.DeviceRepository;
+import com.pruefstein.notification.ReportMailTrigger;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.flow.ComplianceReportFlow;
@@ -29,6 +30,8 @@ import com.pruefstein.report.flow.PeriodicFlowTrigger;
 import com.pruefstein.report.flow.PeriodicReportingFlow;
 import com.pruefstein.report.flow.WorkflowStartTrigger;
 import com.pruefstein.report.repository.ReportRepository;
+import com.pruefstein.user.domain.AppUser;
+import com.pruefstein.user.service.UserSyncService;
 import io.quarkus.oidc.Tenant;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.event.Event;
@@ -99,6 +102,12 @@ public class AgentResource
 	Event<WorkflowStartTrigger> workflowStartTrigger;
 
 	@Inject
+	Event<ReportMailTrigger> mailTrigger;
+
+	@Inject
+	UserSyncService userSyncService;
+
+	@Inject
 	JsonWebToken jwt;
 
 	@ConfigProperty(name = "pruefstein.compliance.remediation-days", defaultValue = "7")
@@ -155,6 +164,11 @@ public class AgentResource
 		Report report = existing.map(value -> handleResubmission(value, payload, allPassed))
 			.orElseGet(() -> handleFirstSubmission(payload, allPassed));
 
+		// Agents authenticate as their own bearer identity, which never passes
+		// through the web login augmentor — so the local user record (and with
+		// it the address every notification goes to) is synced here.
+		report.setAppUser(syncReportingUser());
+
 		replaceInventory(report, payload.installedApps());
 		upsertDevice(payload);
 
@@ -191,7 +205,26 @@ public class AgentResource
 			report.setFlowInstanceId(wi.id());
 			workflowStartTrigger.fire(new WorkflowStartTrigger(wi));
 		}
+
+		// Only the first submission mails from here. A resubmission has no
+		// outcome yet, so its mail comes from the flow's finalize callback.
+		mailTrigger.fire(new ReportMailTrigger(report.id));
 		return report;
+	}
+
+	/**
+	 * Keeps the {@link AppUser} record in step with the agent's bearer token.
+	 * Keycloak and Entra both put {@code email}, {@code given_name} and
+	 * {@code family_name} in the access token, so the same claims the browser
+	 * login syncs are available here.
+	 */
+	private AppUser syncReportingUser()
+	{
+		return userSyncService.syncUser(
+			jwt.getSubject(),
+			jwt.<String> claim("email").orElse(null),
+			jwt.<String> claim("given_name").orElse(null),
+			jwt.<String> claim("family_name").orElse(null));
 	}
 
 	private Report handleResubmission(Report report, ReportPayload payload, boolean allPassed)
