@@ -16,7 +16,11 @@ public class UserSyncAugmentor implements SecurityIdentityAugmentor
 	@Override
 	public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext ctx)
 	{
-		org.eclipse.microprofile.jwt.JsonWebToken idToken = identity.getAttribute("id_token");
+		// Quarkus sets no "id_token" attribute: in the code flow the ID token is
+		// the principal itself. The old lookup was always null, so no user was
+		// ever synced and the UI fell back to showing the raw principal name.
+		org.eclipse.microprofile.jwt.JsonWebToken idToken =
+			identity.getPrincipal() instanceof org.eclipse.microprofile.jwt.JsonWebToken jwt ? jwt : null;
 		if (idToken == null || identity.isAnonymous())
 		{
 			return Uni.createFrom().item(identity);
