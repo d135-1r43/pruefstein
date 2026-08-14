@@ -19,9 +19,9 @@ import org.slf4j.LoggerFactory;
  * Fires every hour to detect devices that have not submitted a report within
  * the configured reporting interval. Emits a {@link PeriodicFlowTrigger} with
  * {@code reported=false} for each overdue device; after the transaction commits
- * {@link PeriodicFlowEventEmitter} forwards it to Kafka, which resumes the
- * waiting flow instance and triggers creation of a {@code MISSING} report
- * entry.
+ * {@link PeriodicFlowEventEmitter} hands it to the workflow engine, which
+ * resumes the waiting flow instance and triggers creation of a {@code MISSING}
+ * report entry.
  */
 @ApplicationScoped
 public class PeriodicDeadlineJob

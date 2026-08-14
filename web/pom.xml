@@ -109,10 +109,6 @@
             <groupId>io.quarkiverse.flow</groupId>
             <artifactId>quarkus-flow-jpa</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-messaging-kafka</artifactId>
-        </dependency>
         <!-- test -->
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -127,11 +123,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-test-security-jwt</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.smallrye.reactive</groupId>
-            <artifactId>smallrye-reactive-messaging-in-memory</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

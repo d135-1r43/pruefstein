@@ -35,7 +35,11 @@ public class ComplianceReportFlow extends Flow
 		return FlowWorkflowBuilder.workflow("compliance-report")
 			.tasks(
 				listen("waitForOutcome", toOne("compliance.outcome.decided")),
-				call("finalize", http().POST().endpoint(finalizeUrl).body(".")))
+				// A listen task yields an array of consumed event payloads,
+				// even
+				// for toOne. The endpoint takes a single object, so unwrap it
+				// here or every callback comes back 400.
+				call("finalize", http().POST().endpoint(finalizeUrl).body("${ .[0] }")))
 			.build();
 	}
 }
