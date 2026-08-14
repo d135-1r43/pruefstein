@@ -22,8 +22,7 @@ public class ReportRepository implements PanacheRepository<Report>
 
 	public List<Report> findExpiredOpen(Instant now)
 	{
-		return list("status = ?1 and deadline < ?2 and flowInstanceId is not null",
-			ReportStatus.OPEN, now);
+		return list("status = ?1 and deadline < ?2", ReportStatus.OPEN, now);
 	}
 
 	/**
