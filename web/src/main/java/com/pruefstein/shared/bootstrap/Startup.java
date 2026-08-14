@@ -311,7 +311,8 @@ public class Startup
 		addResult(userReport, autoUpdates, true, "[{\"value\":\"1\"}]");
 		addResult(userReport, screenLock, true, "[{\"value\":\"180\"}]");
 
-		// Device registry — no periodic flow in dev seed (flow needs Kafka)
+		// Device registry — seeded devices carry no periodic flow instance;
+		// the first real check-in starts one.
 		Device alice = new Device();
 		alice.setDeviceId("MacBook-Pro-Alice.local");
 		alice.setUserId("alice");

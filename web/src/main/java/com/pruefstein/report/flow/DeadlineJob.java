@@ -16,8 +16,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Fires every hour to close any {@code OPEN} reports whose deadline has passed.
  * Emits a {@link FlowTrigger} with {@code allPassed=false}; after the
- * transaction commits the event is forwarded to Kafka, which resumes the
- * waiting flow instance and finalises the report as {@code NON_COMPLIANT}.
+ * transaction commits the event is handed to the workflow engine, which resumes
+ * the waiting flow instance and finalises the report as {@code NON_COMPLIANT}.
  */
 @ApplicationScoped
 public class DeadlineJob
