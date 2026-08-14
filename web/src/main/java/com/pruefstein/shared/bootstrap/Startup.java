@@ -5,13 +5,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.pruefstein.compliance.domain.AppBlacklistCheck;
+import com.pruefstein.compliance.bootstrap.CatalogSeeder;
 import com.pruefstein.compliance.domain.AppMatcher;
 import com.pruefstein.compliance.domain.BlockedApp;
-import com.pruefstein.compliance.domain.ComplianceGroup;
 import com.pruefstein.compliance.domain.ComplianceItem;
 import com.pruefstein.compliance.domain.ComplianceResult;
-import com.pruefstein.compliance.domain.ExpressionCheck;
 import com.pruefstein.compliance.domain.MatcherType;
 import com.pruefstein.compliance.repository.BlockedAppRepository;
 import com.pruefstein.compliance.repository.ComplianceGroupRepository;
@@ -28,6 +26,7 @@ import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.repository.ReportRepository;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.StartupEvent;
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
@@ -84,151 +83,42 @@ public class Startup
 	DeviceRepository deviceRepository;
 
 	@Transactional
-	public void start(@Observes StartupEvent evt)
+	public void start(@Observes @Priority(CatalogSeeder.PRIORITY + 100) StartupEvent evt)
 	{
 		if (LaunchMode.current() == LaunchMode.DEVELOPMENT)
 		{
-			seedCompliance();
+			seedDemoData();
 		}
 	}
 
-	private void seedCompliance()
+	/**
+	 * Demo data for the dev UI. The checks themselves come from
+	 * {@link CatalogSeeder}, which every environment shares — this only adds
+	 * the blocked-app examples and a few reports to look at.
+	 */
+	private void seedDemoData()
 	{
-		ComplianceGroup cryptography = new ComplianceGroup();
-		cryptography.setName("A.10 Cryptography");
-		groupRepository.persist(cryptography);
-
-		ComplianceItem fileVault = addItem(cryptography,
-			"FileVault enabled",
-			"SELECT filevault_status FROM disk_encryption WHERE filevault_status = 'on' LIMIT 1;",
-			"results.size() > 0");
-
-		ComplianceGroup operations = new ComplianceGroup();
-		operations.setName("A.12 Operations Security");
-		groupRepository.persist(operations);
-
-		ComplianceItem firewall = addItem(operations,
-			"Firewall enabled",
-			"SELECT global_state FROM alf;",
-			"results.size() > 0 && results[0].global_state == '1'");
-
-		ComplianceItem autoUpdates = addItem(operations,
-			"Automatic updates enabled",
-			"SELECT value FROM preferences WHERE domain = 'com.apple.SoftwareUpdate' AND key = 'AutomaticCheckEnabled';",
-			"results.size() > 0 && results[0].value == '1'");
-
-		// A.12.6 — technical vulnerability management: checking for updates is
-		// not enough, they have to be installed as well
-		addItem(operations,
-			"Critical security updates installed automatically",
-			"SELECT value FROM preferences WHERE domain = 'com.apple.SoftwareUpdate' AND key = 'CriticalUpdateInstall';",
-			"results.size() > 0 && results[0].value == '1'");
-
-		addItem(operations,
-			"macOS updates installed automatically",
-			"SELECT value FROM preferences WHERE domain = 'com.apple.SoftwareUpdate' AND key = 'AutomaticallyInstallMacOSUpdates';",
-			"results.size() > 0 && results[0].value == '1'");
-
-		// A.12.2 — protection against malware
-		addItem(operations,
-			"Gatekeeper enabled",
-			"SELECT assessments_enabled FROM gatekeeper;",
-			"results.size() > 0 && results[0].assessments_enabled == '1'");
-
-		addItem(operations,
-			"System Integrity Protection enabled",
-			"SELECT enabled FROM sip_config WHERE config_flag = 'sip';",
-			"results.size() > 0 && results[0].enabled == '1'");
-
-		// A.12.3 — backup
-		addItem(operations,
-			"Time Machine backup destination configured",
-			"SELECT destination_id FROM time_machine_destinations;",
-			"results.size() > 0");
-
-		// A.12.4 — logging and monitoring
-		addItem(operations,
-			"Firewall logging enabled",
-			"SELECT logging_enabled FROM alf;",
-			"results.size() > 0 && results[0].logging_enabled == '1'");
-
-		ComplianceGroup access = new ComplianceGroup();
-		access.setName("A.9 Access Control");
-		groupRepository.persist(access);
-
-		ComplianceItem screenLock = addItem(access,
-			"Screen lock timeout ≤ 300 seconds",
-			"SELECT value FROM preferences WHERE domain = 'com.apple.screensaver' AND key = 'idleTime';",
-			"results.size() > 0 && results[0].value <= 300");
-
-		// A.9.4.2 — secure log-on. A screensaver that blanks the display
-		// without
-		// asking for a password protects nothing.
-		addItem(access,
-			"Screen lock requires a password",
-			"SELECT enabled, grace_period FROM screenlock;",
-			"results.size() > 0 && results[0].enabled == '1' && results[0].grace_period <= 300");
-
-		// Absence of the key means no auto-login user is configured
-		addItem(access,
-			"Automatic login disabled",
-			"SELECT value FROM preferences WHERE domain = 'com.apple.loginwindow' AND key = 'autoLoginUser';",
-			"results.size() == 0");
-
-		addItem(access,
-			"Guest account disabled",
-			"SELECT value FROM preferences WHERE domain = 'com.apple.loginwindow' AND key = 'GuestEnabled';",
-			"results.size() == 0 || results[0].value == '0'");
-
-		ComplianceGroup communications = new ComplianceGroup();
-		communications.setName("A.13 Communications Security");
-		groupRepository.persist(communications);
-
-		// A.13.1 — network security management: every inbound sharing service
-		// is
-		// attack surface on an endpoint that does not need to serve anything
-		addItem(communications,
-			"Remote login (SSH) disabled",
-			"SELECT remote_login FROM sharing_preferences;",
-			"results.size() > 0 && results[0].remote_login == '0'");
-
-		addItem(communications,
-			"Screen sharing disabled",
-			"SELECT screen_sharing FROM sharing_preferences;",
-			"results.size() > 0 && results[0].screen_sharing == '0'");
-
-		addItem(communications,
-			"File sharing disabled",
-			"SELECT file_sharing FROM sharing_preferences;",
-			"results.size() > 0 && results[0].file_sharing == '0'");
-
-		addItem(communications,
-			"Internet sharing disabled",
-			"SELECT internet_sharing FROM sharing_preferences;",
-			"results.size() > 0 && results[0].internet_sharing == '0'");
-
-		addItem(communications,
-			"Firewall stealth mode enabled",
-			"SELECT stealth_enabled FROM alf;",
-			"results.size() > 0 && results[0].stealth_enabled == '1'");
-
 		seedBlockedApps();
+		seedReports(
+			requireItem("FileVault enabled"),
+			requireItem("Firewall enabled"),
+			requireItem("Automatic updates enabled"),
+			requireItem("Screen lock timeout \u2264 300 seconds"));
+	}
 
-		seedReports(fileVault, firewall, autoUpdates, screenLock);
+	private ComplianceItem requireItem(String name)
+	{
+		return itemRepository.find("name", name).firstResultOptional()
+			.orElseThrow(() -> new IllegalStateException(
+				"Baseline check '" + name + "' is missing; the catalog should have been seeded first"));
 	}
 
 	/**
-	 * A.12.6.2 — restrictions on software installation. The check's SQL is
-	 * generated from these rules on every agent run, so it is left null here.
+	 * Example rules for the generated blacklist check, which the catalog
+	 * already created. Their SQL is rendered from these on every agent run.
 	 */
 	private void seedBlockedApps()
 	{
-		// Deliberately group-less: this check lives on the Blocked Apps screen
-		// and in its own report section, not under Groups & Items.
-		AppBlacklistCheck check = new AppBlacklistCheck();
-		check.setName("No blacklisted applications installed");
-		itemRepository.persist(check);
-
 		// Nextcloud is the reason the rule owns several matchers: it ships as a
 		// Homebrew cask and as a plain bundle, and one entry has to catch both.
 		addBlockedApp("Nextcloud Desktop",
@@ -333,17 +223,6 @@ public class Startup
 		user.setKeycloakUser("user");
 		user.setLastReportAt(userReport.getCheckedAt());
 		deviceRepository.persist(user);
-	}
-
-	private ComplianceItem addItem(ComplianceGroup group, String name, String query, String expectedExpression)
-	{
-		ExpressionCheck item = new ExpressionCheck();
-		item.setName(name);
-		item.setQuery(query);
-		item.setExpectedExpression(expectedExpression);
-		item.setGroup(group);
-		itemRepository.persist(item);
-		return item;
 	}
 
 	private void addResult(Report report, ComplianceItem item, boolean passed, String output)
