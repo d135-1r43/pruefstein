@@ -5,15 +5,15 @@ import java.util.Map;
 import io.quarkus.test.junit.QuarkusTestProfile;
 
 /**
- * Forces a dedicated application instance for the round-trip test.
+ * Gives the round-trip test its own application instance.
  *
  * <p>
- * Workflow instances parked by other test classes stay registered for the life
- * of the JVM, and an event is delivered to every instance listening for its
- * type — so without isolation they all wake on this test's event, flood the
- * HTTP callback and trip its circuit breaker before the instance under test is
- * served. See the disabled test in {@link ComplianceFlowRoundTripTest} for the
- * underlying defect.
+ * Other test classes tear down their reports while the workflow instances that
+ * reference them are still parked. Those instances later call back into the
+ * finalize endpoint, get a 404, and trip the fault-tolerance circuit breaker —
+ * which is shared by every instance of the same workflow task, so a legitimate
+ * callback is then rejected too. Isolating this test keeps that debris out of
+ * its way.
  */
 public class FreshEngineProfile implements QuarkusTestProfile
 {
