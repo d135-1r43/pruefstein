@@ -6,6 +6,7 @@ import io.quarkus.security.identity.SecurityIdentityAugmentor;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 
 @ApplicationScoped
 public class UserSyncAugmentor implements SecurityIdentityAugmentor
@@ -16,18 +17,17 @@ public class UserSyncAugmentor implements SecurityIdentityAugmentor
 	@Override
 	public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext ctx)
 	{
-		// Quarkus sets no "id_token" attribute: in the code flow the ID token is
-		// the principal itself. The old lookup was always null, so no user was
-		// ever synced and the UI fell back to showing the raw principal name.
-		org.eclipse.microprofile.jwt.JsonWebToken idToken =
-			identity.getPrincipal() instanceof org.eclipse.microprofile.jwt.JsonWebToken jwt ? jwt : null;
+		// Quarkus sets no "id_token" attribute — in the code flow the token
+		// is the principal itself. The old lookup was always null, so no
+		// user was ever synced and the UI showed the raw principal name.
+		JsonWebToken idToken = identity.getPrincipal() instanceof JsonWebToken jwt ? jwt : null;
 		if (idToken == null || identity.isAnonymous())
 		{
 			return Uni.createFrom().item(identity);
 		}
 
-		// The subject keys the local record, so there is nothing to sync without
-		// one. Entra always sends it; identities built in tests need not.
+		// The subject keys the local record, so there is nothing to sync
+		// without one. Entra always sends it; test identities need not.
 		String subject = idToken.getSubject();
 		if (subject == null || subject.isBlank())
 		{

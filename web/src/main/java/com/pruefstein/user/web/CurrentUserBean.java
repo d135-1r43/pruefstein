@@ -5,6 +5,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 
 @Named("currentUser")
 @RequestScoped
@@ -27,13 +28,13 @@ public class CurrentUserBean
 	}
 
 	/**
-	 * Quarkus sets no "id_token" attribute: in the code flow the ID token is the
-	 * principal itself. Looking up the attribute always returned null, which is
-	 * why the UI fell back to the raw principal name.
+	 * Quarkus sets no "id_token" attribute: in the code flow the ID token is
+	 * the principal itself. Looking up the attribute always returned null,
+	 * which is why the UI fell back to the raw principal name.
 	 */
-	private org.eclipse.microprofile.jwt.JsonWebToken idToken()
+	private JsonWebToken idToken()
 	{
-		return identity.getPrincipal() instanceof org.eclipse.microprofile.jwt.JsonWebToken jwt ? jwt : null;
+		return identity.getPrincipal() instanceof JsonWebToken jwt ? jwt : null;
 	}
 
 	public String getUsername()
@@ -42,7 +43,7 @@ public class CurrentUserBean
 		{
 			return null;
 		}
-		org.eclipse.microprofile.jwt.JsonWebToken idToken = idToken();
+		JsonWebToken idToken = idToken();
 		if (idToken != null)
 		{
 			return idToken.getClaim("preferred_username");
@@ -56,7 +57,7 @@ public class CurrentUserBean
 		{
 			return null;
 		}
-		org.eclipse.microprofile.jwt.JsonWebToken idToken = idToken();
+		JsonWebToken idToken = idToken();
 		if (idToken != null)
 		{
 			String username = idToken.getClaim("preferred_username");
