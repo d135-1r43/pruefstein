@@ -43,7 +43,9 @@ public class PeriodicReportingFlow extends Flow
 
 		return FlowWorkflowBuilder.workflow("periodic-reporting")
 			.tasks(
-				listen("waitForCycle", toOne("reporting.cycle.completed")),
+				listen("waitForCycle",
+					toOne(consumed("reporting.cycle.completed")
+						.extensionByInstanceId("flowinstanceid"))),
 				// Same unwrapping as the compliance flow: a listen task hands
 				// on an
 				// array, the endpoint takes one object.

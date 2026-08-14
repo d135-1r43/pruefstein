@@ -34,7 +34,9 @@ public class ComplianceReportFlow extends Flow
 
 		return FlowWorkflowBuilder.workflow("compliance-report")
 			.tasks(
-				listen("waitForOutcome", toOne("compliance.outcome.decided")),
+				listen("waitForOutcome",
+					toOne(consumed("compliance.outcome.decided")
+						.extensionByInstanceId("flowinstanceid"))),
 				// A listen task yields an array of consumed event payloads,
 				// even
 				// for toOne. The endpoint takes a single object, so unwrap it

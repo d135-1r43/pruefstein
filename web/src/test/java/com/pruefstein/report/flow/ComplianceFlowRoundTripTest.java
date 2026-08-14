@@ -19,7 +19,6 @@ import io.quarkus.test.security.jwt.JwtSecurity;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -118,19 +117,6 @@ class ComplianceFlowRoundTripTest
 		assertEquals(ReportStatus.COMPLIANT, awaitFinalStatus(reportId));
 	}
 
-	/**
-	 * Fails today, and did before the broker was removed: a {@code listen} task
-	 * filtered on event type alone matches every parked instance of the
-	 * workflow, so the first event delivered consumes all of them. The
-	 * {@code flowinstanceid} extension the emitters set is never used for
-	 * routing — {@code FlowMessagingConsumer} and {@code InMemoryEvents} both
-	 * dispatch purely by type through {@code AbstractTypeConsumer}.
-	 *
-	 * <p>
-	 * Fixing it means correlating the listen filter with the instance id.
-	 * Disabled rather than deleted so the gap stays visible.
-	 */
-	@Disabled("known defect: a listen filtered by type alone consumes every parked instance")
 	@Test
 	void oneDevicesOutcomeLeavesAnotherDevicesWorkflowWaiting()
 	{
