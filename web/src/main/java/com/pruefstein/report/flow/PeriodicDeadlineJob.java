@@ -7,6 +7,7 @@ import java.util.List;
 import com.pruefstein.device.domain.Device;
 import com.pruefstein.device.repository.DeviceRepository;
 import com.pruefstein.report.service.PeriodicCycleService;
+import com.pruefstein.report.service.WorkflowInstances;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -38,6 +39,12 @@ public class PeriodicDeadlineJob
 	@Inject
 	PeriodicCycleService cycleService;
 
+	@Inject
+	PeriodicReportingFlow periodicReportingFlow;
+
+	@Inject
+	WorkflowInstances workflowInstances;
+
 	@ConfigProperty(name = "pruefstein.compliance.reporting-interval-days", defaultValue = "7")
 	int reportingIntervalDays;
 
@@ -54,7 +61,10 @@ public class PeriodicDeadlineJob
 		LOG.info("Marking {} overdue device(s) as missing", overdue.size());
 		for (Device device : overdue)
 		{
+			// Capture before the cycle overwrites it with the new instance
+			String abandoned = device.getPeriodicFlowInstanceId();
 			cycleService.completeCycle(device, false);
+			workflowInstances.discard(periodicReportingFlow, abandoned);
 		}
 	}
 }

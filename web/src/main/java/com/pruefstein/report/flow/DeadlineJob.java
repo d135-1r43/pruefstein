@@ -7,6 +7,7 @@ import com.pruefstein.compliance.repository.ComplianceResultRepository;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.repository.ReportRepository;
 import com.pruefstein.report.service.ReportFinalizer;
+import com.pruefstein.report.service.WorkflowInstances;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -26,8 +27,8 @@ import org.slf4j.LoggerFactory;
  * restart it is not.
  *
  * <p>
- * The instance parked on the corresponding {@code listen} is left behind. It
- * only answers to its own id, so it is inert once the report is decided.
+ * The instance parked on the corresponding {@code listen} is discarded, so it
+ * stops holding an event registration and a row for a report that is decided.
  */
 @ApplicationScoped
 public class DeadlineJob
@@ -43,6 +44,12 @@ public class DeadlineJob
 	@Inject
 	ReportFinalizer finalizer;
 
+	@Inject
+	ComplianceReportFlow complianceReportFlow;
+
+	@Inject
+	WorkflowInstances workflowInstances;
+
 	@Scheduled(every = "1h")
 	@Transactional
 	void closeExpiredReports()
@@ -57,6 +64,7 @@ public class DeadlineJob
 		{
 			boolean allPassed = resultRepository.count("report = ?1 and passed = false", report) == 0;
 			finalizer.finalizeReport(report, allPassed);
+			workflowInstances.discard(complianceReportFlow, report.getFlowInstanceId());
 			LOG.debug("Report {} closed at its deadline (allPassed={})", (Object)report.id, allPassed);
 		}
 	}
