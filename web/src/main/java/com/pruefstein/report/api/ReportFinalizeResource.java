@@ -1,13 +1,9 @@
 package com.pruefstein.report.api;
 
-import java.time.Instant;
-
-import com.pruefstein.notification.ReportMailTrigger;
 import com.pruefstein.report.domain.Report;
-import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.repository.ReportRepository;
+import com.pruefstein.report.service.ReportFinalizer;
 import jakarta.annotation.security.PermitAll;
-import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
@@ -31,7 +27,7 @@ public class ReportFinalizeResource
 	ReportRepository reportRepository;
 
 	@Inject
-	Event<ReportMailTrigger> mailTrigger;
+	ReportFinalizer finalizer;
 
 	public record FinalizeRequest(long reportId, boolean allPassed)
 	{
@@ -47,12 +43,9 @@ public class ReportFinalizeResource
 		{
 			return Response.status(Response.Status.NOT_FOUND).build();
 		}
-		report.setStatus(req.allPassed() ? ReportStatus.COMPLIANT : ReportStatus.NON_COMPLIANT);
-		report.setFinalizedAt(Instant.now());
-
-		// The verdict the user has been waiting for since their report went
-		// OPEN — mailed after commit by ReportMailNotifier.
-		mailTrigger.fire(new ReportMailTrigger(report.id));
+		// A no-op if the deadline job already decided this report, so a late
+		// callback cannot overwrite the outcome or send a second mail.
+		finalizer.finalizeReport(report, req.allPassed());
 		return Response.ok().build();
 	}
 }

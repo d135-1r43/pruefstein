@@ -1,17 +1,10 @@
 package com.pruefstein.report.api;
 
-import java.time.Instant;
-import java.util.Map;
-
 import com.pruefstein.device.domain.Device;
 import com.pruefstein.device.repository.DeviceRepository;
-import com.pruefstein.report.domain.Report;
-import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.flow.PeriodicReportingFlow;
-import com.pruefstein.report.flow.WorkflowStartTrigger;
-import com.pruefstein.report.repository.ReportRepository;
+import com.pruefstein.report.service.PeriodicCycleService;
 import jakarta.annotation.security.PermitAll;
-import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
@@ -34,13 +27,7 @@ public class PeriodicReportingResource
 	DeviceRepository deviceRepository;
 
 	@Inject
-	ReportRepository reportRepository;
-
-	@Inject
-	PeriodicReportingFlow periodicReportingFlow;
-
-	@Inject
-	Event<WorkflowStartTrigger> workflowStartTrigger;
+	PeriodicCycleService cycleService;
 
 	public record CycleRequest(String deviceId, boolean reported)
 	{
@@ -57,25 +44,7 @@ public class PeriodicReportingResource
 			return Response.status(Response.Status.NOT_FOUND).build();
 		}
 
-		if (!req.reported())
-		{
-			Report missing = new Report();
-			missing.setDeviceId(device.getDeviceId());
-			missing.setUserId(device.getUserId());
-			missing.setKeycloakUser(device.getKeycloakUser());
-			missing.setCheckedAt(Instant.now());
-			missing.setStatus(ReportStatus.MISSING);
-			missing.setFinalizedAt(Instant.now());
-			reportRepository.persist(missing);
-		}
-
-		// Reset the clock so the next hourly tick does not immediately re-fire
-		device.setLastReportAt(Instant.now());
-
-		var wi = periodicReportingFlow.instance(Map.of("deviceId", device.getDeviceId()));
-		device.setPeriodicFlowInstanceId(wi.id());
-		workflowStartTrigger.fire(new WorkflowStartTrigger(wi));
-
+		cycleService.completeCycle(device, req.reported());
 		return Response.ok().build();
 	}
 }

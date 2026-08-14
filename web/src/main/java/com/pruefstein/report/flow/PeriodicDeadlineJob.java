@@ -6,9 +6,9 @@ import java.util.List;
 
 import com.pruefstein.device.domain.Device;
 import com.pruefstein.device.repository.DeviceRepository;
+import com.pruefstein.report.service.PeriodicCycleService;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -17,11 +17,15 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Fires every hour to detect devices that have not submitted a report within
- * the configured reporting interval. Emits a {@link PeriodicFlowTrigger} with
- * {@code reported=false} for each overdue device; after the transaction commits
- * {@link PeriodicFlowEventEmitter} hands it to the workflow engine, which
- * resumes the waiting flow instance and triggers creation of a {@code MISSING}
- * report entry.
+ * the configured reporting interval, records a {@code MISSING} report for each
+ * and starts their next cycle.
+ *
+ * <p>
+ * The cycle is completed here rather than by handing an event to the device's
+ * workflow instance: a device whose instance no longer listens — after a
+ * restart it does not — would otherwise never be marked missing and never get
+ * another cycle. Overdue is read from {@code lastReportAt}, so the verdict is
+ * the database's rather than an event's.
  */
 @ApplicationScoped
 public class PeriodicDeadlineJob
@@ -32,7 +36,7 @@ public class PeriodicDeadlineJob
 	DeviceRepository deviceRepository;
 
 	@Inject
-	Event<PeriodicFlowTrigger> periodicFlowTrigger;
+	PeriodicCycleService cycleService;
 
 	@ConfigProperty(name = "pruefstein.compliance.reporting-interval-days", defaultValue = "7")
 	int reportingIntervalDays;
@@ -50,8 +54,7 @@ public class PeriodicDeadlineJob
 		LOG.info("Marking {} overdue device(s) as missing", overdue.size());
 		for (Device device : overdue)
 		{
-			periodicFlowTrigger.fire(
-				new PeriodicFlowTrigger(device.getDeviceId(), device.getPeriodicFlowInstanceId(), false));
+			cycleService.completeCycle(device, false);
 		}
 	}
 }
