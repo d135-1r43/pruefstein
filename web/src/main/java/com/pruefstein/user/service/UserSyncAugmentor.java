@@ -26,9 +26,17 @@ public class UserSyncAugmentor implements SecurityIdentityAugmentor
 			return Uni.createFrom().item(identity);
 		}
 
+		// The subject keys the local record, so there is nothing to sync without
+		// one. Entra always sends it; identities built in tests need not.
+		String subject = idToken.getSubject();
+		if (subject == null || subject.isBlank())
+		{
+			return Uni.createFrom().item(identity);
+		}
+
 		return ctx.runBlocking(() -> {
 			userSyncService.syncUser(
-				idToken.getSubject(),
+				subject,
 				idToken.getClaim("email"),
 				idToken.getClaim("given_name"),
 				idToken.getClaim("family_name"));
