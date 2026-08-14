@@ -18,8 +18,20 @@ services:
   web:
     image: ghcr.io/d135-1r43/pruefstein-web:latest
     restart: unless-stopped
-    ports:
-      - "8080:8080"
+    # No host port published: the app trusts X-Forwarded-* (see
+    # quarkus.http.proxy.* in application.properties), so it must only ever be
+    # reachable through Traefik, never directly.
+    networks:
+      - proxy
+      - default
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.routers.pruefstein.rule: Host(`pruefstein.explore.de`)
+      traefik.http.routers.pruefstein.entrypoints: websecure
+      traefik.http.routers.pruefstein.tls: "true"
+      traefik.http.routers.pruefstein.tls.certresolver: le
+      traefik.http.services.pruefstein.loadbalancer.server.port: "8080"
     environment:
       QUARKUS_PROFILE: prod
       QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -38,6 +50,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+networks:
+  # Shared ingress network owned by the Traefik stack.
+  proxy:
+    external: true
+  default:
 
 volumes:
   postgres_data:
