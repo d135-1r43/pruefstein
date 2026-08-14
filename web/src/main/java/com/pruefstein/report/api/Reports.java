@@ -210,7 +210,18 @@ public class Reports extends Controller
 		String activeSort = sort != null ? sort : "checkedAt";
 		String activeDir = dir != null ? dir : "desc";
 
-		String ownerFilter = currentUser.isAdmin() ? null : currentUser.getUsername();
+		// null means "every owner" to the repository, which is right for an
+		// admin and a disclosure for anyone else — so an unidentifiable user
+		// gets a refusal rather than the whole estate's reports.
+		String ownerFilter = null;
+		if (!currentUser.isAdmin())
+		{
+			ownerFilter = currentUser.getUsername();
+			if (ownerFilter == null)
+			{
+				throw new ForbiddenException();
+			}
+		}
 		List<Report> reports = reportRepository.listFiltered(statusFilter, activeQ, activeSort, activeDir, ownerFilter);
 		return Templates.index(reports, activeStatus, activeQ, activeSort, activeDir);
 	}

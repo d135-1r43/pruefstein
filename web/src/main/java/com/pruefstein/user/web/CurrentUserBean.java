@@ -37,6 +37,11 @@ public class CurrentUserBean
 		return identity.getPrincipal() instanceof JsonWebToken jwt ? jwt : null;
 	}
 
+	/**
+	 * Identifies the signed-in user the way reports record their owner. Never
+	 * null for an authenticated user: a null would read as "no owner" to the
+	 * report filter, which is the opposite of what a missing claim should mean.
+	 */
 	public String getUsername()
 	{
 		if (identity.isAnonymous())
@@ -46,9 +51,27 @@ public class CurrentUserBean
 		JsonWebToken idToken = idToken();
 		if (idToken != null)
 		{
-			return idToken.getClaim("preferred_username");
+			String username = firstOf(idToken, "preferred_username", "upn", "email");
+			if (username != null)
+			{
+				return username;
+			}
 		}
+		// The subject, for a token that carries no friendlier handle
 		return identity.getPrincipal().getName();
+	}
+
+	private static String firstOf(JsonWebToken token, String... claims)
+	{
+		for (String claim : claims)
+		{
+			String value = token.getClaim(claim);
+			if (value != null && !value.isBlank())
+			{
+				return value;
+			}
+		}
+		return null;
 	}
 
 	public String getDisplayName()
@@ -60,15 +83,10 @@ public class CurrentUserBean
 		JsonWebToken idToken = idToken();
 		if (idToken != null)
 		{
-			String username = idToken.getClaim("preferred_username");
-			if (username != null)
+			String name = firstOf(idToken, "name", "preferred_username", "email");
+			if (name != null)
 			{
-				return username;
-			}
-			String email = idToken.getClaim("email");
-			if (email != null)
-			{
-				return email;
+				return name;
 			}
 		}
 		return identity.getPrincipal().getName();
