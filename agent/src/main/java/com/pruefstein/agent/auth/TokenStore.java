@@ -15,7 +15,11 @@ import static org.slf4j.LoggerFactory.getLogger;
 @ApplicationScoped
 public class TokenStore
 {
-	private static final Path TOKEN_FILE = Path.of(
+	/**
+	 * Also read by {@code CredentialsConfigSource} before CDI exists, which is
+	 * why the path lives in a constant both can reach.
+	 */
+	public static final Path CREDENTIALS_FILE = Path.of(
 		System.getProperty("user.home"), ".config", "pruefstein", "credentials.json");
 
 	private static final Logger LOG = getLogger(TokenStore.class);
@@ -23,33 +27,33 @@ public class TokenStore
 	@Inject
 	ObjectMapper objectMapper;
 
-	public Optional<StoredToken> load()
+	public Optional<Credentials> load()
 	{
-		if (!Files.exists(TOKEN_FILE))
+		if (!Files.exists(CREDENTIALS_FILE))
 		{
 			return Optional.empty();
 		}
 		try
 		{
-			return Optional.of(objectMapper.readValue(TOKEN_FILE.toFile(), StoredToken.class));
+			return Optional.of(objectMapper.readValue(CREDENTIALS_FILE.toFile(), Credentials.class));
 		}
 		catch (IOException e)
 		{
-			LOG.warn("Error while loading token", e);
+			LOG.warn("Error while loading credentials", e);
 			return Optional.empty();
 		}
 	}
 
-	public void save(StoredToken token)
+	public void save(Credentials credentials)
 	{
 		try
 		{
-			Files.createDirectories(TOKEN_FILE.getParent());
-			objectMapper.writeValue(TOKEN_FILE.toFile(), token);
+			Files.createDirectories(CREDENTIALS_FILE.getParent());
+			objectMapper.writeValue(CREDENTIALS_FILE.toFile(), credentials);
 		}
 		catch (IOException e)
 		{
-			throw new RuntimeException("Could not save credentials to " + TOKEN_FILE, e);
+			throw new RuntimeException("Could not save credentials to " + CREDENTIALS_FILE, e);
 		}
 	}
 
@@ -57,11 +61,11 @@ public class TokenStore
 	{
 		try
 		{
-			Files.deleteIfExists(TOKEN_FILE);
+			Files.deleteIfExists(CREDENTIALS_FILE);
 		}
 		catch (IOException e)
 		{
-			throw new RuntimeException("Could not clear credentials at " + TOKEN_FILE, e);
+			throw new RuntimeException("Could not clear credentials at " + CREDENTIALS_FILE, e);
 		}
 	}
 }

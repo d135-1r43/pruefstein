@@ -14,7 +14,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 public class DeviceAuthService
@@ -23,30 +22,27 @@ public class DeviceAuthService
 	{
 	};
 
-	@ConfigProperty(name = "pruefstein.agent.auth-server-url")
-	String authServerUrl;
-
-	@ConfigProperty(name = "pruefstein.agent.client-id")
-	String clientId;
-
 	@Inject
 	ObjectMapper objectMapper;
 
+	@Inject
+	OidcDiscovery discovery;
+
 	private final HttpClient http = HttpClient.newHttpClient();
 
-	public StoredToken login() throws IOException, InterruptedException
+	public Credentials login(String serverUrl, AgentServerConfig config)
+		throws IOException, InterruptedException
 	{
-		String deviceEndpoint = authServerUrl + "/protocol/openid-connect/auth/device";
-		String body = "client_id=" + encode(clientId);
+		OidcEndpoints endpoints = discovery.discover(config.issuer());
 
-		HttpRequest request = HttpRequest.newBuilder()
-			.uri(URI.create(deviceEndpoint))
-			.header("Content-Type", "application/x-www-form-urlencoded")
-			.POST(HttpRequest.BodyPublishers.ofString(body))
-			.build();
-
-		HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+		HttpResponse<String> response = post(endpoints.deviceAuthorizationEndpoint(),
+			"client_id=" + encode(config.clientId()) + scopeParameter(config));
 		Map<String, Object> device = objectMapper.readValue(response.body(), MAP_TYPE);
+
+		if (!device.containsKey("device_code"))
+		{
+			throw new IllegalStateException("Device authorization failed: " + describeError(device));
+		}
 
 		String userCode = (String) device.get("user_code");
 		String verificationUri = (String) device.get("verification_uri_complete");
@@ -64,14 +60,14 @@ public class DeviceAuthService
 		System.out.println();
 		System.out.print("  Waiting for authentication");
 
-		return pollForToken(deviceCode, interval);
+		Map<String, Object> token = pollForToken(endpoints.tokenEndpoint(), config, deviceCode, interval);
+		return toCredentials(serverUrl, config, token);
 	}
 
-	private StoredToken pollForToken(String deviceCode, int intervalSeconds)
-		throws IOException, InterruptedException
+	private Map<String, Object> pollForToken(String tokenEndpoint, AgentServerConfig config,
+		String deviceCode, int intervalSeconds) throws IOException, InterruptedException
 	{
-		String tokenEndpoint = authServerUrl + "/protocol/openid-connect/token";
-		String body = "client_id=" + encode(clientId)
+		String body = "client_id=" + encode(config.clientId())
 			+ "&grant_type=urn:ietf:params:oauth:grant-type:device_code"
 			+ "&device_code=" + encode(deviceCode);
 
@@ -80,25 +76,19 @@ public class DeviceAuthService
 			Thread.sleep(intervalSeconds * 1000L);
 			System.out.print(".");
 
-			HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create(tokenEndpoint))
-				.header("Content-Type", "application/x-www-form-urlencoded")
-				.POST(HttpRequest.BodyPublishers.ofString(body))
-				.build();
-
-			HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+			HttpResponse<String> response = post(tokenEndpoint, body);
 			Map<String, Object> result = objectMapper.readValue(response.body(), MAP_TYPE);
 
 			if (result.containsKey("access_token"))
 			{
 				System.out.println(" done.");
-				return toStoredToken(result);
+				return result;
 			}
 
 			String error = (String) result.get("error");
 			if (!"authorization_pending".equals(error) && !"slow_down".equals(error))
 			{
-				throw new RuntimeException("Authentication failed: " + error);
+				throw new IllegalStateException("Authentication failed: " + describeError(result));
 			}
 			if ("slow_down".equals(error))
 			{
@@ -107,36 +97,68 @@ public class DeviceAuthService
 		}
 	}
 
-	public StoredToken refresh(String refreshToken) throws IOException, InterruptedException
+	public Credentials refresh(Credentials current) throws IOException, InterruptedException
 	{
-		String tokenEndpoint = authServerUrl + "/protocol/openid-connect/token";
-		String body = "client_id=" + encode(clientId)
+		AgentServerConfig config = current.serverConfig();
+		OidcEndpoints endpoints = discovery.discover(config.issuer());
+
+		String body = "client_id=" + encode(config.clientId())
 			+ "&grant_type=refresh_token"
-			+ "&refresh_token=" + encode(refreshToken);
+			+ "&refresh_token=" + encode(current.refreshToken())
+			+ scopeParameter(config);
 
-		HttpRequest request = HttpRequest.newBuilder()
-			.uri(URI.create(tokenEndpoint))
-			.header("Content-Type", "application/x-www-form-urlencoded")
-			.POST(HttpRequest.BodyPublishers.ofString(body))
-			.build();
-
-		HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+		HttpResponse<String> response = post(endpoints.tokenEndpoint(), body);
 		Map<String, Object> result = objectMapper.readValue(response.body(), MAP_TYPE);
 
 		if (!result.containsKey("access_token"))
 		{
-			throw new RuntimeException("Token refresh failed: " + result.get("error"));
+			throw new IllegalStateException("Token refresh failed: " + describeError(result));
 		}
-		return toStoredToken(result);
+		return toCredentials(current.serverUrl(), config, result);
 	}
 
-	private StoredToken toStoredToken(Map<String, Object> tokenResponse)
+	private HttpResponse<String> post(String endpoint, String body) throws IOException, InterruptedException
+	{
+		HttpRequest request = HttpRequest.newBuilder()
+			.uri(URI.create(endpoint))
+			.header("Content-Type", "application/x-www-form-urlencoded")
+			.POST(HttpRequest.BodyPublishers.ofString(body))
+			.build();
+
+		return http.send(request, HttpResponse.BodyHandlers.ofString());
+	}
+
+	/**
+	 * Keycloak defaults the scope when none is sent; Entra rejects the request
+	 * outright (AADSTS900144). The value decides both the token's audience and
+	 * whether a refresh token comes back at all, so the server dictates it.
+	 */
+	private static String scopeParameter(AgentServerConfig config)
+	{
+		String scopes = config.scopes();
+		return scopes == null || scopes.isBlank() ? "" : "&scope=" + encode(scopes);
+	}
+
+	private static Credentials toCredentials(String serverUrl, AgentServerConfig config,
+		Map<String, Object> tokenResponse)
 	{
 		String accessToken = (String) tokenResponse.get("access_token");
 		String refreshToken = (String) tokenResponse.get("refresh_token");
 		int expiresIn = ((Number) tokenResponse.getOrDefault("expires_in", 300)).intValue();
 		Instant expiresAt = Instant.now().plusSeconds(expiresIn);
-		return new StoredToken(accessToken, refreshToken, expiresAt);
+
+		return new Credentials(serverUrl, config.issuer(), config.clientId(), config.scopes(),
+			accessToken, refreshToken, expiresAt);
+	}
+
+	/**
+	 * Entra puts the actionable part in {@code error_description} — the bare
+	 * {@code error} code is usually {@code invalid_request}.
+	 */
+	private static String describeError(Map<String, Object> response)
+	{
+		Object description = response.get("error_description");
+		return description != null ? String.valueOf(description) : String.valueOf(response.get("error"));
 	}
 
 	private static String encode(String value)

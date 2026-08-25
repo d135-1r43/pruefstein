@@ -1,11 +1,11 @@
 package com.pruefstein.agent;
 
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 
-import com.pruefstein.agent.auth.StoredToken;
+import com.pruefstein.agent.auth.Credentials;
 import com.pruefstein.agent.auth.TokenStore;
+import com.pruefstein.agent.command.LoginCommand;
 import com.pruefstein.agent.command.LogoutCommand;
 import com.pruefstein.agent.command.MainCommand;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
@@ -47,14 +47,36 @@ class SmokeTest
 	}
 
 	@Test
+	void loginAcceptsAServerToReportTo()
+	{
+		String help = new CommandLine(new LoginCommand()).getUsageMessage();
+		assertTrue(help.contains("--server"), "login should offer '--server'");
+	}
+
+	@Test
 	void logoutClearsCredentials()
 	{
-		Path credFile = Path.of(System.getProperty("user.home"), ".config", "pruefstein", "credentials.json");
-		tokenStore.save(new StoredToken("tok", "ref", Instant.now().plusSeconds(300)));
-		assertTrue(Files.exists(credFile), "credentials file should exist after save");
+		tokenStore.save(new Credentials("http://localhost:8080", "http://localhost:8180/realms/pruefstein",
+			"pruefstein-web", "openid offline_access", "tok", "ref", Instant.now().plusSeconds(300)));
+		assertTrue(Files.exists(TokenStore.CREDENTIALS_FILE), "credentials file should exist after save");
 
 		logoutCommand.run();
 
-		assertFalse(Files.exists(credFile), "credentials file should be deleted after logout");
+		assertFalse(Files.exists(TokenStore.CREDENTIALS_FILE), "credentials file should be deleted after logout");
+	}
+
+	@Test
+	void credentialsRoundTripThroughTheStore()
+	{
+		Credentials saved = new Credentials("https://pruefstein.example.com",
+			"https://login.microsoftonline.com/tenant/v2.0", "client", "api://client/.default offline_access",
+			"tok", "ref", Instant.now().plusSeconds(300));
+		tokenStore.save(saved);
+
+		Credentials loaded = tokenStore.load().orElseThrow();
+		assertEquals(saved, loaded);
+		assertEquals(saved.serverConfig(), loaded.serverConfig());
+
+		logoutCommand.run();
 	}
 }

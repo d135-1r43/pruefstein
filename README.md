@@ -80,6 +80,36 @@ One user can have multiple devices — each device reports independently and app
 
 It is intended to run as a scheduled task (launchd on macOS, systemd on Linux, Task Scheduler on Windows).
 
+### Logging in
+
+```bash
+agent login --server https://pruefstein.example.com
+```
+
+The agent carries no identity-provider configuration of its own. It asks the
+server it reports to (`GET /internal/agent-config`) for the issuer, client id
+and scopes, then discovers the device-flow endpoints from that issuer's
+`/.well-known/openid-configuration`. The same binary therefore works against a
+Keycloak and an Entra deployment without a rebuild, and the token it obtains is
+audienced to whatever the server's `api` tenant validates.
+
+The server URL, the tokens and the issuer are stored together in
+`~/.config/pruefstein/credentials.json`; later `agent run` invocations need no
+arguments and refresh the token unattended. `QUARKUS_REST_CLIENT_PRUEFSTEIN_API_URL`
+still overrides the stored server, for CI.
+
+Reports are attributed to the person who logged in — the server builds the
+`AppUser` from the token's `sub`, `email`, `given_name` and `family_name` — so
+the grant is device code, not client credentials.
+
+Against Entra, the app registration has to allow public client flows (device
+code) and expose an Application ID URI, and `%prod.pruefstein.agent.scopes`
+requests `api://<client-id>/.default offline_access`. Without the API scope
+Entra audiences the access token to Microsoft Graph and the `api` tenant
+rejects it; without `offline_access` no refresh token is issued and every run
+would prompt for an interactive login. Set `PRUEFSTEIN_AGENT_CLIENT_ID` when the
+agent gets a registration separate from the web client.
+
 ---
 
 ## Web app stack
