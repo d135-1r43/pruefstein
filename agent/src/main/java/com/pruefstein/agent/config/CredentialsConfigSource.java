@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
- * Feeds the server URL stored by {@code agent login --server} into the REST
+ * Feeds the server URL stored by {@code pruefstein-agent login --server} into the REST
  * client's configuration.
  * <p>
  * {@code @RegisterRestClient} resolves its base URL from MicroProfile Config at
@@ -62,7 +62,7 @@ public class CredentialsConfigSource implements ConfigSource
 	}
 
 	/**
-	 * Read on every lookup rather than cached: {@code agent login} writes the
+	 * Read on every lookup rather than cached: {@code pruefstein-agent login} writes the
 	 * file inside a running JVM, and a value cached from before that would
 	 * point at the wrong server for the rest of the process.
 	 */

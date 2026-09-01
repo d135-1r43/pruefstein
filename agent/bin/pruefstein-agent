@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# Prüfstein compliance agent launcher.
+#
+# Runs whichever build is present in agent/target, fastest packaging first:
+#   1. the GraalVM native binary   (cd agent && ./mvnw package -Dnative)
+#   2. the uber-jar                (cd agent && ./mvnw package -Dquarkus.package.jar.type=uber-jar)
+#   3. the default fast-jar        (cd agent && ./mvnw package)
+#
+# Put it on your PATH once, from the repository root:
+#   ln -s "$PWD/agent/bin/pruefstein-agent" ~/.local/bin/pruefstein-agent
+#
+# The symlink points into the working tree, so a rebuild takes effect
+# immediately — there is nothing to reinstall.
+#
+set -euo pipefail
+
+# Resolve through the PATH symlink to the script's real home. Plain
+# dirname "$0" would yield ~/.local/bin and look for a build under ~/.
+src="${BASH_SOURCE[0]}"
+while [[ -L "$src" ]]; do
+	dir="$(cd -P "$(dirname "$src")" && pwd)"
+	src="$(readlink "$src")"
+	[[ "$src" != /* ]] && src="$dir/$src"
+done
+module="$(cd -P "$(dirname "$src")/.." && pwd)"
+target="$module/target"
+
+# 1. native binary — target/pruefstein-agent-<version>-runner (no extension)
+native="$(find "$target" -maxdepth 1 -type f -name 'pruefstein-agent-*-runner' 2>/dev/null | head -n1 || true)"
+if [[ -n "$native" && -x "$native" ]]; then
+	exec "$native" "$@"
+fi
+
+# 2./3. JVM builds
+uberjar="$(find "$target" -maxdepth 1 -type f -name 'pruefstein-agent-*-runner.jar' 2>/dev/null | head -n1 || true)"
+fastjar="$target/quarkus-app/quarkus-run.jar"
+
+for jar in "$uberjar" "$fastjar"; do
+	if [[ -n "$jar" && -f "$jar" ]]; then
+		exec java -jar "$jar" "$@"
+	fi
+done
+
+cat >&2 <<MSG
+pruefstein-agent: no build found in $target
+
+Build one first:
+  cd "$module" && ./mvnw package            # JVM  (needs Java 25 to run)
+  cd "$module" && ./mvnw package -Dnative   # native binary (needs GraalVM)
+MSG
+exit 1

@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The one thing that makes {@code agent login --server} stick: the stored URL
+ * The one thing that makes {@code pruefstein-agent login --server} stick: the stored URL
  * has to reach {@code @RegisterRestClient}, which only reads MicroProfile
  * Config.
  */
