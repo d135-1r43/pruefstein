@@ -1,82 +1,107 @@
 # pruefstein-agent
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+The local compliance agent. It logs in once as the employee, downloads the
+compliance checks from a Prüfstein server, runs each of them through
+[osquery](https://osquery.io/), and pushes a report back.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+Built with Quarkus and [Picocli](https://quarkus.io/guides/picocli).
 
-## Running the application in dev mode
+---
 
-You can run your application in dev mode that enables live coding using:
+## Installing
 
-```shell script
-./mvnw quarkus:dev
+From this directory:
+
+```bash
+./bin/install.sh
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+(or `./agent/bin/install.sh` from the repository root). This builds the agent
+if nothing is built yet and makes it available as the
+`pruefstein-agent` command. `./bin/install.sh --uninstall` removes it again.
+See the [root README](../README.md#building-and-installing-the-cli) for
+prerequisites and the full first-run walkthrough.
 
-## Packaging and running the application
+## Commands
 
-The application can be packaged using:
+| Command | What it does |
+|---|---|
+| `login` | Authenticates against the server's identity provider and caches the credentials |
+| `run` | Runs every compliance check and pushes a report |
+| `logout` | Deletes the cached credentials |
 
-```shell script
-./mvnw package
+```bash
+pruefstein-agent login --server https://pruefstein.example.com
+pruefstein-agent run
+pruefstein-agent logout
 ```
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+Every command accepts `--help`.
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
+### login
 
-If you want to build an _über-jar_, execute the following command:
+`--server` (`-s`) names the Prüfstein server to report to. It is only needed
+the first time: the URL is stored alongside the credentials and reused by every
+later run. Naming a *different* server discards the cached token — it was
+issued by the previous server's identity provider and means nothing to the new
+one.
 
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
+Login uses the OAuth **device code** flow: the agent prints a URL and a code,
+you confirm in the browser, and the token comes back to the agent. The agent
+itself carries no identity-provider configuration — it asks the server
+(`GET /internal/agent-config`) which issuer and client id to use, so the same
+binary works against Keycloak and Microsoft Entra ID without a rebuild.
+
+Everything ends up in `~/.config/pruefstein/credentials.json`: server URL,
+issuer, access token and refresh token.
+
+### run
+
+Needs **`osqueryi` on the `PATH`** (`brew install --cask osquery` on macOS).
+Each query gets 10 seconds before it is abandoned.
+
+`run` takes no arguments — it reads the stored server and refreshes the access
+token on its own. If the refresh token is gone or rejected it falls back to an
+interactive device login, which is worth knowing before putting `run` in cron
+or launchd: an unattended run can end up waiting for a browser confirmation
+that nobody gives.
+
+`QUARKUS_REST_CLIENT_PRUEFSTEIN_API_URL` overrides the stored server for a
+single run, which is what CI uses.
+
+---
+
+## Running without installing
+
+The launcher is a convenience, not a requirement. After a build you can always
+invoke the artifact directly:
+
+```bash
+java -jar target/quarkus-app/quarkus-run.jar login --server http://localhost:8080
+./target/pruefstein-agent-1.0.0-SNAPSHOT-runner run     # after a native build
 ```
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+In dev mode, arguments are passed through `quarkus.args`:
 
-## Creating a native executable
-
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
+```bash
+./mvnw quarkus:dev -Dquarkus.args='run'
 ```
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
+Dev mode runs the application and restarts it on Enter.
 
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
+## Building
+
+`bin/install.sh` builds for you; these are for when you want a specific
+packaging:
+
+```bash
+./mvnw package            # fast-jar in target/quarkus-app/ — what the installer builds
+./mvnw package -Dnative   # native binary; the launcher prefers it, nothing to reinstall
+./mvnw test
 ```
 
-You can then execute your native executable with: `./target/pruefstein-agent-1.0.0-SNAPSHOT-runner`
+## Related guides
 
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Related Guides
-
-- OpenID Connect Client ([guide](https://quarkus.io/guides/security-openid-connect-client)): Get and refresh access tokens from OpenID Connect providers
-- Picocli ([guide](https://quarkus.io/guides/picocli)): Develop command line applications with Picocli
-- Scheduler ([guide](https://quarkus.io/guides/scheduler)): Schedule jobs and tasks
-
-## Provided Code
-
-### Picocli Example
-
-Hello and goodbye are civilization fundamentals. Let's not forget it with this example picocli application by changing the <code>command</code> and <code>parameters</code>.
-
-[Related guide section...](https://quarkus.io/guides/picocli#command-line-application-with-multiple-commands)
-
-Also for picocli applications the dev mode is supported. When running dev mode, the picocli application is executed and on press of the Enter key, is restarted.
-
-As picocli applications will often require arguments to be passed on the commandline, this is also possible in dev mode via:
-
-```shell script
-./mvnw quarkus:dev -Dquarkus.args='Quarky'
-```
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+- [Picocli](https://quarkus.io/guides/picocli) — the CLI framework
+- [OpenID Connect Client](https://quarkus.io/guides/security-openid-connect-client) — token handling
+- [Maven tooling](https://quarkus.io/guides/maven-tooling) — native builds

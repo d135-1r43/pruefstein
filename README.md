@@ -80,10 +80,47 @@ One user can have multiple devices — each device reports independently and app
 
 It is intended to run as a scheduled task (launchd on macOS, systemd on Linux, Task Scheduler on Windows).
 
+### Building and installing the CLI
+
+Prerequisites: **JDK 25** (GraalVM if you want the native binary), **Docker** or
+Podman for the web app's Dev Services, and **osquery** on the `PATH`
+(`brew install --cask osquery` on macOS).
+
+```bash
+git clone git@github.com:d135-1r43/pruefstein.git
+cd pruefstein
+./agent/bin/install.sh
+```
+
+That is the whole setup. The installer builds the agent if nothing is built
+yet, then links it as `pruefstein-agent` into whichever directory is already
+on your `PATH` — so there is normally nothing to add to your shell profile. If
+no suitable directory exists it uses `~/.local/bin` and prints the one line to
+add. `./agent/bin/install.sh --uninstall` removes the command again.
+
+What gets linked is `agent/bin/pruefstein-agent`, a launcher rather than a copy: it
+runs whichever build is present in `agent/target`, preferring the native binary
+over the JVM one. A rebuild therefore takes effect immediately, with nothing to
+reinstall — including the switch to a native build:
+
+```bash
+cd agent && ./mvnw package -Dnative     # same command afterwards, ~20 ms startup
+```
+
+Against a local server, start the web app first. Dev Services bring up
+PostgreSQL and a Keycloak realm seeded with `admin`/`admin` and `user`/`user`:
+
+```bash
+(cd web && ./mvnw quarkus:dev)                           # terminal 1
+
+pruefstein-agent login --server http://localhost:8080    # terminal 2
+pruefstein-agent run
+```
+
 ### Logging in
 
 ```bash
-agent login --server https://pruefstein.example.com
+pruefstein-agent login --server https://pruefstein.example.com
 ```
 
 The agent carries no identity-provider configuration of its own. It asks the
@@ -94,7 +131,7 @@ Keycloak and an Entra deployment without a rebuild, and the token it obtains is
 audienced to whatever the server's `api` tenant validates.
 
 The server URL, the tokens and the issuer are stored together in
-`~/.config/pruefstein/credentials.json`; later `agent run` invocations need no
+`~/.config/pruefstein/credentials.json`; later `pruefstein-agent run` invocations need no
 arguments and refresh the token unattended. `QUARKUS_REST_CLIENT_PRUEFSTEIN_API_URL`
 still overrides the stored server, for CI.
 
