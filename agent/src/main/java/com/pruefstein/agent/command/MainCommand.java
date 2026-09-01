@@ -7,7 +7,7 @@ import picocli.CommandLine;
 @TopCommand
 @ApplicationScoped
 @CommandLine.Command(
-	name = "agent",
+	name = "pruefstein-agent",
 	description = "Prüfstein compliance agent",
 	subcommands = {LoginCommand.class, LogoutCommand.class, RunCommand.class},
 	mixinStandardHelpOptions = true)

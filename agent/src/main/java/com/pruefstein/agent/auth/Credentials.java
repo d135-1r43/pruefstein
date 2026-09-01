@@ -6,7 +6,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 
 /**
  * Everything the agent needs to talk to one server, written to
- * {@code ~/.config/pruefstein/credentials.json} by {@code agent login}.
+ * {@code ~/.config/pruefstein/credentials.json} by {@code pruefstein-agent login}.
  * <p>
  * The IdP coordinates are stored alongside the tokens rather than configured:
  * they came from the server at login time, and a refresh has to go back to the

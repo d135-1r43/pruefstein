@@ -10,7 +10,11 @@ release.properties
 .project
 .classpath
 .settings/
-bin/
+# Eclipse output. Excludes the contents rather than the directory itself:
+# git cannot re-include a file whose parent directory is excluded.
+bin/*
+!bin/pruefstein-agent
+!bin/install.sh
 
 # IntelliJ
 .idea

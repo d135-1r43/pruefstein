@@ -15,7 +15,7 @@ import jakarta.inject.Inject;
  * <p>
  * Deliberately plain {@link HttpClient} rather than the REST client: this runs
  * before the agent is authenticated and before the REST client's base URL is
- * known, since {@code agent login --server} may be naming a server for the
+ * known, since {@code pruefstein-agent login --server} may be naming a server for the
  * first time.
  */
 @ApplicationScoped
