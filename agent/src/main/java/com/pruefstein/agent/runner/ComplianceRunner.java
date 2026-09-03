@@ -2,11 +2,21 @@ package com.pruefstein.agent.runner;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,6 +33,7 @@ import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +43,10 @@ public class ComplianceRunner
 {
 	private static final Logger LOG = LoggerFactory.getLogger(ComplianceRunner.class);
 	private static final JexlEngine JEXL = new JexlBuilder().strict(true).silent(false).create();
+
+	/** The same date the server's mails print, so the two never disagree. */
+	private static final DateTimeFormatter DEADLINE_DATE = DateTimeFormatter
+		.ofPattern("d MMM yyyy", Locale.ENGLISH).withZone(ZoneId.systemDefault());
 
 	/**
 	 * Scoped to software a person installed, not everything on disk. The
@@ -53,10 +68,27 @@ public class ComplianceRunner
 	@RestClient
 	PruefsteinClient client;
 
+	/**
+	 * How many checks may be in flight at once. This caps {@code osqueryi}
+	 * processes, not just threads, which is why it is worth being able to turn
+	 * down on a machine that has to stay responsive while the agent runs.
+	 */
+	@ConfigProperty(name = "pruefstein.agent.check-parallelism", defaultValue = "100")
+	int parallelism;
+
 	@Inject
 	ObjectMapper objectMapper;
 
-	public void runAll()
+	/**
+	 * Runs every check and takes stock of the machine, and tells the server
+	 * none of it. Downloading the checks is all this needs the server for, so a
+	 * run can be repeated as often as someone likes while they fix what it
+	 * found — nothing is on record until {@link #submit} is called.
+	 *
+	 * @return what a report of this run would say, or empty when the server has
+	 *         no checks configured and there is nothing to report
+	 */
+	public Optional<ReportPayload> check()
 	{
 		String deviceId = fetchDeviceId();
 		String userId = hostname();
@@ -67,24 +99,126 @@ public class ComplianceRunner
 		if (checks.isEmpty())
 		{
 			LOG.info("No compliance checks configured on server.");
-			return;
+			return Optional.empty();
 		}
 
-		List<ResultPayload> results = new ArrayList<>();
-		for (CheckItem check : checks)
-		{
-			results.add(runCheck(check));
-		}
-
+		List<ResultPayload> results = runChecks(checks, this::runCheck);
 		List<InstalledAppPayload> installedApps = collectInventory();
-		LOG.info("Reporting {} installed applications and packages", installedApps.size());
-
-		ReportResponse response = client.pushReport(
-			new ReportPayload(deviceId, userId, Instant.now(), results, installedApps));
 
 		long passed = results.stream().filter(ResultPayload::passed).count();
-		LOG.info("Done: {}/{} checks passed", passed, results.size());
+		LOG.info(ConsoleStyle.rule());
+		LOG.info(ConsoleStyle.summary(passed, results.size()));
+
+		// Stamped here rather than at submission: this is when the machine
+		// looked like this, and someone may sit on the question for a while.
+		return Optional.of(new ReportPayload(deviceId, userId, Instant.now(), results, installedApps));
+	}
+
+	/** Files a run that has already happened. The report exists from here on. */
+	public void submit(ReportPayload run)
+	{
+		LOG.info("Reporting {} installed applications and packages", run.installedApps().size());
+		ReportResponse response = client.pushReport(run);
 		LOG.info("View report: {}", response.reportUrl());
+
+		long failing = run.results().stream().filter(result -> !result.passed()).count();
+		String notice = remediationNotice(failing, response.deadline());
+		if (notice != null)
+		{
+			LOG.info(ConsoleStyle.notice(notice));
+		}
+	}
+
+	/**
+	 * What a reported failure costs if it is left alone, said at the one moment
+	 * someone is certain to read it.
+	 *
+	 * <p>
+	 * The deadline is the server's to give, not this run's to guess: it belongs
+	 * to the report rather than to the attempt, so reporting a still-failing
+	 * machine again does not push it back, and the days left here shrink with
+	 * every attempt. A run the server decided on arrival has no deadline and
+	 * nothing to warn about.
+	 *
+	 * @return the warning, or {@code null} when there is nothing to warn about
+	 */
+	static String remediationNotice(long failing, Instant deadline)
+	{
+		if (deadline == null || failing == 0)
+		{
+			return null;
+		}
+		return "%s still failing. Fix %s and report again by %s (%s), or this report is recorded as non-compliant."
+			.formatted(
+				failing == 1 ? "1 check is" : failing + " checks are",
+				failing == 1 ? "it" : "them",
+				DEADLINE_DATE.format(deadline),
+				dayLabel(deadline));
+	}
+
+	/**
+	 * Rounded up, so a deadline 47 hours out still reads as "2 days" — the same
+	 * arithmetic the reminder mail uses, so the two never quote a different
+	 * number on the same day.
+	 */
+	private static String dayLabel(Instant deadline)
+	{
+		long days = Math.max(0, (long)Math.ceil(Duration.between(Instant.now(), deadline).toHours() / 24.0));
+		if (days == 0)
+		{
+			return "today";
+		}
+		return days == 1 ? "1 day" : days + " days";
+	}
+
+	/**
+	 * Runs the checks concurrently. Each one is a separate short-lived
+	 * {@code osqueryi} process that spends around 250 ms of its life starting
+	 * up, so in a row they cost roughly the number of checks times that
+	 * startup: 12 invocations measured 3.2 s sequentially against 0.31 s at
+	 * once. Nothing serialises them — {@code osqueryi} keeps its database in
+	 * memory, unlike {@code osqueryd}, so concurrent instances do not contend
+	 * for a RocksDB lock.
+	 * <p>
+	 * The returned list keeps the order the server sent, whichever check
+	 * happened to finish first; only the progress lines arrive in completion
+	 * order.
+	 *
+	 * @param work
+	 *            how to run one check, taken as an argument so the concurrency
+	 *            can be tested without an osquery installation
+	 */
+	List<ResultPayload> runChecks(List<CheckItem> checks, Function<CheckItem, ResultPayload> work)
+	{
+		int threads = Math.max(1, Math.min(parallelism, checks.size()));
+		try (ExecutorService executor = Executors.newFixedThreadPool(threads))
+		{
+			List<Future<ResultPayload>> pending = new ArrayList<>(checks.size());
+			for (CheckItem check : checks)
+			{
+				pending.add(executor.submit(() -> work.apply(check)));
+			}
+			return pending.stream().map(ComplianceRunner::join).toList();
+		}
+	}
+
+	private static ResultPayload join(Future<ResultPayload> pending)
+	{
+		try
+		{
+			return pending.get();
+		}
+		catch (InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("Interrupted while waiting for a check to finish", e);
+		}
+		catch (ExecutionException e)
+		{
+			// runCheck turns a failing check into a failed result itself, so
+			// reaching here means the task broke, not the check.
+			throw new IllegalStateException("A compliance check ended abnormally", e.getCause());
+		}
 	}
 
 	private ResultPayload runCheck(CheckItem check)
@@ -93,12 +227,12 @@ public class ComplianceRunner
 		{
 			String output = osquery(check.query());
 			boolean passed = evaluate(output, check.expectedExpression());
-			LOG.info("  [{}] {}", passed ? "PASS" : "FAIL", check.name());
+			LOG.info("  {} {}", ConsoleStyle.verdict(passed), check.name());
 			return new ResultPayload(check.id(), passed, output);
 		}
 		catch (Exception e)
 		{
-			LOG.warn("  [ERROR] {}", check.name(), e);
+			LOG.warn("  {} {}", ConsoleStyle.errorTag(), check.name(), e);
 			return new ResultPayload(check.id(), false, null);
 		}
 	}

@@ -11,11 +11,7 @@ import com.pruefstein.compliance.service.ComplianceItemSuggestion;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.InternalServerErrorException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
 @Path("/ai")
@@ -60,7 +56,7 @@ public class AiSuggestResource
 	{
 		if (request == null || request.description() == null || request.description().isBlank())
 		{
-			throw new InternalServerErrorException("description is required");
+			throw new BadRequestException("description is required");
 		}
 		return aiService.suggest(request.description(), schema);
 	}

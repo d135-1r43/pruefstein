@@ -10,7 +10,7 @@ Prüfstein lets you define compliance checks as SQL queries, run them on every e
 
 The web app (Quarkus) lets admins define Compliance Items: each item belongs to a ComplianceGroup (e.g. "A.8 Asset Management") and contains a SQL query and a JEXL pass/fail expression. The dashboard shows per-user/device compliance Reports, each containing a ComplianceResult per item.
 
-A lightweight local agent runs on each employee's machine. It fetches all ComplianceItems via `GET /api/checks`, executes each SQL query through osquery, evaluates the result against the expected expression, and POSTs a Report back via `POST /api/reports`. The agent runs periodically via cron, launchd, or systemd.
+A lightweight local agent runs on each employee's machine. It fetches all ComplianceItems via `GET /api/checks`, executes each SQL query through osquery, evaluates the result against the expected expression, and — once the person running it says so — POSTs a Report back via `POST /api/reports`. Checking is free and repeatable; reporting is the deliberate step, so a machine can be checked and fixed as often as needed before anything is filed. For a schedule (cron, launchd, systemd) `--yes` answers the question up front.
 
 ---
 
@@ -114,7 +114,7 @@ PostgreSQL and a Keycloak realm seeded with `admin`/`admin` and `user`/`user`:
 (cd web && ./mvnw quarkus:dev)                           # terminal 1
 
 pruefstein-agent login --server http://localhost:8080    # terminal 2
-pruefstein-agent run
+pruefstein-agent run                                     # asks before reporting
 ```
 
 ### Logging in

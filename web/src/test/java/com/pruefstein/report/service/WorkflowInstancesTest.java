@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
-import com.pruefstein.report.flow.ComplianceReportFlow;
+import com.pruefstein.report.flow.PeriodicReportingFlow;
 import io.quarkiverse.flow.persistence.jpa.WorkflowInstanceEntity;
 import io.quarkiverse.flow.persistence.jpa.WorkflowInstanceRepository;
 import io.quarkus.narayana.jta.QuarkusTransaction;
@@ -20,6 +20,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * A parked instance holds an event registration for the life of the JVM, so
  * discarding one has to actually detach it from the engine rather than just
  * tidy the database.
+ *
+ * <p>
+ * Exercised against the periodic reporting flow, which since reports stopped
+ * waiting for an outcome event is the only flow there is.
  */
 @QuarkusTest
 class WorkflowInstancesTest
@@ -28,7 +32,7 @@ class WorkflowInstancesTest
 	WorkflowInstances workflowInstances;
 
 	@Inject
-	ComplianceReportFlow complianceReportFlow;
+	PeriodicReportingFlow periodicReportingFlow;
 
 	@Inject
 	WorkflowInstanceRepository instanceRepository;
@@ -37,15 +41,15 @@ class WorkflowInstancesTest
 	void discardingAParkedInstanceDetachesItFromTheEngine()
 	{
 		// given — an instance parked on its listen task
-		WorkflowInstance instance = complianceReportFlow.instance(Map.of("reportId", -1L));
+		WorkflowInstance instance = periodicReportingFlow.instance(Map.of("deviceId", "instances-test-1"));
 		instance.start();
 		String instanceId = instance.id();
-		assertTrue(complianceReportFlow.definition().activeInstance(instanceId).isPresent(),
+		assertTrue(periodicReportingFlow.definition().activeInstance(instanceId).isPresent(),
 			"instance should be active before it is discarded");
 
 		// when
 		QuarkusTransaction.requiringNew()
-			.run(() -> workflowInstances.discard(complianceReportFlow, instanceId));
+			.run(() -> workflowInstances.discard(periodicReportingFlow, instanceId));
 
 		// then — cancelling unwinds the parked listen task on an engine thread,
 		// which is what releases its event registration
@@ -58,7 +62,7 @@ class WorkflowInstancesTest
 	{
 		for (int attempt = 0; attempt < 50; attempt++)
 		{
-			if (complianceReportFlow.definition().activeInstance(instanceId).isEmpty())
+			if (periodicReportingFlow.definition().activeInstance(instanceId).isEmpty())
 			{
 				return true;
 			}
@@ -80,11 +84,11 @@ class WorkflowInstancesTest
 	{
 		// given — the shape of a leftover from a previous JVM
 		String instanceId = "no-such-instance";
-		assertTrue(complianceReportFlow.definition().activeInstance(instanceId).isEmpty());
+		assertTrue(periodicReportingFlow.definition().activeInstance(instanceId).isEmpty());
 
 		// when / then — no row to remove, and nothing blows up
 		QuarkusTransaction.requiringNew()
-			.run(() -> workflowInstances.discard(complianceReportFlow, instanceId));
+			.run(() -> workflowInstances.discard(periodicReportingFlow, instanceId));
 		assertEquals(0, instanceRepository.count("instanceId", instanceId));
 	}
 
@@ -121,7 +125,7 @@ class WorkflowInstancesTest
 	{
 		// given — parked right now, and backdated so only the engine check can
 		// save it from the sweep
-		WorkflowInstance instance = complianceReportFlow.instance(Map.of("reportId", -2L));
+		WorkflowInstance instance = periodicReportingFlow.instance(Map.of("deviceId", "instances-test-2"));
 		instance.start();
 		String instanceId = instance.id();
 		QuarkusTransaction.requiringNew().run(() -> instanceRepository
@@ -132,7 +136,7 @@ class WorkflowInstancesTest
 
 		// then
 		assertEquals(1, instanceRepository.count("instanceId", instanceId));
-		assertTrue(complianceReportFlow.definition().activeInstance(instanceId).isPresent());
+		assertTrue(periodicReportingFlow.definition().activeInstance(instanceId).isPresent());
 	}
 
 	/** A row as an earlier process would have left it behind. */
@@ -140,7 +144,7 @@ class WorkflowInstancesTest
 	{
 		QuarkusTransaction.requiringNew().run(() -> {
 			WorkflowInstanceEntity entity = new WorkflowInstanceEntity(
-				"pruefstein-web", complianceReportFlow.definition().id(), instanceId, startedAt, null);
+				"pruefstein-web", periodicReportingFlow.definition().id(), instanceId, startedAt, null);
 			entity.setStatus(status);
 			instanceRepository.persist(entity);
 		});
@@ -151,8 +155,8 @@ class WorkflowInstancesTest
 	void discardingNothingIsHarmless()
 	{
 		QuarkusTransaction.requiringNew().run(() -> {
-			workflowInstances.discard(complianceReportFlow, null);
-			workflowInstances.discard(complianceReportFlow, "  ");
+			workflowInstances.discard(periodicReportingFlow, null);
+			workflowInstances.discard(periodicReportingFlow, "  ");
 		});
 	}
 }

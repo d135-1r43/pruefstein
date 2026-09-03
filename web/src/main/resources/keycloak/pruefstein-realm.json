@@ -43,7 +43,7 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["admin"]
+      "realmRoles": ["admin", "offline_access"]
     },
     {
       "username": "user",
@@ -58,7 +58,7 @@
           "temporary": false
         }
       ],
-      "realmRoles": []
+      "realmRoles": ["offline_access"]
     }
   ]
 }
