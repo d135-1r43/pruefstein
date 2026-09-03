@@ -24,9 +24,9 @@ import org.slf4j.LoggerFactory;
  * Disposes of workflow instances that will never be resumed.
  *
  * <p>
- * Once a deadline job has decided a report itself, the instance parked on the
- * corresponding {@code listen} is dead weight: it holds an event registration
- * for the life of the JVM and a row for longer than that.
+ * Once the overdue job has completed a device's cycle itself, the instance
+ * parked on the corresponding {@code listen} is dead weight: it holds an event
+ * registration for the life of the JVM and a row for longer than that.
  */
 @ApplicationScoped
 public class WorkflowInstances

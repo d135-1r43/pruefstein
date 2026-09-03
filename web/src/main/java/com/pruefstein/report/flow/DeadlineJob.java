@@ -3,11 +3,9 @@ package com.pruefstein.report.flow;
 import java.time.Instant;
 import java.util.List;
 
-import com.pruefstein.compliance.repository.ComplianceResultRepository;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.repository.ReportRepository;
 import com.pruefstein.report.service.ReportFinalizer;
-import com.pruefstein.report.service.WorkflowInstances;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -19,16 +17,10 @@ import org.slf4j.LoggerFactory;
  * Fires every hour to close any {@code OPEN} report whose deadline has passed.
  *
  * <p>
- * The verdict comes from the report's own results rather than a blanket
- * failure: if the device fixed everything but the outcome event never reached
- * its workflow instance, the checks on record all pass and the report closes
- * {@code COMPLIANT}. Closing the report is what this job guarantees — it no
- * longer depends on the workflow instance still listening, which after a
- * restart it is not.
- *
- * <p>
- * The instance parked on the corresponding {@code listen} is discarded, so it
- * stops holding an event registration and a row for a report that is decided.
+ * The verdict is always {@code NON_COMPLIANT}, and it cannot be anything else:
+ * a report is only open because the run it holds had failures, and a later run
+ * that fixed them would have closed it on arrival. Reaching the deadline still
+ * open means the failures are still there.
  */
 @ApplicationScoped
 public class DeadlineJob
@@ -39,16 +31,7 @@ public class DeadlineJob
 	ReportRepository reportRepository;
 
 	@Inject
-	ComplianceResultRepository resultRepository;
-
-	@Inject
 	ReportFinalizer finalizer;
-
-	@Inject
-	ComplianceReportFlow complianceReportFlow;
-
-	@Inject
-	WorkflowInstances workflowInstances;
 
 	@Scheduled(every = "1h")
 	@Transactional
@@ -62,10 +45,8 @@ public class DeadlineJob
 		LOG.info("Closing {} expired OPEN report(s)", expired.size());
 		for (Report report : expired)
 		{
-			boolean allPassed = resultRepository.count("report = ?1 and passed = false", report) == 0;
-			finalizer.finalizeReport(report, allPassed);
-			workflowInstances.discard(complianceReportFlow, report.getFlowInstanceId());
-			LOG.debug("Report {} closed at its deadline (allPassed={})", (Object)report.id, allPassed);
+			finalizer.finalizeReport(report, false);
+			LOG.debug("Report {} closed non-compliant at its deadline", (Object)report.id);
 		}
 	}
 }

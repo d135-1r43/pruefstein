@@ -3,33 +3,26 @@ package com.pruefstein.agent.api;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
-import com.pruefstein.compliance.domain.AppBlacklistCheck;
-import com.pruefstein.compliance.domain.BlockedApp;
 import com.pruefstein.compliance.domain.ComplianceItem;
 import com.pruefstein.compliance.domain.ComplianceResult;
 import com.pruefstein.compliance.domain.InstalledApp;
-import com.pruefstein.compliance.repository.BlockedAppRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
 import com.pruefstein.compliance.repository.InstalledAppRepository;
-import com.pruefstein.compliance.service.BlacklistMatcher;
 import com.pruefstein.compliance.service.CheckResolver;
 import com.pruefstein.compliance.service.CheckResolver.ResolvedCheck;
-import com.pruefstein.compliance.service.ComplianceResultAiService;
-import com.pruefstein.compliance.service.ComplianceResultExplanation;
 import com.pruefstein.device.domain.Device;
 import com.pruefstein.device.repository.DeviceRepository;
-import com.pruefstein.notification.ReportMailTrigger;
+import com.pruefstein.notification.ReportMailDispatcher;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
-import com.pruefstein.report.flow.ComplianceReportFlow;
-import com.pruefstein.report.flow.FlowTrigger;
 import com.pruefstein.report.flow.PeriodicFlowTrigger;
 import com.pruefstein.report.flow.PeriodicReportingFlow;
 import com.pruefstein.report.flow.WorkflowStartTrigger;
 import com.pruefstein.report.repository.ReportRepository;
+import com.pruefstein.report.service.ReportFinalizer;
 import com.pruefstein.user.domain.AppUser;
 import com.pruefstein.user.service.UserSyncService;
 import io.quarkus.oidc.Tenant;
@@ -48,8 +41,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Tenant("api")
 @Authenticated
@@ -57,22 +48,11 @@ import org.slf4j.LoggerFactory;
 @Produces(MediaType.APPLICATION_JSON)
 public class AgentResource
 {
-	private static final Logger LOG = LoggerFactory.getLogger(AgentResource.class);
-
-	@Inject
-	ComplianceResultAiService aiService;
-
 	@Inject
 	ComplianceItemRepository itemRepository;
 
 	@Inject
-	BlockedAppRepository blockedAppRepository;
-
-	@Inject
 	CheckResolver checkResolver;
-
-	@Inject
-	BlacklistMatcher blacklistMatcher;
 
 	@Inject
 	InstalledAppRepository installedAppRepository;
@@ -87,13 +67,7 @@ public class AgentResource
 	DeviceRepository deviceRepository;
 
 	@Inject
-	ComplianceReportFlow complianceReportFlow;
-
-	@Inject
 	PeriodicReportingFlow periodicReportingFlow;
-
-	@Inject
-	Event<FlowTrigger> flowTrigger;
 
 	@Inject
 	Event<PeriodicFlowTrigger> periodicFlowTrigger;
@@ -102,7 +76,10 @@ public class AgentResource
 	Event<WorkflowStartTrigger> workflowStartTrigger;
 
 	@Inject
-	Event<ReportMailTrigger> mailTrigger;
+	ReportMailDispatcher mailDispatcher;
+
+	@Inject
+	ReportFinalizer finalizer;
 
 	@Inject
 	UserSyncService userSyncService;
@@ -150,6 +127,16 @@ public class AgentResource
 			.toList();
 	}
 
+	/**
+	 * Takes one submitted run.
+	 *
+	 * <p>
+	 * Submitting is a decision now — the agent runs the checks, shows them, and
+	 * asks before it sends anything — so what arrives here is a machine someone
+	 * meant to report on. A clean run is compliant on the spot. A run with
+	 * failures opens a report with a deadline, and stays open until it is fixed
+	 * or the deadline decides it.
+	 */
 	@POST
 	@Path("/reports")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -158,11 +145,9 @@ public class AgentResource
 	{
 		boolean allPassed = payload.results().stream().allMatch(ResultPayload::passed);
 
-		Optional<Report> existing = reportRepository.findOpenByDeviceAndUser(
-			payload.deviceId(), payload.userId());
-
-		Report report = existing.map(value -> handleResubmission(value, payload, allPassed))
-			.orElseGet(() -> handleFirstSubmission(payload, allPassed));
+		Report report = reportRepository.findOpenByDeviceAndUser(payload.deviceId(), payload.userId())
+			.map(open -> anotherAttempt(open, payload, allPassed))
+			.orElseGet(() -> firstAttempt(payload, allPassed));
 
 		// Agents authenticate as their own bearer identity, which never passes
 		// through the web login augmentor — so the local user record (and with
@@ -176,7 +161,12 @@ public class AgentResource
 		return Response.ok(new ReportResponse(reportUrl)).build();
 	}
 
-	private Report handleFirstSubmission(ReportPayload payload, boolean allPassed)
+	/**
+	 * The first run this device has submitted since its last report was
+	 * decided. A clean one is finished as it arrives; a failing one gets the
+	 * remediation window, and {@code DeadlineJob} has the last word on it.
+	 */
+	private Report firstAttempt(ReportPayload payload, boolean allPassed)
 	{
 		Report report = new Report();
 		report.setDeviceId(payload.deviceId());
@@ -196,19 +186,33 @@ public class AgentResource
 		{
 			report.setStatus(ReportStatus.OPEN);
 			report.setDeadline(Instant.now().plus(remediationDays, ChronoUnit.DAYS));
-
-			// Create the flow instance and fire a CDI event to start it after
-			// the current transaction commits. Starting inside @Transactional
-			// causes ConcurrentModificationException because ManagedExecutor
-			// propagates the JTA context into the async workflow JPA writer.
-			var wi = complianceReportFlow.instance(java.util.Map.of("reportId", report.id));
-			report.setFlowInstanceId(wi.id());
-			workflowStartTrigger.fire(new WorkflowStartTrigger(wi));
 		}
 
-		// Only the first submission mails from here. A resubmission has no
-		// outcome yet, so its mail comes from the flow's finalize callback.
-		mailTrigger.fire(new ReportMailTrigger(report.id));
+		// Only a report that is new here mails from here. One that was already
+		// open has said its piece, and mails again when it is decided — by the
+		// next attempt that passes, or by the deadline job. The dispatcher
+		// holds either back until the failed checks have been explained.
+		mailDispatcher.request(report);
+		return report;
+	}
+
+	/**
+	 * A device reporting again while its report is still open is having another
+	 * go at the same failure, so the run replaces what the report holds rather
+	 * than opening a second one beside it. Everything passing closes it; the
+	 * deadline does not move either way, or a run that still fails would buy
+	 * itself another week by being uploaded.
+	 */
+	private Report anotherAttempt(Report report, ReportPayload payload, boolean allPassed)
+	{
+		resultRepository.delete("report", report);
+		persistResults(report, payload.results());
+		report.setCheckedAt(payload.checkedAt() != null ? payload.checkedAt() : Instant.now());
+
+		if (allPassed)
+		{
+			finalizer.finalizeReport(report, true);
+		}
 		return report;
 	}
 
@@ -227,19 +231,6 @@ public class AgentResource
 			jwt.<String> claim("family_name").orElse(null));
 	}
 
-	private Report handleResubmission(Report report, ReportPayload payload, boolean allPassed)
-	{
-		// Replace results with the new run
-		resultRepository.delete("report", report);
-		persistResults(report, payload.results());
-		report.setCheckedAt(payload.checkedAt() != null ? payload.checkedAt() : Instant.now());
-
-		// The flow is waiting for this event; FlowEventEmitter sends it after
-		// commit
-		flowTrigger.fire(new FlowTrigger(report.id, report.getFlowInstanceId(), allPassed));
-		return report;
-	}
-
 	private void persistResults(Report report, List<ResultPayload> results)
 	{
 		for (ResultPayload rp : results)
@@ -255,26 +246,15 @@ public class AgentResource
 			result.setPassed(rp.passed());
 			result.setOutput(rp.output());
 			resultRepository.persist(result);
-
-			if (!rp.passed())
-			{
-				try
-				{
-					ComplianceResultExplanation exp = explain(item, rp.output());
-					result.setAiShortDescription(exp.shortDescription());
-					result.setAiLongExplanation(exp.longExplanation());
-				}
-				catch (Exception e)
-				{
-					LOG.warn("AI enrichment skipped for '{}'.", item.getName(), e);
-				}
-			}
+			// Failed checks are explained by ResultEnrichmentJob afterwards.
+			// Calling the model here made the agent wait for one round trip per
+			// failure and time out on a device with several.
 		}
 	}
 
 	/**
-	 * The inventory is a snapshot, so a resubmission replaces it wholesale
-	 * rather than accumulating stale rows.
+	 * The inventory is a snapshot, so another attempt at an open report
+	 * replaces it wholesale rather than accumulating stale rows.
 	 */
 	private void replaceInventory(Report report, List<InstalledAppPayload> apps)
 	{
@@ -294,21 +274,6 @@ public class AgentResource
 			app.setPath(payload.path());
 			installedAppRepository.persist(app);
 		}
-	}
-
-	/**
-	 * A blacklist failure gets its own prompt: the useful context is which
-	 * policy each detected app violates, not the SQL that found it.
-	 */
-	private ComplianceResultExplanation explain(ComplianceItem item, String output)
-	{
-		if (item instanceof AppBlacklistCheck)
-		{
-			List<BlockedApp> matched = blacklistMatcher.match(output, blockedAppRepository.listEnabled());
-			return aiService.explainBlacklist(output, blacklistMatcher.reasons(matched));
-		}
-		ResolvedCheck resolved = checkResolver.resolve(item);
-		return aiService.explain(item.getName(), resolved.query(), resolved.expression(), output);
 	}
 
 	/**
@@ -339,7 +304,7 @@ public class AgentResource
 			device.setLastReportAt(Instant.now());
 			deviceRepository.persist(device);
 
-			var wi = periodicReportingFlow.instance(java.util.Map.of("deviceId", payload.deviceId()));
+			var wi = periodicReportingFlow.instance(Map.of("deviceId", payload.deviceId()));
 			device.setPeriodicFlowInstanceId(wi.id());
 			workflowStartTrigger.fire(new WorkflowStartTrigger(wi));
 		}

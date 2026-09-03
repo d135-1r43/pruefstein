@@ -2,12 +2,6 @@ package com.pruefstein.report.flow;
 
 import java.time.Instant;
 
-import com.pruefstein.compliance.domain.ComplianceGroup;
-import com.pruefstein.compliance.domain.ComplianceResult;
-import com.pruefstein.compliance.domain.ExpressionCheck;
-import com.pruefstein.compliance.repository.ComplianceGroupRepository;
-import com.pruefstein.compliance.repository.ComplianceItemRepository;
-import com.pruefstein.compliance.repository.ComplianceResultRepository;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.repository.ReportRepository;
@@ -16,15 +10,14 @@ import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The deadline job is the last thing that can decide a report, so it has to do
- * so without help from the workflow instance and with the outcome the results
- * on record actually support.
+ * The deadline is what ends an open report, and it is the only thing left that
+ * can: a device that fixes its checks closes the report by reporting again, and
+ * one that does not runs out of time here.
  */
 @QuarkusTest
 class DeadlineJobTest
@@ -40,100 +33,36 @@ class DeadlineJobTest
 	@Inject
 	ReportRepository reportRepository;
 
-	@Inject
-	ComplianceResultRepository resultRepository;
-
-	@Inject
-	ComplianceItemRepository itemRepository;
-
-	@Inject
-	ComplianceGroupRepository groupRepository;
-
-	private Long itemId;
-	private Long groupId;
-
-	@BeforeEach
-	void setUp()
-	{
-		Long[] ids = new Long[2];
-		QuarkusTransaction.requiringNew().run(() -> {
-			ComplianceGroup group = new ComplianceGroup();
-			group.setName("Deadline Group");
-			groupRepository.persist(group);
-			ids[0] = group.id;
-
-			ExpressionCheck item = new ExpressionCheck();
-			item.setName("Deadline Check");
-			item.setGroup(group);
-			itemRepository.persist(item);
-			ids[1] = item.id;
-		});
-		groupId = ids[0];
-		itemId = ids[1];
-	}
-
 	@AfterEach
 	void tearDown()
 	{
-		QuarkusTransaction.requiringNew().run(() -> {
-			resultRepository.delete("report.deviceId", DEVICE);
-			reportRepository.delete("deviceId", DEVICE);
-			itemRepository.deleteById(itemId);
-			groupRepository.deleteById(groupId);
-		});
+		QuarkusTransaction.requiringNew().run(() -> reportRepository.delete("deviceId", DEVICE));
 	}
 
+	/**
+	 * The results are not consulted, and there is nothing they could say: a
+	 * report is open because the run it holds failed, and a run that fixed
+	 * those failures would have closed it on arrival.
+	 */
 	@Test
-	void anExpiredReportWhoseChecksAllPassClosesCompliant()
-	{
-		// given — the outcome event was lost, but the results on record are
-		// clean
-		long reportId = expiredReport("flow-1", true);
-
-		// when
-		deadlineJob.closeExpiredReports();
-
-		// then — the blanket NON_COMPLIANT would have been the wrong verdict
-		assertEquals(ReportStatus.COMPLIANT, statusOf(reportId));
-		assertNotNull(finalizedAtOf(reportId));
-	}
-
-	@Test
-	void anExpiredReportWithAFailingCheckClosesNonCompliant()
+	void anExpiredReportClosesNonCompliant()
 	{
 		// given
-		long reportId = expiredReport("flow-2", false);
+		long reportId = openReport(Instant.now().minusSeconds(60));
 
 		// when
 		deadlineJob.closeExpiredReports();
 
 		// then
 		assertEquals(ReportStatus.NON_COMPLIANT, statusOf(reportId));
-	}
-
-	@Test
-	void anExpiredReportClosesEvenWithoutAWorkflowInstance()
-	{
-		// given — nothing is listening, which is the state after a restart
-		long reportId = expiredReport(null, false);
-
-		// when
-		deadlineJob.closeExpiredReports();
-
-		// then
-		assertEquals(ReportStatus.NON_COMPLIANT, statusOf(reportId));
+		assertNotNull(finalizedAtOf(reportId), "a closed report should carry when it was closed");
 	}
 
 	@Test
 	void aReportInsideItsDeadlineIsLeftAlone()
 	{
-		// given
-		long reportId = QuarkusTransaction.requiringNew().call(() -> {
-			Report report = openReport("flow-3");
-			report.setDeadline(Instant.now().plusSeconds(3600));
-			reportRepository.persist(report);
-			return report.id;
-		});
+		// given — the whole window is still there to fix things in
+		long reportId = openReport(Instant.now().plusSeconds(3600));
 
 		// when
 		deadlineJob.closeExpiredReports();
@@ -142,53 +71,42 @@ class DeadlineJobTest
 		assertEquals(ReportStatus.OPEN, statusOf(reportId));
 	}
 
+	/**
+	 * A device that fixes everything in the last minute of its window races the
+	 * hourly job. Whichever loses must change nothing — no overwritten verdict,
+	 * and no second mail about the same report.
+	 */
 	@Test
-	void aLateWorkflowCallbackCannotOverturnTheDeadlineVerdict()
+	void aRunThatArrivesAfterTheDeadlineCannotOverturnTheVerdict()
 	{
-		// given — the job already closed it as non-compliant
-		long reportId = expiredReport("flow-4", false);
+		// given — the job already closed it
+		long reportId = openReport(Instant.now().minusSeconds(60));
 		deadlineJob.closeExpiredReports();
 		Instant decidedAt = finalizedAtOf(reportId);
 
-		// when — the parked instance finally reports a clean run
+		// when — a clean run lands a moment too late
 		boolean decided = QuarkusTransaction.requiringNew()
 			.call(() -> finalizer.finalizeReport(reportRepository.findById(reportId), true));
 
-		// then — first verdict stands, and no second mail goes out
-		assertFalse(decided);
+		// then
+		assertFalse(decided, "the report was already decided");
 		assertEquals(ReportStatus.NON_COMPLIANT, statusOf(reportId));
 		assertEquals(decidedAt, finalizedAtOf(reportId));
 	}
 
-	/**
-	 * An OPEN report past its deadline, with one result of the given outcome.
-	 */
-	private long expiredReport(String flowInstanceId, boolean passed)
+	private long openReport(Instant deadline)
 	{
 		return QuarkusTransaction.requiringNew().call(() -> {
-			Report report = openReport(flowInstanceId);
-			report.setDeadline(Instant.now().minusSeconds(60));
+			Report report = new Report();
+			report.setDeviceId(DEVICE);
+			report.setUserId("deadline-user");
+			report.setKeycloakUser("deadline-user");
+			report.setCheckedAt(Instant.now());
+			report.setStatus(ReportStatus.OPEN);
+			report.setDeadline(deadline);
 			reportRepository.persist(report);
-
-			ComplianceResult result = new ComplianceResult();
-			result.setReport(report);
-			result.setItem(itemRepository.findById(itemId));
-			result.setPassed(passed);
-			resultRepository.persist(result);
 			return report.id;
 		});
-	}
-
-	private Report openReport(String flowInstanceId)
-	{
-		Report report = new Report();
-		report.setDeviceId(DEVICE);
-		report.setUserId("deadline-user");
-		report.setKeycloakUser("deadline-user");
-		report.setCheckedAt(Instant.now());
-		report.setStatus(ReportStatus.OPEN);
-		report.setFlowInstanceId(flowInstanceId);
-		return report;
 	}
 
 	private ReportStatus statusOf(long reportId)

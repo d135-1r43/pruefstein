@@ -2,16 +2,15 @@ package com.pruefstein.report.service;
 
 import java.time.Instant;
 
-import com.pruefstein.notification.ReportMailTrigger;
+import com.pruefstein.notification.ReportMailDispatcher;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 
 /**
- * Gives a report its verdict. Shared by the workflow callback and the deadline
- * job, which can both arrive for the same report.
+ * Gives an open report its verdict. Shared by the submission that fixes one and
+ * the deadline job, which can both arrive for the same report.
  *
  * <p>
  * Callers must already be in a transaction.
@@ -20,11 +19,13 @@ import jakarta.inject.Inject;
 public class ReportFinalizer
 {
 	@Inject
-	Event<ReportMailTrigger> mailTrigger;
+	ReportMailDispatcher mailDispatcher;
 
 	/**
 	 * Only an open report gets a verdict, so whichever of the two callers loses
-	 * the race changes nothing — no overwritten outcome, and no second mail.
+	 * the race changes nothing — no overwritten outcome, and no second mail. A
+	 * device that fixes its checks in the last minute of the window is the case
+	 * that makes this a race rather than a formality.
 	 *
 	 * @return whether this call was the one that decided the report
 	 */
@@ -36,7 +37,7 @@ public class ReportFinalizer
 		}
 		report.setStatus(allPassed ? ReportStatus.COMPLIANT : ReportStatus.NON_COMPLIANT);
 		report.setFinalizedAt(Instant.now());
-		mailTrigger.fire(new ReportMailTrigger(report.id));
+		mailDispatcher.request(report);
 		return true;
 	}
 }

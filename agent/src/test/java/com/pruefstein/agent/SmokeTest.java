@@ -8,6 +8,7 @@ import com.pruefstein.agent.auth.TokenStore;
 import com.pruefstein.agent.command.LoginCommand;
 import com.pruefstein.agent.command.LogoutCommand;
 import com.pruefstein.agent.command.MainCommand;
+import com.pruefstein.agent.command.RunCommand;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -44,6 +45,17 @@ class SmokeTest
 		assertTrue(help.contains("login"), "help should list 'login' subcommand");
 		assertTrue(help.contains("logout"), "help should list 'logout' subcommand");
 		assertTrue(help.contains("run"), "help should list 'run' subcommand");
+	}
+
+	/**
+	 * The flag a schedule needs: without it an unattended {@code run} stops at
+	 * a question nobody answers.
+	 */
+	@Test
+	void runOffersAWayPastTheQuestion()
+	{
+		String help = new CommandLine(new RunCommand()).getUsageMessage();
+		assertTrue(help.contains("--yes"), "run should offer '--yes'");
 	}
 
 	@Test
