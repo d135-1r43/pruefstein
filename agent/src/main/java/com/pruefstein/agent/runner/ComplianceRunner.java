@@ -2,9 +2,13 @@ package com.pruefstein.agent.runner;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -39,6 +43,10 @@ public class ComplianceRunner
 {
 	private static final Logger LOG = LoggerFactory.getLogger(ComplianceRunner.class);
 	private static final JexlEngine JEXL = new JexlBuilder().strict(true).silent(false).create();
+
+	/** The same date the server's mails print, so the two never disagree. */
+	private static final DateTimeFormatter DEADLINE_DATE = DateTimeFormatter
+		.ofPattern("d MMM yyyy", Locale.ENGLISH).withZone(ZoneId.systemDefault());
 
 	/**
 	 * Scoped to software a person installed, not everything on disk. The
@@ -112,6 +120,55 @@ public class ComplianceRunner
 		LOG.info("Reporting {} installed applications and packages", run.installedApps().size());
 		ReportResponse response = client.pushReport(run);
 		LOG.info("View report: {}", response.reportUrl());
+
+		long failing = run.results().stream().filter(result -> !result.passed()).count();
+		String notice = remediationNotice(failing, response.deadline());
+		if (notice != null)
+		{
+			LOG.info(ConsoleStyle.notice(notice));
+		}
+	}
+
+	/**
+	 * What a reported failure costs if it is left alone, said at the one moment
+	 * someone is certain to read it.
+	 *
+	 * <p>
+	 * The deadline is the server's to give, not this run's to guess: it belongs
+	 * to the report rather than to the attempt, so reporting a still-failing
+	 * machine again does not push it back, and the days left here shrink with
+	 * every attempt. A run the server decided on arrival has no deadline and
+	 * nothing to warn about.
+	 *
+	 * @return the warning, or {@code null} when there is nothing to warn about
+	 */
+	static String remediationNotice(long failing, Instant deadline)
+	{
+		if (deadline == null || failing == 0)
+		{
+			return null;
+		}
+		return "%s still failing. Fix %s and report again by %s (%s), or this report is recorded as non-compliant."
+			.formatted(
+				failing == 1 ? "1 check is" : failing + " checks are",
+				failing == 1 ? "it" : "them",
+				DEADLINE_DATE.format(deadline),
+				dayLabel(deadline));
+	}
+
+	/**
+	 * Rounded up, so a deadline 47 hours out still reads as "2 days" — the same
+	 * arithmetic the reminder mail uses, so the two never quote a different
+	 * number on the same day.
+	 */
+	private static String dayLabel(Instant deadline)
+	{
+		long days = Math.max(0, (long)Math.ceil(Duration.between(Instant.now(), deadline).toHours() / 24.0));
+		if (days == 0)
+		{
+			return "today";
+		}
+		return days == 1 ? "1 day" : days + " days";
 	}
 
 	/**

@@ -50,6 +50,19 @@ public final class ConsoleStyle
 		return style(passed == total ? "@|bold,green " + text + "|@" : "@|bold " + text + "|@");
 	}
 
+	/**
+	 * What a run costs if it is left as it is — red, unlike the summary above
+	 * it. The summary is left unpainted because the {@code [FAIL]} lines have
+	 * already said which checks are red; this line says something the run
+	 * itself does not, that a deadline is counting down and the report goes on
+	 * record as non-compliant at the end of it. It is the last line printed
+	 * and the one worth losing nothing to.
+	 */
+	public static String notice(String text)
+	{
+		return style("@|bold,red " + text + "|@");
+	}
+
 	/** Separates the summary from the per-check lines above it. */
 	public static String rule()
 	{

@@ -107,7 +107,14 @@ public class AgentResource
 	{
 	}
 
-	public record ReportResponse(String reportUrl)
+	/**
+	 * @param deadline
+	 *            when the report stops being fixable, or {@code null} if it is
+	 *            already decided. The agent has no way of working this out —
+	 *            the window belongs to the report, so a device reporting a
+	 *            second failing run gets back what is left of the first one's.
+	 */
+	public record ReportResponse(String reportUrl, Instant deadline)
 	{
 	}
 
@@ -158,7 +165,8 @@ public class AgentResource
 		upsertDevice(payload);
 
 		String reportUrl = uriInfo.getBaseUri().resolve("Reports/show/" + report.id).toString();
-		return Response.ok(new ReportResponse(reportUrl)).build();
+		Instant deadline = report.getStatus() == ReportStatus.OPEN ? report.getDeadline() : null;
+		return Response.ok(new ReportResponse(reportUrl, deadline)).build();
 	}
 
 	/**

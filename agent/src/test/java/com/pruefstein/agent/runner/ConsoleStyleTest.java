@@ -59,6 +59,20 @@ class ConsoleStyleTest
 	}
 
 	/**
+	 * Red, though the failing summary right above it is not: this is the line
+	 * about the deadline, and it says something the [FAIL] lines do not.
+	 */
+	@Test
+	void paintsTheDeadlineNoticeRed()
+	{
+		System.setProperty("picocli.ansi", "true");
+
+		String notice = ConsoleStyle.notice("2 checks are still failing.");
+		assertTrue(notice.contains("31"), "the notice should carry the red code: " + notice);
+		assertTrue(notice.contains("1m"), "the notice should be bold too: " + notice);
+	}
+
+	/**
 	 * The important half: a redirected run — cron mail, a log file, CI — must
 	 * come out as plain text, with no escape codes and no leftover markup.
 	 */
@@ -71,6 +85,7 @@ class ConsoleStyleTest
 		assertEquals("[FAIL]", ConsoleStyle.verdict(false));
 		assertEquals("[ERROR]", ConsoleStyle.errorTag());
 		assertEquals("Done: 3/5 checks passed", ConsoleStyle.summary(3, 5));
+		assertEquals("fix them by Tuesday", ConsoleStyle.notice("fix them by Tuesday"));
 		assertEquals("─".repeat(44), ConsoleStyle.rule());
 	}
 

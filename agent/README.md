@@ -78,6 +78,20 @@ verdicts are known and the server still knows nothing.
 
 Anything other than `y` or `yes` is a no, a bare Enter included.
 
+A yes that reports failures gets told what they cost:
+
+```
+View report: http://localhost:8080/Reports/show/41
+2 checks are still failing. Fix them and report again by 10 Sep 2026 (7 days),
+or this report is recorded as non-compliant.
+```
+
+The date comes back from the server rather than being worked out locally,
+because the window belongs to the report and not to the run: reporting a
+still-failing machine again replaces what the report holds without pushing its
+deadline back, so the days left shrink with every attempt. Report a clean run
+before then and the same report closes compliant instead.
+
 **Unattended runs need `--yes`.** With stdin closed — cron, launchd, CI — the
 prompt reaches EOF, and an EOF is not consent: nothing is reported and `run`
 exits non-zero, so a schedule that is quietly reporting nothing looks broken
@@ -145,8 +159,10 @@ installed, so the root logger sits at `WARN` and only `com.pruefstein` logs at
 Verdicts are coloured: `[PASS]` green, `[FAIL]` and `[ERROR]` red. The closing
 summary is bold, and green when the whole run passed; a run with failures is
 left in the terminal's normal text colour, since the red already sits on the
-`[FAIL]` lines that name the checks. A faint rule separates it from the
-per-check lines:
+`[FAIL]` lines that name the checks. The deadline notice after a reported
+failure *is* red — it is the one line that says something the `[FAIL]` lines do
+not, that a window is counting down. A faint rule separates the summary from
+the per-check lines:
 
 ```
   [PASS] FileVault enabled

@@ -16,6 +16,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.jwt.Claim;
 import io.quarkus.test.security.jwt.JwtSecurity;
+import io.restassured.response.ValidatableResponse;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -182,7 +183,34 @@ class AgentResourceTest
 			.run(() -> assertEquals(2, reportRepository.count("deviceId", DEVICE)));
 	}
 
+	/**
+	 * The agent cannot work the deadline out for itself — it belongs to the
+	 * report, not to the run — so the response has to carry it, and only while
+	 * there is still something to fix.
+	 */
+	@Test
+	void theResponseCarriesTheDeadlineOfAnOpenReport()
+	{
+		// given / when
+		String deadline = pushFor(false).extract().path("deadline");
+
+		// then
+		assertNotNull(deadline, "a failing run should be told how long it has");
+	}
+
+	@Test
+	void aDecidedReportComesBackWithNoDeadline()
+	{
+		assertNull(pushFor(true).extract().path("deadline"),
+			"a clean run has nothing to remediate, so nothing to count down");
+	}
+
 	private String push(boolean passed)
+	{
+		return pushFor(passed).extract().path("reportUrl");
+	}
+
+	private ValidatableResponse pushFor(boolean passed)
 	{
 		String body = """
 			{"deviceId":"%s","userId":"test-user","checkedAt":"%s",
@@ -194,8 +222,7 @@ class AgentResourceTest
 			.body(body)
 			.when().post("/api/reports")
 			.then()
-			.statusCode(200)
-			.extract().path("reportUrl");
+			.statusCode(200);
 	}
 
 	/** The report the given {@code reportUrl} points at. */

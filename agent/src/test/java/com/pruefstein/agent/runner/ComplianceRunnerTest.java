@@ -1,6 +1,11 @@
 package com.pruefstein.agent.runner;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -84,6 +89,56 @@ class ComplianceRunnerTest
 			check -> new ResultPayload(check.id(), true, null));
 
 		assertEquals(ids(3), itemIds(results));
+	}
+
+	/**
+	 * The line someone acts on: what is broken, how long they have, and what
+	 * happens if they leave it.
+	 */
+	@Test
+	void theNoticeSaysWhatAFailureCostsAndWhen()
+	{
+		Instant deadline = Instant.now().plus(7, ChronoUnit.DAYS);
+		String expected = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)
+			.withZone(ZoneId.systemDefault()).format(deadline);
+
+		String notice = ComplianceRunner.remediationNotice(3, deadline);
+
+		assertTrue(notice.startsWith("3 checks are still failing. Fix them"), notice);
+		assertTrue(notice.contains("by " + expected + " (7 days)"), notice);
+		assertTrue(notice.endsWith("or this report is recorded as non-compliant."), notice);
+	}
+
+	@Test
+	void theNoticeCountsOneFailureInTheSingular()
+	{
+		String notice = ComplianceRunner.remediationNotice(1, Instant.now().plus(47, ChronoUnit.HOURS));
+
+		assertTrue(notice.startsWith("1 check is still failing. Fix it"), notice);
+		// Part days round up, exactly as the reminder mail counts them, so the
+		// two never quote a different number on the same day
+		assertTrue(notice.contains("(2 days)"), notice);
+	}
+
+	/** A deadline inside the last day has to read as something, not "0 days". */
+	@Test
+	void theNoticeCallsTheLastDayToday()
+	{
+		String notice = ComplianceRunner.remediationNotice(1, Instant.now().plusSeconds(600));
+
+		assertTrue(notice.contains("(today)"), notice);
+	}
+
+	/**
+	 * A clean run is decided on arrival and carries no deadline, so there is
+	 * nothing to warn about — and nothing should be printed.
+	 */
+	@Test
+	void thereIsNoNoticeWithoutADeadline()
+	{
+		assertNull(ComplianceRunner.remediationNotice(0, null));
+		assertNull(ComplianceRunner.remediationNotice(3, null));
+		assertNull(ComplianceRunner.remediationNotice(0, Instant.now().plus(7, ChronoUnit.DAYS)));
 	}
 
 	private static List<CheckItem> checks(int count)
