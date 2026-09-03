@@ -1,11 +1,10 @@
-package com.pruefstein.report.flow;
+package com.pruefstein.report.service;
 
 import java.time.Instant;
 
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.repository.ReportRepository;
-import com.pruefstein.report.service.ReportFinalizer;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
