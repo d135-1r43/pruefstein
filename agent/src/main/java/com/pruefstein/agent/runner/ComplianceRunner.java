@@ -93,12 +93,12 @@ public class ComplianceRunner
 		String deviceId = fetchDeviceId();
 		String userId = hostname();
 
-		LOG.info("Running compliance checks on device {} (user: {})", deviceId, userId);
+		System.out.printf("Running compliance checks on device %s (user: %s)%n", deviceId, userId);
 
 		List<CheckItem> checks = client.getChecks();
 		if (checks.isEmpty())
 		{
-			LOG.info("No compliance checks configured on server.");
+			System.out.println("No compliance checks configured on server.");
 			return Optional.empty();
 		}
 
@@ -106,8 +106,8 @@ public class ComplianceRunner
 		List<InstalledAppPayload> installedApps = collectInventory();
 
 		long passed = results.stream().filter(ResultPayload::passed).count();
-		LOG.info(ConsoleStyle.rule());
-		LOG.info(ConsoleStyle.summary(passed, results.size()));
+		System.out.println(ConsoleStyle.rule());
+		System.out.println(ConsoleStyle.summary(passed, results.size()));
 
 		// Stamped here rather than at submission: this is when the machine
 		// looked like this, and someone may sit on the question for a while.
@@ -117,15 +117,15 @@ public class ComplianceRunner
 	/** Files a run that has already happened. The report exists from here on. */
 	public void submit(ReportPayload run)
 	{
-		LOG.info("Reporting {} installed applications and packages", run.installedApps().size());
+		System.out.printf("Reporting %d installed applications and packages%n", run.installedApps().size());
 		ReportResponse response = client.pushReport(run);
-		LOG.info("View report: {}", response.reportUrl());
+		System.out.println("View report: " + response.reportUrl());
 
 		long failing = run.results().stream().filter(result -> !result.passed()).count();
 		String notice = remediationNotice(failing, response.deadline());
 		if (notice != null)
 		{
-			LOG.info(ConsoleStyle.notice(notice));
+			System.out.println(ConsoleStyle.notice(notice));
 		}
 	}
 
@@ -227,14 +227,23 @@ public class ComplianceRunner
 		{
 			String output = osquery(check.query());
 			boolean passed = evaluate(output, check.expectedExpression());
-			LOG.info("  {} {}", ConsoleStyle.verdict(passed), check.name());
+			System.out.println("  " + ConsoleStyle.verdict(passed) + " " + check.name());
 			return new ResultPayload(check.id(), passed, output);
 		}
 		catch (Exception e)
 		{
-			LOG.warn("  {} {}", ConsoleStyle.errorTag(), check.name(), e);
+			// Why it failed on the line itself, because a stack trace between
+			// two check verdicts is unreadable; the trace stays a debug log.
+			System.out.println("  " + ConsoleStyle.errorTag() + " " + check.name() + " — " + reason(e));
+			LOG.debug("Check '{}' could not be run.", check.name(), e);
 			return new ResultPayload(check.id(), false, null);
 		}
+	}
+
+	/** Something to print on the {@code [ERROR]} line when a check breaks. */
+	private static String reason(Exception e)
+	{
+		return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
 	}
 
 	/**

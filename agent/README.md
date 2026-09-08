@@ -150,11 +150,16 @@ single run, which is what CI uses.
 
 ## Output
 
-The commands print their own progress and nothing else — no timestamps, no
-logger names, no framework startup lines. Someone running a compliance check
-does not need to know which profile is active or which Quarkus features are
-installed, so the root logger sits at `WARN` and only `com.pruefstein` logs at
-`INFO`.
+The commands write what they have to say to standard output — the verdicts, the
+summary, the report URL, the prompts. None of it goes through the logger, which
+is left at its Quarkus defaults and used for what a log is for: the warning when
+the installed-app inventory could not be read, the debug line naming why a check
+errored or a token refresh was rejected.
+
+That split is worth keeping. Routed through the logger, program output can only
+be made to look like program output by flattening the log format for everything
+else, and a real warning then arrives with no level, no timestamp and no logger
+name to tell it apart from ordinary output.
 
 Verdicts are coloured: `[PASS]` green, `[FAIL]` and `[ERROR]` red. The closing
 summary is bold, and green when the whole run passed; a run with failures is
@@ -167,35 +172,28 @@ the per-check lines:
 ```
   [PASS] FileVault enabled
   [FAIL] Firewall enabled
+  [ERROR] Screen lock under 5 minutes — osqueryi timed out after 10 seconds
 ────────────────────────────────────────────
-Done: 2/4 checks passed
+Done: 1/4 checks passed
 Report this run? [y/N]
 ```
 
 Colour is decided by picocli's `Ansi.AUTO`, so it turns itself off when there
-is no terminal — piped into a file, mailed by cron, or with `NO_COLOR=1` set —
-rather than writing escape codes into a log.
+is no terminal — piped into a file, mailed by cron, or with `NO_COLOR=1` set.
 
-Quarkus's own log colourization is off (`quarkus.console.color=false`). It
-paints messages in 256-colour greys and near-whites chosen for a dark
-terminal — `38;5;231`, `38;5;251`, `38;5;253` — which read as washed-out grey
-on a light background and sit on top of the colours above. With it off the
-message text reaches the terminal exactly as written.
-
-When something needs diagnosing, turn it back up for one run:
+A check that errors says why on its own line; the stack trace behind it is a
+debug log. Quarkus logs its own startup at `INFO` — the profile, the installed
+features, the scheduler notice — so a command's output arrives with those lines
+around it unless the log level is lowered for the run:
 
 ```bash
-QUARKUS_LOG_LEVEL=INFO pruefstein-agent run                        # framework startup lines back
-QUARKUS_LOG_CATEGORY__COM_PRUEFSTEIN__LEVEL=DEBUG pruefstein-agent login  # why a refresh failed
-QUARKUS_BANNER_ENABLED=true pruefstein-agent                       # the banner, if you miss it
+QUARKUS_LOG_LEVEL=WARN pruefstein-agent run     # just the command's own output
+QUARKUS_LOG_LEVEL=DEBUG pruefstein-agent login  # why a refresh failed
+QUARKUS_BANNER_ENABLED=false pruefstein-agent   # without the banner
 ```
 
-The agent's own `DEBUG` needs that second form, not `QUARKUS_LOG_LEVEL=DEBUG`.
-An explicit category level pins its subtree, and `com.pruefstein` is pinned to
-`INFO` here to keep the run output visible while the root logger stays at
-`WARN` — so raising the root raises everything except the agent. Either way no
-rebuild is needed, because `quarkus.log.min-level` stays at `DEBUG`; the reason
-a refresh was rejected is only ever logged at that level.
+Nothing pins a category, so `QUARKUS_LOG_LEVEL` means what it says and no
+rebuild is needed to reach the agent's own `DEBUG` statements.
 
 ---
 
