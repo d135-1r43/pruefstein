@@ -148,6 +148,23 @@ single run, which is what CI uses.
 
 ---
 
+## Logging
+
+Quiet by default. Every command prints what it has to say on stdout, and the
+log only speaks up at `WARN` or worse — no banner, no startup lines. Raise it
+for a run that has to be explained:
+
+```bash
+PRUEFSTEIN_AGENT_LOG_LEVEL=DEBUG pruefstein-agent run
+```
+
+`INFO` gets the Quarkus startup lines back; `DEBUG` adds the stack trace behind
+every `[ERROR]` check line. The banner is a build-time switch and does not come
+back with the level — `quarkus.banner.enabled` and
+`quarkus.banner-generator.enabled` in `application.properties` turn it on again.
+
+---
+
 ## Output
 
 The commands write what they have to say to standard output — the verdicts, the
@@ -213,7 +230,11 @@ In dev mode, arguments are passed through `quarkus.args`:
 ./mvnw quarkus:dev -Dquarkus.args='run'
 ```
 
-Dev mode runs the application and restarts it on Enter.
+Dev mode runs the application and restarts it on Enter — it does **not** exit
+when the command finishes, and it prints its own startup logging regardless of
+the level above. That is dev mode, not the agent: the packaged artifact runs
+the command and exits. Use it for development, and the installed
+`pruefstein-agent` command for actual runs.
 
 ## Building
 
