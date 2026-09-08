@@ -1,6 +1,7 @@
 package com.pruefstein.report.flow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.TransactionPhase;
@@ -39,6 +40,9 @@ public class PeriodicFlowEventEmitter
 		}
 	}
 
+	// Serialized by hand rather than by the REST layer, so nothing registers
+	// it for reflection in the native image on its own.
+	@RegisterForReflection
 	private record CycleData(String deviceId, boolean reported)
 	{
 	}

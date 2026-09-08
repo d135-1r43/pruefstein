@@ -26,6 +26,7 @@ import com.pruefstein.report.service.ReportFinalizer;
 import com.pruefstein.user.domain.AppUser;
 import com.pruefstein.user.service.UserSyncService;
 import io.quarkus.oidc.Tenant;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
@@ -114,6 +115,10 @@ public class AgentResource
 	 *            the window belongs to the report, so a device reporting a
 	 *            second failing run gets back what is left of the first one's.
 	 */
+	// Handed back through a raw jakarta Response, so Quarkus never sees it as
+	// the endpoint's entity type and leaves it out of the native image's
+	// reflection data — Jackson then cannot serialize it at runtime.
+	@RegisterForReflection
 	public record ReportResponse(String reportUrl, Instant deadline)
 	{
 	}
