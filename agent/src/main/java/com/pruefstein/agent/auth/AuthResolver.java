@@ -62,25 +62,62 @@ public class AuthResolver
 				return;
 			}
 
-			if (credentials.refreshToken() != null)
+			if (tryRefresh(credentials))
 			{
-				try
-				{
-					Credentials refreshed = deviceAuthService.refresh(credentials);
-					tokenStore.save(refreshed);
-					tokenHolder.setAccessToken(refreshed.accessToken());
-					return;
-				}
-				catch (Exception e)
-				{
-					LOG.debug("Token refresh failed, re-authenticating. ", e);
-				}
+				return;
 			}
 		}
 
-		String serverUrl = resolveServerUrl(serverOverride, stored);
-		AgentServerConfig config = serverConfigClient.fetch(serverUrl);
+		login(resolveServerUrl(serverOverride, stored));
+	}
 
+	/**
+	 * Authenticates again after the server rejected the token we had.
+	 * <p>
+	 * {@link Credentials#isExpired()} is a stopwatch, and a stopwatch cannot
+	 * see the things that actually invalidate a token: an identity provider
+	 * that restarted or re-imported its realm signs with new keys, a revoked
+	 * session is gone, a rotated client no longer matches. All of those leave a
+	 * token that looks fine locally and comes back 401.
+	 * <p>
+	 * The refresh token is tried first, since a rejected access token is often
+	 * only stale, and an interactive login is worth avoiding when a refresh
+	 * would do. A refresh that fails, or that returns another token the server
+	 * will not take, falls through to the device flow.
+	 */
+	public void reauthenticate() throws IOException, InterruptedException
+	{
+		Optional<Credentials> stored = tokenStore.load();
+		if (stored.isPresent() && tryRefresh(stored.get()))
+		{
+			return;
+		}
+		login(resolveServerUrl(null, stored));
+	}
+
+	private boolean tryRefresh(Credentials credentials)
+	{
+		if (credentials.refreshToken() == null)
+		{
+			return false;
+		}
+		try
+		{
+			Credentials refreshed = deviceAuthService.refresh(credentials);
+			tokenStore.save(refreshed);
+			tokenHolder.setAccessToken(refreshed.accessToken());
+			return true;
+		}
+		catch (Exception e)
+		{
+			LOG.debug("Token refresh failed, re-authenticating. ", e);
+			return false;
+		}
+	}
+
+	private void login(String serverUrl) throws IOException, InterruptedException
+	{
+		AgentServerConfig config = serverConfigClient.fetch(serverUrl);
 		Credentials fresh = deviceAuthService.login(serverUrl, config);
 		tokenStore.save(fresh);
 		tokenHolder.setAccessToken(fresh.accessToken());

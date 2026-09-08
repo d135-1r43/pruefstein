@@ -1,4 +1,4 @@
-package com.pruefstein.report.flow;
+package com.pruefstein.report.service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

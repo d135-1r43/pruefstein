@@ -8,12 +8,15 @@ import com.pruefstein.compliance.repository.ComplianceGroupRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
 import com.pruefstein.device.repository.DeviceRepository;
+import com.pruefstein.report.domain.Report;
+import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.repository.ReportRepository;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.jwt.Claim;
 import io.quarkus.test.security.jwt.JwtSecurity;
+import io.restassured.response.ValidatableResponse;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +31,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @JwtSecurity(claims = { @Claim(key = "preferred_username", value = "testuser") })
 class AgentResourceTest
 {
+	private static final String DEVICE = "test-device";
+
 	@Inject
 	ComplianceGroupRepository groupRepository;
 
@@ -72,57 +77,158 @@ class AgentResourceTest
 	void tearDown()
 	{
 		QuarkusTransaction.requiringNew().run(() -> {
-			resultRepository.delete("report.deviceId", "test-device");
-			reportRepository.delete("deviceId", "test-device");
-			deviceRepository.delete("deviceId", "test-device");
+			resultRepository.delete("report.deviceId", DEVICE);
+			reportRepository.delete("deviceId", DEVICE);
+			deviceRepository.delete("deviceId", DEVICE);
 			itemRepository.deleteById(itemId);
 			groupRepository.deleteById(groupId);
 		});
 	}
 
 	@Test
-	void pushCompliantReportReturnsReportUrl()
+	void aCleanRunIsCompliantOnArrival()
 	{
-		// given
-		String body = """
-			{"deviceId":"test-device","userId":"test-user","checkedAt":"%s",
-			 "results":[{"itemId":%d,"passed":true,"output":"ok"}]}
-			""".formatted(Instant.now(), itemId);
-
 		// when
-		String reportUrl = given()
-			.contentType(JSON)
-			.body(body)
-			.when().post("/api/reports")
-			.then()
-			.statusCode(200)
-			.extract().path("reportUrl");
+		String reportUrl = push(true);
 
 		// then
-		assertNotNull(reportUrl);
 		assertTrue(reportUrl.contains("/Reports/show/"), "reportUrl should contain /Reports/show/");
+		QuarkusTransaction.requiringNew().run(() -> {
+			Report report = reportOf(reportUrl);
+			assertEquals(ReportStatus.COMPLIANT, report.getStatus());
+			assertNotNull(report.getFinalizedAt(), "a decided report should say when it was decided");
+			assertNull(report.getDeadline(), "there is nothing to remediate");
+		});
+	}
+
+	/**
+	 * The agent asked before sending this, so the failures are reported on
+	 * purpose. What they buy is time to fix them, not an immediate verdict.
+	 */
+	@Test
+	void aFailingRunOpensAReportWithADeadline()
+	{
+		// when
+		String reportUrl = push(false);
+
+		// then
+		QuarkusTransaction.requiringNew().run(() -> {
+			Report report = reportOf(reportUrl);
+			assertEquals(ReportStatus.OPEN, report.getStatus());
+			assertNotNull(report.getDeadline(), "an open report needs a deadline to be closed at");
+			assertNull(report.getFinalizedAt());
+		});
+	}
+
+	/**
+	 * Another go at the same failure updates the report someone is already
+	 * remediating rather than opening a second one beside it — and crucially
+	 * does not move the deadline, or a device could stay open indefinitely by
+	 * uploading a failing run every few days.
+	 */
+	@Test
+	void anotherFailingRunKeepsTheReportAndItsDeadline()
+	{
+		// given
+		String first = push(false);
+		Instant deadline = QuarkusTransaction.requiringNew()
+			.call(() -> reportOf(first).getDeadline());
+
+		// when
+		String second = push(false);
+
+		// then
+		assertEquals(first, second, "the second run should land on the open report");
+		QuarkusTransaction.requiringNew().run(() -> {
+			Report report = reportOf(first);
+			assertEquals(ReportStatus.OPEN, report.getStatus());
+			assertEquals(deadline, report.getDeadline(), "re-uploading must not buy more time");
+			assertEquals(1, resultRepository.count("report", report),
+				"the run should have replaced the results, not been added to them");
+		});
 	}
 
 	@Test
-	void pushNonCompliantReportStartsFlowAndReturnsReportUrl()
+	void aCleanRunClosesTheReportItWasOpenedBy()
 	{
 		// given
-		String body = """
-			{"deviceId":"test-device","userId":"test-user","checkedAt":"%s",
-			 "results":[{"itemId":%d,"passed":false,"output":"fail"}]}
-			""".formatted(Instant.now(), itemId);
+		String open = push(false);
 
+		// when — the device fixed what was failing and reported again
+		String fixed = push(true);
+
+		// then
+		assertEquals(open, fixed, "fixing a report should close that report, not open a new one");
+		QuarkusTransaction.requiringNew().run(() -> {
+			Report report = reportOf(open);
+			assertEquals(ReportStatus.COMPLIANT, report.getStatus());
+			assertNotNull(report.getFinalizedAt());
+		});
+	}
+
+	/**
+	 * With nothing open, each submission is its own record: two clean runs are
+	 * two reports, not one report checked twice.
+	 */
+	@Test
+	void aRunWithNothingOpenIsAReportOfItsOwn()
+	{
 		// when
-		String reportUrl = given()
+		String first = push(true);
+		String second = push(true);
+
+		// then
+		assertNotEquals(first, second);
+		QuarkusTransaction.requiringNew()
+			.run(() -> assertEquals(2, reportRepository.count("deviceId", DEVICE)));
+	}
+
+	/**
+	 * The agent cannot work the deadline out for itself — it belongs to the
+	 * report, not to the run — so the response has to carry it, and only while
+	 * there is still something to fix.
+	 */
+	@Test
+	void theResponseCarriesTheDeadlineOfAnOpenReport()
+	{
+		// given / when
+		String deadline = pushFor(false).extract().path("deadline");
+
+		// then
+		assertNotNull(deadline, "a failing run should be told how long it has");
+	}
+
+	@Test
+	void aDecidedReportComesBackWithNoDeadline()
+	{
+		assertNull(pushFor(true).extract().path("deadline"),
+			"a clean run has nothing to remediate, so nothing to count down");
+	}
+
+	private String push(boolean passed)
+	{
+		return pushFor(passed).extract().path("reportUrl");
+	}
+
+	private ValidatableResponse pushFor(boolean passed)
+	{
+		String body = """
+			{"deviceId":"%s","userId":"test-user","checkedAt":"%s",
+			 "results":[{"itemId":%d,"passed":%b,"output":"%s"}]}
+			""".formatted(DEVICE, Instant.now(), itemId, passed, passed ? "ok" : "fail");
+
+		return given()
 			.contentType(JSON)
 			.body(body)
 			.when().post("/api/reports")
 			.then()
-			.statusCode(200)
-			.extract().path("reportUrl");
+			.statusCode(200);
+	}
 
-		// then
-		assertNotNull(reportUrl);
-		assertTrue(reportUrl.contains("/Reports/show/"), "reportUrl should contain /Reports/show/");
+	/** The report the given {@code reportUrl} points at. */
+	private Report reportOf(String reportUrl)
+	{
+		return reportRepository.findById(
+			Long.valueOf(reportUrl.substring(reportUrl.lastIndexOf('/') + 1)));
 	}
 }

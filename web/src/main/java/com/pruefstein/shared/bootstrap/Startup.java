@@ -12,7 +12,6 @@ import com.pruefstein.compliance.domain.ComplianceItem;
 import com.pruefstein.compliance.domain.ComplianceResult;
 import com.pruefstein.compliance.domain.MatcherType;
 import com.pruefstein.compliance.repository.BlockedAppRepository;
-import com.pruefstein.compliance.repository.ComplianceGroupRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
 import com.pruefstein.compliance.service.CheckResolver;
@@ -66,9 +65,6 @@ public class Startup
 
 	@Inject
 	BlockedAppRepository blockedAppRepository;
-
-	@Inject
-	ComplianceGroupRepository groupRepository;
 
 	@Inject
 	ComplianceItemRepository itemRepository;

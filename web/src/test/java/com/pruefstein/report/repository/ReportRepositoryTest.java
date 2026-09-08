@@ -68,7 +68,6 @@ class ReportRepositoryTest
 		// given
 		Report report = openReport("expired-device", "expired-user");
 		report.setDeadline(Instant.now().minusSeconds(60));
-		report.setFlowInstanceId("flow-123");
 		reportRepository.persist(report);
 
 		// when
@@ -79,30 +78,12 @@ class ReportRepositoryTest
 	}
 
 	@Test
-	void findExpiredOpenIncludesReportsWithoutFlowInstanceId()
-	{
-		// given — nothing is listening for this report, which is exactly why
-		// the
-		// deadline job has to be the one that closes it
-		Report report = openReport("no-flow-device", "no-flow-user");
-		report.setDeadline(Instant.now().minusSeconds(60));
-		reportRepository.persist(report);
-
-		// when
-		List<Report> expired = reportRepository.findExpiredOpen(Instant.now());
-
-		// then
-		assertTrue(expired.stream().anyMatch(r -> "no-flow-device".equals(r.getDeviceId())));
-	}
-
-	@Test
 	void findExpiredOpenIgnoresNonOpenReports()
 	{
 		// given
 		Report report = openReport("compliant-device", "x");
 		report.setStatus(ReportStatus.COMPLIANT);
 		report.setDeadline(Instant.now().minusSeconds(60));
-		report.setFlowInstanceId("flow-456");
 		reportRepository.persist(report);
 
 		// when
@@ -118,7 +99,6 @@ class ReportRepositoryTest
 		// given
 		Report report = openReport("future-device", "future-user");
 		report.setDeadline(Instant.now().plusSeconds(3600));
-		report.setFlowInstanceId("flow-789");
 		reportRepository.persist(report);
 
 		// when

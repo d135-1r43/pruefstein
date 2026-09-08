@@ -7,7 +7,6 @@ import com.pruefstein.compliance.domain.ComplianceResult;
 import com.pruefstein.user.domain.AppUser;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -26,6 +25,12 @@ public class Report extends PanacheEntity
 	@Enumerated(EnumType.STRING)
 	private ReportStatus status = ReportStatus.COMPLIANT;
 
+	/**
+	 * When an open report runs out of time to be fixed. Set once, on the
+	 * submission that opened it, and deliberately not moved by a later
+	 * submission — the window belongs to the failure, not to the last attempt
+	 * at fixing it.
+	 */
 	private Instant deadline;
 
 	private Instant finalizedAt;
@@ -36,8 +41,13 @@ public class Report extends PanacheEntity
 	 */
 	private Instant reminderSentAt;
 
-	@Column(length = 64)
-	private String flowInstanceId;
+	/**
+	 * Set when the outcome mail was asked for while the report's failed checks
+	 * still had no explanations. The enrichment job sends it once they do — or
+	 * once it has waited long enough — and clears this. {@code null} means
+	 * nothing is waiting to be sent.
+	 */
+	private Instant mailPendingSince;
 
 	private String keycloakUser;
 
@@ -107,6 +117,16 @@ public class Report extends PanacheEntity
 		this.finalizedAt = finalizedAt;
 	}
 
+	public Instant getMailPendingSince()
+	{
+		return mailPendingSince;
+	}
+
+	public void setMailPendingSince(Instant mailPendingSince)
+	{
+		this.mailPendingSince = mailPendingSince;
+	}
+
 	public Instant getReminderSentAt()
 	{
 		return reminderSentAt;
@@ -115,16 +135,6 @@ public class Report extends PanacheEntity
 	public void setReminderSentAt(Instant reminderSentAt)
 	{
 		this.reminderSentAt = reminderSentAt;
-	}
-
-	public String getFlowInstanceId()
-	{
-		return flowInstanceId;
-	}
-
-	public void setFlowInstanceId(String flowInstanceId)
-	{
-		this.flowInstanceId = flowInstanceId;
 	}
 
 	public String getKeycloakUser()
