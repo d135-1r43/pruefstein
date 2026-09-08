@@ -36,6 +36,12 @@ updates:
           - "io.quarkus:*"
           - "io.quarkus.platform:*"
           - "io.quarkiverse.*:*"
+      # Build tooling moves independently of the platform, but /web and /agent
+      # keep the same plugin versions — one PR instead of two per bump.
+      build-plugins:
+        patterns:
+          - "org.apache.maven.plugins:*"
+          - "org.apache.maven:*"
 
   # Base images in web/ and agent/ Dockerfiles
   - package-ecosystem: docker
