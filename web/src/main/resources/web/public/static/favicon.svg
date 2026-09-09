@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="90 85 1075 1075">
+  <title>Prüfstein</title>
+  <!-- Deliberately the silhouette, not the faceted mark: at 16px the facet lines
+       collapse into grey noise. The full mark is logo.svg, and is what the nav,
+       the application sidebar and the touch icon use. -->
+  <rect x="-500" y="-500" width="2100" height="2100" fill="#facc15"/>
+  <path fill="#000" d="M657 132 Q668 126 678 134 L912 339 Q919 345 922 354 L1032 624 1051 683 1078 718 1156 863 Q1161 872 1155 882 L1066 1037 Q1062 1044 1054 1048 L890 1115 365 1115 183 1019 Q177 1016 174 1007 L97 826 Q94 820 96 812 L124 661 Q125 654 131 649 L243 553 251 453 Q251 445 258 440 L354 369 454 226 Q458 221 464 218Z"/>
+</svg>
