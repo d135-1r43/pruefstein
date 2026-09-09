@@ -1,0 +1,96 @@
+## Builds the marketing site in website/ and publishes it to GitHub Pages.
+##
+## Deliberately separate from ci.yml: that workflow does a GraalVM native build
+## and a container push. A copy change on the website has no business waiting
+## for that, or failing because of it.
+
+name: Website
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'website/**'
+      - '.github/workflows/website.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'website/**'
+      - '.github/workflows/website.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+## One deployment at a time. Not cancel-in-progress: a half-finished Pages
+## deployment is worse than a queued one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: website/.nvmrc
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install
+        working-directory: website
+        run: npm ci
+
+      ## GitHub Pages serves this project site from /<repo>/, so the build has
+      ## to know its prefix. Remove this once the site moves to its own domain.
+      - name: Build
+        working-directory: website
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}
+        run: npm run build
+
+      ## Cheap guards against the ways a static build fails while still exiting
+      ## 0: prerendering that yields an empty shell, assets that never got
+      ## linked, or a Pages-specific file that quietly stopped being copied.
+      - name: Check the build looks like the site
+        working-directory: website
+        run: |
+          set -eux
+          test -f build/index.html
+          test -f build/impressum/index.html
+          test -f build/.nojekyll
+          test -f build/favicon.ico
+          grep -q 'Prüfstein' build/index.html
+          grep -q '_app/immutable' build/index.html
+          # Prerendered, not an empty SPA shell. The page is ~49 kB today.
+          test "$(wc -c < build/index.html)" -gt 20000
+          # Assets must be relative, or nothing resolves under the /<repo>/ prefix.
+          grep -q 'href="\./_app/immutable' build/index.html
+          ! grep -q 'href="/_app/immutable' build/index.html
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: website/build
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

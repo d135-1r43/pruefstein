@@ -1,0 +1,21 @@
+{
+  "name": "pruefstein-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Marketing site for Prüfstein — pruefstein.com",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./jsconfig.json"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "^2.70.3",
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "svelte": "^5.57.0",
+    "vite": "^8.2.2"
+  }
+}
