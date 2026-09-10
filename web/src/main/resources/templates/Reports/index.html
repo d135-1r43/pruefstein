@@ -1,7 +1,23 @@
 {#include main.html}
 {#title}Reports — Prüfstein{/title}
 
-<div class="max-w-6xl">
+<div class="max-w-6xl" x-data="{
+  setStatus(s) {
+    var f = document.getElementById('ff-status');
+    // Clicking the pill that is already on clears it, so the control that
+    // applied a filter is also the one that lifts it. Clicking ALL while ALL
+    // is on stays a no-op, which is what it looks like it should do.
+    f.value = (f.value === s) ? '' : s;
+    document.getElementById('ff').submit();
+  },
+  setSort(col) {
+    var sf = document.getElementById('ff-sort');
+    var df = document.getElementById('ff-dir');
+    if (sf.value === col) { df.value = (df.value === 'asc') ? 'desc' : 'asc'; }
+    else { sf.value = col; df.value = 'desc'; }
+    document.getElementById('ff').submit();
+  }
+}">
 
   <div class="mb-8">
     <h1 class="text-4xl font-black tracking-tight">Reports</h1>
@@ -9,23 +25,7 @@
   </div>
 
   <!-- ── Filters ──────────────────────────────────────────────────── -->
-  <div x-data="{
-    setStatus(s) {
-      var f = document.getElementById('ff-status');
-      // Clicking the pill that is already on clears it, so the control that
-      // applied a filter is also the one that lifts it. Clicking ALL while
-      // ALL is on stays a no-op, which is what it looks like it should do.
-      f.value = (f.value === s) ? '' : s;
-      document.getElementById('ff').submit();
-    },
-    setSort(col) {
-      var sf = document.getElementById('ff-sort');
-      var df = document.getElementById('ff-dir');
-      if (sf.value === col) { df.value = (df.value === 'asc') ? 'desc' : 'asc'; }
-      else { sf.value = col; df.value = 'desc'; }
-      document.getElementById('ff').submit();
-    }
-  }" class="mb-5">
+  <div class="mb-5">
 
     <form id="ff" method="GET" action="{uri:Reports.index}" class="flex flex-wrap items-stretch gap-3">
       <input id="ff-status" type="hidden" name="status" value="{statusFilter}">

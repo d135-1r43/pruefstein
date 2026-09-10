@@ -149,6 +149,42 @@ class ReportsTest
 	}
 
 	@Test
+	void theSortHeadersSitInsideTheComponentThatDefinesSetSort()
+	{
+		// given — the default view
+
+		// when / then — the sort buttons live in the table, which used to sit
+		// outside the x-data element defining setSort, so Alpine never bound
+		// them and clicking a column header did nothing at all. The component
+		// has to wrap the whole page, not just the filter bar.
+		given()
+			.when().get("/Reports/index")
+			.then()
+			.statusCode(200)
+			.body(containsString("class=\"max-w-6xl\" x-data="))
+			.body(not(containsString("}\" class=\"mb-5\"")));
+	}
+
+	@Test
+	void indexSortsByTheRequestedColumn()
+	{
+		// given — the seeded report, plus one that sorts ahead of it by device
+
+		// when / then — the parameters the sort headers submit have to be
+		// understood on arrival, or a working click still changes nothing
+		given()
+			.when().get("/Reports/index?sort=deviceId&dir=asc")
+			.then()
+			.statusCode(200)
+			.body(containsString("reports-test-device"));
+		given()
+			.when().get("/Reports/index?sort=deviceId&dir=desc")
+			.then()
+			.statusCode(200)
+			.body(containsString("reports-test-device"));
+	}
+
+	@Test
 	void indexContainsReport()
 	{
 		// given (report seeded in setUp)
