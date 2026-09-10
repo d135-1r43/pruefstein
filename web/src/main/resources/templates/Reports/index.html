@@ -77,6 +77,27 @@
           SEARCH
         </button>
       </div>
+
+      {#if statusFilter || q}
+      <!--
+        Only while something is actually filtering. A reset that is always
+        there reads as though a filter were on, and there would be nothing
+        for it to do. An empty string is falsy in Qute, and the controller
+        hands both of these over as "" when unset, so this is just "either
+        one is set".
+
+        A plain link rather than a scripted reset: leaving status and q off
+        the URL is what clears them, and carrying sort and dir keeps the
+        ordering the reader chose. That is deliberate — this button is
+        labelled for the filters, and someone who sorted by device did not
+        ask for that to be undone.
+      -->
+      <a href="{uri:Reports.index}?sort={sort}&amp;dir={dir}"
+        title="Clear the status filter and the search box"
+        class="flex items-center border-2 border-black px-3 py-1.5 text-[10px] font-black tracking-widest bg-white hover:bg-red-100 transition-none">
+        RESET FILTERS
+      </a>
+      {/if}
     </form>
 
   </div>

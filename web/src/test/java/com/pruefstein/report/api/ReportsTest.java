@@ -99,6 +99,56 @@ class ReportsTest
 	}
 
 	@Test
+	void theResetButtonIsAbsentWhileNothingIsFiltering()
+	{
+		// given — the default view
+
+		// when / then — a reset that is always on screen reads as though a
+		// filter were applied
+		given()
+			.when().get("/Reports/index")
+			.then()
+			.statusCode(200)
+			.body(not(containsString("RESET FILTERS")));
+	}
+
+	@Test
+	void theResetButtonAppearsForAStatusFilter()
+	{
+		// when / then
+		given()
+			.when().get("/Reports/index?status=COMPLIANT")
+			.then()
+			.statusCode(200)
+			.body(containsString("RESET FILTERS"));
+	}
+
+	@Test
+	void theResetButtonAppearsForASearch()
+	{
+		// when / then — searching is filtering too, and it is the half that is
+		// easy to forget
+		given()
+			.when().get("/Reports/index?q=reports-test")
+			.then()
+			.statusCode(200)
+			.body(containsString("RESET FILTERS"));
+	}
+
+	@Test
+	void theResetButtonKeepsTheChosenOrdering()
+	{
+		// when / then — it clears the filters by leaving them off the link,
+		// and carries the sort so a reader's ordering survives the reset
+		given()
+			.when().get("/Reports/index?status=COMPLIANT&sort=deviceId&dir=asc")
+			.then()
+			.statusCode(200)
+			.body(containsString("sort=deviceId&amp;dir=asc"))
+			.body(not(containsString("status=COMPLIANT&amp;")));
+	}
+
+	@Test
 	void indexContainsReport()
 	{
 		// given (report seeded in setUp)
