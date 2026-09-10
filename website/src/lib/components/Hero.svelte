@@ -1,10 +1,41 @@
 <script>
+	import { onMount } from 'svelte';
 	import Button from './Button.svelte';
 	import Terminal from './Terminal.svelte';
 	import Stone from './Stone.svelte';
 	import { site } from '$lib/data/site.js';
 
-	const run = [
+	/**
+	 * How far out the demo's deadline sits. A date written into the source went
+	 * stale the day it passed, and the site is not rebuilt often enough for the
+	 * build date on its own to keep it honest — so it is counted from whenever
+	 * the page is actually read.
+	 *
+	 * Prerendering bakes in the build day's answer, which is the best a visitor
+	 * without JavaScript can be given; the client corrects it on mount.
+	 */
+	const REMEDIATION_DAYS = 14;
+
+	/**
+	 * `d MMM yyyy`, to match the agent's own formatter. Spelled out rather than
+	 * left to Intl, whose en-GB shortens September to "Sept" — a difference
+	 * nobody would notice until the one month it shows up.
+	 */
+	const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+	function deadline() {
+		const d = new Date();
+		d.setDate(d.getDate() + REMEDIATION_DAYS);
+		return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+	}
+
+	let due = $state(deadline());
+
+	onMount(() => {
+		due = deadline();
+	});
+
+	const run = $derived([
 		{ k: 'cmd', t: 'pruefstein-agent run' },
 		{ k: 'out', t: 'Running compliance checks on device 4C4C4544 (user: markus-mbp)' },
 		{ k: 'pass', t: 'FileVault enabled' },
@@ -16,9 +47,9 @@
 		{ k: 'pass', t: 'No blacklisted applications installed' },
 		{ k: 'rule' },
 		{ k: 'sum', t: 'Done: 17/19 checks passed' },
-		{ k: 'notice', t: 'Reporting as non-compliant on 15 Sep 2026 unless fixed.' },
+		{ k: 'notice', t: `Reporting as non-compliant on ${due} unless fixed.` },
 		{ k: 'ask', t: 'Report this run? [y/N] ' }
-	];
+	]);
 </script>
 
 <section class="hero" id="top">
