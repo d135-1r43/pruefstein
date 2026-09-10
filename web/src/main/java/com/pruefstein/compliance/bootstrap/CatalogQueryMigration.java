@@ -74,6 +74,11 @@ public class CatalogQueryMigration
 	 * compliant, and passed every device whether or not automatic login was
 	 * enabled or a guest account was available — the more dangerous half,
 	 * because a fleet full of them looked clean.
+	 *
+	 * <p>
+	 * Firewall logging is here for a related but distinct reason: it read a
+	 * table rather than a domain, but that table reads the same file macOS 15
+	 * deleted, and it cannot report anything true on a modern machine either.
 	 */
 	static final List<Rewrite> REWRITES = List.of(
 		new Rewrite("a12.auto-updates#plist", "a12.auto-updates",
@@ -87,7 +92,9 @@ public class CatalogQueryMigration
 		new Rewrite("a9.auto-login#plist", "a9.auto-login",
 			"SELECT value FROM preferences WHERE domain = 'com.apple.loginwindow' AND key = 'autoLoginUser';"),
 		new Rewrite("a9.guest-account#plist", "a9.guest-account",
-			"SELECT value FROM preferences WHERE domain = 'com.apple.loginwindow' AND key = 'GuestEnabled';"));
+			"SELECT value FROM preferences WHERE domain = 'com.apple.loginwindow' AND key = 'GuestEnabled';"),
+		new Rewrite("a12.firewall-logging#os-version", "a12.firewall-logging",
+			"SELECT logging_enabled FROM alf;"));
 
 	@Inject
 	SeedLedger ledger;

@@ -107,6 +107,28 @@ class CatalogExpressionTest
 		assertFalse(evaluate("a9.screen-lock-timeout", idle(2, "0", "300")));
 	}
 
+	// ── Firewall logging
+	// ─────────────────────────────────────────────────
+
+	@Test
+	void firewallLoggingPassesOnMacOsFifteenAndLaterWhateverTheTableSays() throws Exception
+	{
+		// macOS 15 removed the setting and turned logging on for good, and the
+		// alf table still reports 0 because the file it reads is gone
+		assertTrue(evaluate("a12.firewall-logging", "[{\"major\":\"26\",\"logging_enabled\":\"0\"}]"));
+		assertTrue(evaluate("a12.firewall-logging", "[{\"major\":\"15\",\"logging_enabled\":\"0\"}]"));
+	}
+
+	@Test
+	void firewallLoggingStillReadsTheSettingOnOlderMacOs() throws Exception
+	{
+		// below that line the setting was real, so it is still what decides
+		assertTrue(evaluate("a12.firewall-logging", "[{\"major\":\"14\",\"logging_enabled\":\"1\"}]"));
+		assertFalse(evaluate("a12.firewall-logging", "[{\"major\":\"14\",\"logging_enabled\":\"0\"}]"));
+		// 10.x compared numerically, not as text
+		assertFalse(evaluate("a12.firewall-logging", "[{\"major\":\"10\",\"logging_enabled\":\"0\"}]"));
+	}
+
 	@Test
 	void noTimeoutConfiguredAnywhereFails() throws Exception
 	{

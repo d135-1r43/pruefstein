@@ -27,6 +27,15 @@ class CatalogQueryMigrationTest
 {
 	private static final String AUTO_UPDATES = "a12.auto-updates";
 
+	/**
+	 * The rewrites that answer by reading a preference file. Firewall logging
+	 * is the one that cannot — macOS 15 deleted the file it would have read, so
+	 * it answers from the OS version instead.
+	 */
+	private static final List<String> PLIST_BACKED = List.of(
+		"a12.auto-updates", "a12.critical-updates", "a12.macos-updates",
+		"a9.screen-lock-timeout", "a9.auto-login", "a9.guest-account");
+
 	@Inject
 	CatalogQueryMigration migration;
 
@@ -135,20 +144,20 @@ class CatalogQueryMigrationTest
 		{
 			String query = ComplianceCatalog.check(rewrite.checkKey()).query();
 			assertFalse(query.contains("FROM preferences"), rewrite.checkKey() + ": " + query);
-			assertTrue(query.contains("FROM plist"), rewrite.checkKey() + ": " + query);
 		}
 	}
 
 	@Test
-	void everyRewrittenCheckConsultsTheManagedProfile()
+	void theChecksThatReadAFileConsultTheManagedProfile()
 	{
 		// then — a setting enforced centrally overrides the local file, and a
 		// check reading only the local one contradicts the fleet's own policy
-		for (Rewrite rewrite : CatalogQueryMigration.REWRITES)
+		for (String checkKey : PLIST_BACKED)
 		{
-			String query = ComplianceCatalog.check(rewrite.checkKey()).query();
+			String query = ComplianceCatalog.check(checkKey).query();
+			assertTrue(query.contains("FROM plist"), checkKey + ": " + query);
 			assertTrue(query.contains("/Library/Managed Preferences/"),
-				rewrite.checkKey() + " ignores managed preferences: " + query);
+				checkKey + " ignores managed preferences: " + query);
 		}
 	}
 

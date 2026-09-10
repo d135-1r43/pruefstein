@@ -124,6 +124,29 @@ public final class ComplianceCatalog
 	 * old version of this check reported machines it had never really measured.
 	 */
 	private static final String SCREEN_LOCK_WITHIN_POLICY = "results.size() > 0 && results[0].configured > 0 && results[0].shortest > 0 && results[0].longest <= 300";
+
+	/** The OS major version alongside what the alf table makes of logging. */
+	private static final String FIREWALL_LOGGING_QUERY = "SELECT (SELECT major FROM os_version) AS major,"
+		+ " (SELECT logging_enabled FROM alf) AS logging_enabled;";
+
+	/**
+	 * Passes when the application firewall is logging.
+	 *
+	 * <p>
+	 * macOS 15 took this setting away and turned logging on permanently:
+	 * {@code socketfilterfw} no longer has a logging switch at all, the
+	 * {@code EnableLogging} profile key is deprecated, and
+	 * {@code /Library/Preferences/com.apple.alf.plist} — the file osquery's
+	 * {@code alf} table reads — does not exist any more. On such a machine the
+	 * table reports {@code logging_enabled} as 0 whatever the firewall is
+	 * really doing, and returns empty strings for the siblings it also cannot
+	 * find, so the version is the only honest answer above that line.
+	 *
+	 * <p>
+	 * Below it the setting was real and configurable, and is still read.
+	 */
+	private static final String FIREWALL_LOGGING_ENABLED = "results.size() > 0 && (results[0].major >= 15 || results[0].logging_enabled == '1')";
+
 	public static final List<GroupDef> GROUPS = List.of(
 		new GroupDef(ORGANIZATIONAL, "A.5 Organizational controls"),
 		new GroupDef(PHYSICAL, "A.7 Physical controls"),
@@ -173,8 +196,8 @@ public final class ComplianceCatalog
 
 		new CheckDef("a12.firewall-logging", TECHNOLOGICAL, "A.8.15",
 			"Firewall logging enabled",
-			"SELECT logging_enabled FROM alf;",
-			"results.size() > 0 && results[0].logging_enabled == '1'"),
+			FIREWALL_LOGGING_QUERY,
+			FIREWALL_LOGGING_ENABLED),
 
 		// Deliberately group-less: it lives on the Blocked Apps screen and in
 		// its own report section, and its SQL comes from the rules kept there.
