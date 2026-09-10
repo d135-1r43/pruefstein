@@ -4,13 +4,25 @@ import java.util.List;
 
 /**
  * The baseline set of compliance checks every deployment starts with, mapped to
- * the ISO 27001 Annex A controls they serve.
+ * the ISO/IEC 27001:2022 Annex A controls they serve.
+ *
+ * <p>
+ * Groups are the four themes the 2022 revision organises Annex A into, and each
+ * check additionally names the individual control it evidences. The theme is
+ * what an administrator navigates; the control is what an auditor traces. A.6
+ * People has no entry here because nothing about it is measurable on an
+ * endpoint — the seeder only creates a group some check asks for.
  *
  * <p>
  * Keys are permanent. They are what the seed ledger remembers, so renaming one
  * makes the deployment believe it is a new check and create a duplicate
  * alongside whatever the administrator has since done to the original. Add
- * entries freely; never repurpose a key.
+ * entries freely; never repurpose a key. The {@code a9.}/{@code a10.}/
+ * {@code a12.}/{@code a13.} prefixes are the 2013 domains these checks were
+ * first written against: they are meaningless now and deliberately left alone,
+ * because renaming them would cost every existing deployment a duplicate of
+ * every check. Read the key as an opaque identifier and the {@code control} as
+ * the standard it maps to.
  */
 public final class ComplianceCatalog
 {
@@ -19,11 +31,14 @@ public final class ComplianceCatalog
 	}
 
 	/**
+	 * @param control
+	 *            the Annex A control this check evidences, as it is numbered in
+	 *            ISO/IEC 27001:2022
 	 * @param query
 	 *            the osquery SQL, or {@code null} for a check whose SQL is
 	 *            generated at request time
 	 */
-	public record CheckDef(String key, String groupKey, String name, String query, String expression)
+	public record CheckDef(String key, String groupKey, String control, String name, String query, String expression)
 	{
 		public boolean generated()
 		{
@@ -31,10 +46,9 @@ public final class ComplianceCatalog
 		}
 	}
 
-	private static final String CRYPTO = "a10";
-	private static final String OPERATIONS = "a12";
-	private static final String ACCESS = "a9";
-	private static final String COMMUNICATIONS = "a13";
+	private static final String ORGANIZATIONAL = "a5";
+	private static final String PHYSICAL = "a7";
+	private static final String TECHNOLOGICAL = "a8";
 
 	/**
 	 * Where macOS keeps the automatic-update settings: the local file, and the
@@ -110,115 +124,114 @@ public final class ComplianceCatalog
 	 * old version of this check reported machines it had never really measured.
 	 */
 	private static final String SCREEN_LOCK_WITHIN_POLICY = "results.size() > 0 && results[0].configured > 0 && results[0].shortest > 0 && results[0].longest <= 300";
-
 	public static final List<GroupDef> GROUPS = List.of(
-		new GroupDef(CRYPTO, "A.10 Cryptography"),
-		new GroupDef(OPERATIONS, "A.12 Operations Security"),
-		new GroupDef(ACCESS, "A.9 Access Control"),
-		new GroupDef(COMMUNICATIONS, "A.13 Communications Security"));
+		new GroupDef(ORGANIZATIONAL, "A.5 Organizational controls"),
+		new GroupDef(PHYSICAL, "A.7 Physical controls"),
+		new GroupDef(TECHNOLOGICAL, "A.8 Technological controls"));
 
 	public static final List<CheckDef> CHECKS = List.of(
-		new CheckDef("a10.filevault", CRYPTO,
+		new CheckDef("a10.filevault", TECHNOLOGICAL, "A.8.24",
 			"FileVault enabled",
 			"SELECT filevault_status FROM disk_encryption WHERE filevault_status = 'on' LIMIT 1;",
 			"results.size() > 0"),
 
-		new CheckDef("a12.firewall", OPERATIONS,
+		new CheckDef("a12.firewall", TECHNOLOGICAL, "A.8.20",
 			"Firewall enabled",
 			"SELECT global_state FROM alf;",
 			"results.size() > 0 && results[0].global_state == '1'"),
 
-		new CheckDef("a12.auto-updates", OPERATIONS,
+		new CheckDef("a12.auto-updates", TECHNOLOGICAL, "A.8.8",
 			"Automatic updates enabled",
 			softwareUpdateQuery("AutomaticCheckEnabled"),
 			SOFTWARE_UPDATE_NOT_DISABLED),
 
-		// A.12.6 — technical vulnerability management: checking for updates is
-		// not enough, they have to be installed as well
-		new CheckDef("a12.critical-updates", OPERATIONS,
+		// Checking for updates is not enough, they have to be installed as well
+		new CheckDef("a12.critical-updates", TECHNOLOGICAL, "A.8.8",
 			"Critical security updates installed automatically",
 			softwareUpdateQuery("CriticalUpdateInstall"),
 			SOFTWARE_UPDATE_ENABLED),
 
-		new CheckDef("a12.macos-updates", OPERATIONS,
+		new CheckDef("a12.macos-updates", TECHNOLOGICAL, "A.8.8",
 			"macOS updates installed automatically",
 			softwareUpdateQuery("AutomaticallyInstallMacOSUpdates"),
 			SOFTWARE_UPDATE_ENABLED),
 
-		// A.12.2 — protection against malware
-		new CheckDef("a12.gatekeeper", OPERATIONS,
+		new CheckDef("a12.gatekeeper", TECHNOLOGICAL, "A.8.7",
 			"Gatekeeper enabled",
 			"SELECT assessments_enabled FROM gatekeeper;",
 			"results.size() > 0 && results[0].assessments_enabled == '1'"),
 
-		new CheckDef("a12.sip", OPERATIONS,
+		new CheckDef("a12.sip", TECHNOLOGICAL, "A.8.7",
 			"System Integrity Protection enabled",
 			"SELECT enabled FROM sip_config WHERE config_flag = 'sip';",
 			"results.size() > 0 && results[0].enabled == '1'"),
 
-		// A.12.3 — backup
-		new CheckDef("a12.time-machine", OPERATIONS,
+		new CheckDef("a12.time-machine", TECHNOLOGICAL, "A.8.13",
 			"Time Machine backup destination configured",
 			"SELECT destination_id FROM time_machine_destinations;",
 			"results.size() > 0"),
 
-		// A.12.4 — logging and monitoring
-		new CheckDef("a12.firewall-logging", OPERATIONS,
+		new CheckDef("a12.firewall-logging", TECHNOLOGICAL, "A.8.15",
 			"Firewall logging enabled",
 			"SELECT logging_enabled FROM alf;",
 			"results.size() > 0 && results[0].logging_enabled == '1'"),
 
-		// A.12.6.2 — restrictions on software installation. Deliberately
-		// group-less: it lives on the Blocked Apps screen and in its own report
-		// section, and its SQL comes from the rules kept there.
-		new CheckDef("a12.blocked-apps", null,
+		// Deliberately group-less: it lives on the Blocked Apps screen and in
+		// its own report section, and its SQL comes from the rules kept there.
+		// The control still applies, so it carries one.
+		new CheckDef("a12.blocked-apps", null, "A.8.19",
 			"No blacklisted applications installed", null, null),
 
-		new CheckDef("a9.screen-lock-timeout", ACCESS,
+		new CheckDef("a9.screen-lock-timeout", PHYSICAL, "A.7.7",
 			"Screen lock timeout ≤ 300 seconds",
 			SCREENSAVER_IDLE_QUERY,
 			SCREEN_LOCK_WITHIN_POLICY),
 
-		// A.9.4.2 — secure log-on. A screensaver that blanks the display
-		// without asking for a password protects nothing.
-		new CheckDef("a9.screen-lock-password", ACCESS,
+		// A screensaver that blanks the display without asking for a password
+		// protects nothing.
+		new CheckDef("a9.screen-lock-password", PHYSICAL, "A.7.7",
 			"Screen lock requires a password",
 			"SELECT enabled, grace_period FROM screenlock;",
 			"results.size() > 0 && results[0].enabled == '1' && results[0].grace_period <= 300"),
 
-		new CheckDef("a9.auto-login", ACCESS,
+		// Automatic login bypasses authentication outright, which is why this
+		// is secure authentication rather than access control.
+		new CheckDef("a9.auto-login", TECHNOLOGICAL, "A.8.5",
 			"Automatic login disabled",
 			loginWindowQuery("autoLoginUser", "value != ''"),
 			LOGIN_WINDOW_OFF),
 
-		new CheckDef("a9.guest-account", ACCESS,
+		// An account nobody owns cannot be granted or revoked, so this sits
+		// with access control as a rule rather than with the technological
+		// controls.
+		new CheckDef("a9.guest-account", ORGANIZATIONAL, "A.5.15",
 			"Guest account disabled",
 			loginWindowQuery("GuestEnabled", "value IN ('1', 'true')"),
 			LOGIN_WINDOW_OFF),
 
-		// A.13.1 — network security management: every inbound sharing service
-		// is attack surface on an endpoint that need not serve anything
-		new CheckDef("a13.remote-login", COMMUNICATIONS,
+		// Every inbound sharing service is attack surface on an endpoint that
+		// need not serve anything
+		new CheckDef("a13.remote-login", TECHNOLOGICAL, "A.8.20",
 			"Remote login (SSH) disabled",
 			"SELECT remote_login FROM sharing_preferences;",
 			"results.size() > 0 && results[0].remote_login == '0'"),
 
-		new CheckDef("a13.screen-sharing", COMMUNICATIONS,
+		new CheckDef("a13.screen-sharing", TECHNOLOGICAL, "A.8.20",
 			"Screen sharing disabled",
 			"SELECT screen_sharing FROM sharing_preferences;",
 			"results.size() > 0 && results[0].screen_sharing == '0'"),
 
-		new CheckDef("a13.file-sharing", COMMUNICATIONS,
+		new CheckDef("a13.file-sharing", TECHNOLOGICAL, "A.8.20",
 			"File sharing disabled",
 			"SELECT file_sharing FROM sharing_preferences;",
 			"results.size() > 0 && results[0].file_sharing == '0'"),
 
-		new CheckDef("a13.internet-sharing", COMMUNICATIONS,
+		new CheckDef("a13.internet-sharing", TECHNOLOGICAL, "A.8.20",
 			"Internet sharing disabled",
 			"SELECT internet_sharing FROM sharing_preferences;",
 			"results.size() > 0 && results[0].internet_sharing == '0'"),
 
-		new CheckDef("a13.stealth-mode", COMMUNICATIONS,
+		new CheckDef("a13.stealth-mode", TECHNOLOGICAL, "A.8.20",
 			"Firewall stealth mode enabled",
 			"SELECT stealth_enabled FROM alf;",
 			"results.size() > 0 && results[0].stealth_enabled == '1'"));

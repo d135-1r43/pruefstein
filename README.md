@@ -176,17 +176,33 @@ docker compose up -d
 
 ---
 
-## ISO 27001 mapping
+## ISO 27001:2022 mapping
 
-Compliance Groups map to ISO 27001 Annex A control families. Suggested groups:
+Compliance Groups are the four themes ISO/IEC 27001:2022 organises Annex A into.
+Each seeded check additionally records the individual control it evidences,
+shown in the **Control** column on a group's screen — the theme is what an
+administrator navigates, the control is what an auditor traces.
 
-| Group | Controls |
-|---|---|
-| A.8 Asset Management | Inventory, software install policy |
-| A.9 Access Control | Screen lock, password policy, MFA presence |
-| A.10 Cryptography | Disk encryption |
-| A.12 Operations Security | Auto-update, AV, firewall |
-| A.13 Network Security | VPN, DNS-over-HTTPS |
+| Theme | Control | Seeded checks |
+|---|---|---|
+| A.5 Organizational | A.5.15 Access control | Guest account disabled |
+| A.7 Physical | A.7.7 Clear desk and clear screen | Screen lock timeout, screen lock requires a password |
+| A.8 Technological | A.8.5 Secure authentication | Automatic login disabled |
+| | A.8.7 Protection against malware | Gatekeeper, System Integrity Protection |
+| | A.8.8 Management of technical vulnerabilities | Automatic update check, critical security updates, macOS updates |
+| | A.8.13 Information backup | Time Machine backup destination |
+| | A.8.15 Logging | Firewall logging |
+| | A.8.19 Installation of software on operational systems | No blacklisted applications |
+| | A.8.20 Networks security | Firewall, stealth mode, remote login, screen/file/internet sharing |
+| | A.8.24 Use of cryptography | FileVault |
+
+A.6 People has no row because nothing in it is measurable on an endpoint, and
+the seeder only creates a group that some check asks for.
+
+The seed keys (`a9.*`, `a10.*`, `a12.*`, `a13.*`) still carry the 2013 domain
+numbers. They are opaque identifiers that the seed ledger remembers, and
+renaming one would make every existing deployment seed a duplicate check, so
+they are left as they are — read the `control` field, not the key.
 
 ---
 
