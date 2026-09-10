@@ -12,7 +12,7 @@
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
 
     <!-- Non-compliant -->
-    <a href="{uri:Reports.index}" class="block bg-red-400 border-2 border-black shadow-brutal p-6 hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+    <a href="{uri:Reports.index}?status=NON_COMPLIANT" class="block bg-red-400 border-2 border-black shadow-brutal p-6 hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
       <p class="text-[10px] font-black tracking-widest text-red-900">NON-COMPLIANT</p>
       <p class="text-5xl font-black mt-2">{nonCompliantCount}</p>
       {#if totalCount > 0}
@@ -25,7 +25,7 @@
     </a>
 
     <!-- Missing -->
-    <a href="{uri:Reports.index}" class="block bg-accent border-2 border-black shadow-brutal p-6 hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+    <a href="{uri:Reports.index}?status=MISSING" class="block bg-accent border-2 border-black shadow-brutal p-6 hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
       <p class="text-[10px] font-black tracking-widest text-stone-700">MISSING</p>
       <p class="text-5xl font-black mt-2">{missingCount}</p>
       {#if totalCount > 0}
@@ -38,7 +38,7 @@
     </a>
 
     <!-- Compliant -->
-    <a href="{uri:Reports.index}" class="block bg-emerald-400 border-2 border-black shadow-brutal p-6 hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+    <a href="{uri:Reports.index}?status=COMPLIANT" class="block bg-emerald-400 border-2 border-black shadow-brutal p-6 hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
       <p class="text-[10px] font-black tracking-widest text-emerald-900">COMPLIANT</p>
       <p class="text-5xl font-black mt-2">{compliantCount}</p>
       {#if totalCount > 0}

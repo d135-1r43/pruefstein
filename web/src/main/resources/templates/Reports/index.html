@@ -11,7 +11,11 @@
   <!-- ── Filters ──────────────────────────────────────────────────── -->
   <div x-data="{
     setStatus(s) {
-      document.getElementById('ff-status').value = s;
+      var f = document.getElementById('ff-status');
+      // Clicking the pill that is already on clears it, so the control that
+      // applied a filter is also the one that lifts it. Clicking ALL while
+      // ALL is on stays a no-op, which is what it looks like it should do.
+      f.value = (f.value === s) ? '' : s;
       document.getElementById('ff').submit();
     },
     setSort(col) {
