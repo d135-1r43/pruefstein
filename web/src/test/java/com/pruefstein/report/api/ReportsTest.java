@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
 
 @QuarkusTest
 @TestSecurity(user = "admin", roles = { "admin" })
@@ -61,6 +62,40 @@ class ReportsTest
 			.then()
 			.statusCode(200)
 			.contentType(containsString("text/html"));
+	}
+
+	@Test
+	void indexFiltersByStatus()
+	{
+		// given — one COMPLIANT report from setUp
+
+		// when asked for the status it has
+		given()
+			.when().get("/Reports/index?status=COMPLIANT")
+			.then()
+			.statusCode(200)
+			.body(containsString("reports-test-device"));
+
+		// when asked for one it does not — the dashboard's non-compliant block
+		// links here, so this parameter is a contract, not a convenience
+		given()
+			.when().get("/Reports/index?status=NON_COMPLIANT")
+			.then()
+			.statusCode(200)
+			.body(not(containsString("reports-test-device")));
+	}
+
+	@Test
+	void indexIgnoresAnUnknownStatus()
+	{
+		// given — a value no ReportStatus has, as a hand-edited URL would give
+
+		// when / then — the filter is dropped rather than the page breaking
+		given()
+			.when().get("/Reports/index?status=NOT_A_STATUS")
+			.then()
+			.statusCode(200)
+			.body(containsString("reports-test-device"));
 	}
 
 	@Test
