@@ -55,7 +55,7 @@ public class Reports extends Controller
 	public static class Templates
 	{
 		public static native TemplateInstance index(
-			List<Report> reports,
+			List<ReportGroup> groups,
 			String statusFilter,
 			String q,
 			String sort,
@@ -223,7 +223,9 @@ public class Reports extends Controller
 			}
 		}
 		List<Report> reports = reportRepository.listFiltered(statusFilter, activeQ, activeSort, activeDir, ownerFilter);
-		return Templates.index(reports, activeStatus, activeQ, activeSort, activeDir);
+		// Grouped after filtering, so "latest" means the latest run the reader
+		// asked to see rather than one the filter just took off the page.
+		return Templates.index(ReportGroup.group(reports), activeStatus, activeQ, activeSort, activeDir);
 	}
 
 	public TemplateInstance show(@RestPath Long id)
