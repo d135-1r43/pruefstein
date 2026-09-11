@@ -100,6 +100,7 @@ public class CatalogSeeder
 			item = check;
 		}
 		item.setName(def.name());
+		item.setControl(def.control());
 		if (def.groupKey() != null)
 		{
 			item.setGroup(group(def.groupKey()));
@@ -107,19 +108,8 @@ public class CatalogSeeder
 		return item;
 	}
 
-	/**
-	 * Groups are matched by name rather than ledgered: a check being created
-	 * needs somewhere to live, so if its group is gone it is recreated with it.
-	 */
 	private ComplianceGroup group(String groupKey)
 	{
-		String name = ComplianceCatalog.groupName(groupKey);
-		return groupRepository.find("name", name).firstResultOptional()
-			.orElseGet(() -> {
-				ComplianceGroup group = new ComplianceGroup();
-				group.setName(name);
-				groupRepository.persist(group);
-				return group;
-			});
+		return groupRepository.findOrCreateByName(ComplianceCatalog.groupName(groupKey));
 	}
 }

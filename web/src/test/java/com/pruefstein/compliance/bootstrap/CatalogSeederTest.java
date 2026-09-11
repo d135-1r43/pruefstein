@@ -5,6 +5,7 @@ import java.util.List;
 import com.pruefstein.compliance.bootstrap.ComplianceCatalog.CheckDef;
 import com.pruefstein.compliance.bootstrap.ComplianceCatalog.GroupDef;
 import com.pruefstein.compliance.domain.AppBlacklistCheck;
+import com.pruefstein.compliance.domain.ComplianceGroup;
 import com.pruefstein.compliance.domain.ComplianceItem;
 import com.pruefstein.compliance.domain.ExpressionCheck;
 import com.pruefstein.compliance.repository.ComplianceGroupRepository;
@@ -155,20 +156,28 @@ class CatalogSeederTest
 	void aDeletedGroupIsRecreatedForTheCheckThatNeedsIt()
 	{
 		// given — the group is gone along with the ledger entry of one of its
-		// checks
+		// checks. Taken from the catalog rather than written out, so re-mapping
+		// a check to another control does not fail this test.
+		CheckDef filevault = ComplianceCatalog.check("a10.filevault");
+		String groupName = ComplianceCatalog.groupName(filevault.groupKey());
 		seed();
 		QuarkusTransaction.requiringNew().run(() -> {
-			itemRepository.delete("name", "FileVault enabled");
-			ledger.deleteById("a10.filevault");
-			groupRepository.delete("name", "A.10 Cryptography");
+			// A theme holds many checks, and the group cannot go while any of
+			// them still points at it
+			for (ComplianceGroup group : groupRepository.list("name", groupName))
+			{
+				itemRepository.delete("group", group);
+				groupRepository.delete(group);
+			}
+			ledger.deleteById(filevault.key());
 		});
 
 		// when
 		seed();
 
 		// then — a check has to live somewhere
-		assertNotNull(find("FileVault enabled").getGroup());
-		assertEquals("A.10 Cryptography", find("FileVault enabled").getGroup().getName());
+		assertNotNull(find(filevault.name()).getGroup());
+		assertEquals(groupName, find(filevault.name()).getGroup().getName());
 	}
 
 	private int seed()
