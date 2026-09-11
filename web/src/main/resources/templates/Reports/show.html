@@ -202,7 +202,7 @@
           <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Application</th>
           <th class="text-left px-4 py-3 font-black text-xs tracking-widest w-24">Source</th>
           <th class="text-left px-4 py-3 font-black text-xs tracking-widest w-28">Version</th>
-          <th class="px-4 py-3 font-black text-xs tracking-widest text-right w-32">Status</th>
+          <th class="px-4 py-3 font-black text-xs tracking-widest text-right w-56">Status</th>
         </tr>
       </thead>
       <tbody>
@@ -219,12 +219,18 @@
             <span class="text-[10px] font-black tracking-wide border-2 border-black px-1 py-0.5 bg-accent">{row.source}</span>
           </td>
           <td class="px-4 py-3 text-stone-500 text-xs font-mono">{row.displayVersion}</td>
-          <td class="px-4 py-3 text-right">
+          <!--
+            Nowrap, because the two block buttons are one control each and
+            reading "BLOCK" alone on a line above "BLOCK WITH AI" invites the
+            wrong one. The column is wide enough to hold them side by side, so
+            the table gives the room here rather than the reader guessing.
+          -->
+          <td class="px-4 py-3 text-right whitespace-nowrap">
             {#if row.blocked}
             <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-red-400 text-white"
                   title="{row.ruleLabel}">BLOCKED</span>
             {#else if inject:currentUser.admin}
-            <form method="post" action="{uri:BlockedApps.blockFromReport}" class="inline">
+            <form method="post" action="{uri:BlockedApps.blockFromReport}" class="inline-flex items-center justify-end gap-1">
               {#authenticityToken /}
               <input type="hidden" name="label" value="{row.name}">
               <input type="hidden" name="matcherType" value="{row.suggestedMatcherType}">
@@ -237,7 +243,7 @@
               </button>
               <button type="submit" name="useAi" value="true"
                       title="Block, and let AI find the other install routes for this app"
-                      class="text-[10px] font-black tracking-widest border-2 border-black px-2 py-1 ml-1 whitespace-nowrap hover:bg-accent transition-none">
+                      class="text-[10px] font-black tracking-widest border-2 border-black px-2 py-1 whitespace-nowrap hover:bg-accent transition-none">
                 ✦ BLOCK WITH AI
               </button>
             </form>
