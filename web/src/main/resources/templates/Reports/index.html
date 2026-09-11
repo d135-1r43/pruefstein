@@ -10,6 +10,10 @@
     f.value = (f.value === s) ? '' : s;
     document.getElementById('ff').submit();
   },
+  // Which users' earlier runs are unfolded, keyed by group. Nothing is
+  // remembered across a request: a reload is a fresh look at the table.
+  openGroups: {},
+  toggleGroup(key) { this.openGroups[key] = !this.openGroups[key]; },
   setSort(col) {
     var sf = document.getElementById('ff-sort');
     var df = document.getElementById('ff-dir');
@@ -163,47 +167,74 @@
         </tr>
       </thead>
       <tbody>
-        {#for report in reports}
-        <tr class="border-b-2 border-black last:border-0 hover:bg-stone-50 transition-colors">
-          <td class="px-4 py-3 font-mono text-xs text-stone-500">{report.deviceId}</td>
+        {#for group in groups}
+        {#for row in group.rows}
+        <!--
+          One user's runs come through as a group: the latest row is on screen
+          and the earlier ones are rendered right behind it, hidden. They are
+          on the page rather than a request away, so the toggle is instant and
+          works on whatever the filter and sort already decided to show.
+        -->
+        <tr {#if row.older}data-older-run x-show="openGroups['{group.key}']" style="display: none"{/if}
+          class="border-b-2 border-black last:border-0 transition-colors
+          {#if row.older}bg-stone-50/70 hover:bg-stone-100{#else}hover:bg-stone-50{/if}">
+          <td class="px-4 py-3 font-mono text-xs text-stone-500">
+            {#if row.older}<span class="text-stone-300 mr-1">&#8627;</span>{/if}{row.report.deviceId}
+          </td>
           <td class="px-4 py-3 font-medium">
-            {#if report.keycloakUser != null}
-            {report.keycloakUser}
+            {#if row.older}
+            <!-- The name is already on the row above; repeating it down the
+                 group just makes the fold harder to see. -->
+            <span class="text-stone-400 text-xs">earlier run</span>
+            {#else}
+            {#if row.report.keycloakUser != null}
+            {row.report.keycloakUser}
             {#else}
             <span class="text-stone-400">—</span>
             {/if}
+            {#if group.olderCount > 0}
+            <button type="button" @click="toggleGroup('{group.key}')"
+              :aria-expanded="openGroups['{group.key}'] ? 'true' : 'false'"
+              title="Earlier runs from this user"
+              class="mt-1 flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-black tracking-widest border-2 border-black bg-white hover:bg-accent transition-none">
+              <span x-text="openGroups['{group.key}'] ? '&#9662;' : '&#9656;'">&#9656;</span>
+              {group.olderCount} OLDER
+            </button>
+            {/if}
+            {/if}
           </td>
-          <td class="px-4 py-3 text-stone-500">{report.userId}</td>
+          <td class="px-4 py-3 text-stone-500">{row.report.userId}</td>
           <td class="px-4 py-3">
-            {#if report.status.name() == "COMPLIANT"}
+            {#if row.report.status.name() == "COMPLIANT"}
             <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-emerald-400">COMPLIANT</span>
-            {#else if report.status.name() == "NON_COMPLIANT"}
+            {#else if row.report.status.name() == "NON_COMPLIANT"}
             <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-red-400 text-white">NON-COMPLIANT</span>
-            {#else if report.status.name() == "MISSING"}
+            {#else if row.report.status.name() == "MISSING"}
             <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-accent">MISSING</span>
             {#else}
             <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-stone-200">OPEN</span>
             {/if}
           </td>
           <td class="px-4 py-3 text-stone-500 text-xs tabular-nums">
-            {report.checkedAt.toString().substring(0, 16).replace('T', ' ')}
+            {row.report.checkedAt.toString().substring(0, 16).replace('T', ' ')}
           </td>
           <td class="px-4 py-3 text-stone-500 text-xs tabular-nums">
-            {#if report.deadline != null}
-            {report.deadline.toString().substring(0, 10)}
+            {#if row.report.deadline != null}
+            {row.report.deadline.toString().substring(0, 10)}
             {#else}
             —
             {/if}
           </td>
           <td class="px-4 py-3 text-right w-px whitespace-nowrap">
-            <a href="{uri:Reports.show(report.id)}"
+            <a href="{uri:Reports.show(row.report.id)}"
                class="inline-block whitespace-nowrap text-xs font-bold border-2 border-black px-2.5 py-1 hover:bg-accent transition-none">
               View →
             </a>
           </td>
         </tr>
         {/for}
-        {#if reports.isEmpty()}
+        {/for}
+        {#if groups.isEmpty()}
         <tr>
           <td colspan="7" class="px-4 py-10 text-center text-sm text-stone-400 font-medium">
             No reports match the current filters.
