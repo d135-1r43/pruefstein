@@ -19,7 +19,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @ApplicationScoped
 public class ReportingSchedule
 {
-	@ConfigProperty(name = "pruefstein.compliance.reporting-interval-days", defaultValue = "7")
+	@ConfigProperty(name = "pruefstein.compliance.reporting-interval-days", defaultValue = "30")
 	int intervalDays;
 
 	public int intervalDays()

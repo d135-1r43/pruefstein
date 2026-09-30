@@ -40,7 +40,7 @@ public class ReportDueReminderJob
 	@Inject
 	ReportRequestMailService mailService;
 
-	@ConfigProperty(name = "pruefstein.compliance.reporting-interval-days", defaultValue = "7")
+	@ConfigProperty(name = "pruefstein.compliance.reporting-interval-days", defaultValue = "30")
 	int reportingIntervalDays;
 
 	@ConfigProperty(name = "pruefstein.compliance.report-due-reminder-days-before", defaultValue = "2")

@@ -45,7 +45,7 @@ public class PeriodicDeadlineJob
 	@Inject
 	WorkflowInstances workflowInstances;
 
-	@ConfigProperty(name = "pruefstein.compliance.reporting-interval-days", defaultValue = "7")
+	@ConfigProperty(name = "pruefstein.compliance.reporting-interval-days", defaultValue = "30")
 	int reportingIntervalDays;
 
 	@Scheduled(every = "1h")

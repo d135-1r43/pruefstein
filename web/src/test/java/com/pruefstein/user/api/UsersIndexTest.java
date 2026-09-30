@@ -109,9 +109,9 @@ class UsersIndexTest
 	@Test
 	void marksAReportOlderThanTheReportingIntervalAsStale()
 	{
-		// given a pass from three weeks ago, against a 7-day interval
+		// given a pass from six weeks ago, against a 30-day interval
 		AppUser user = seedUser("Stan", "Stale", "index-stale@example.com");
-		seedReport(user, Instant.now().minus(21, ChronoUnit.DAYS), ReportStatus.COMPLIANT, null);
+		seedReport(user, Instant.now().minus(42, ChronoUnit.DAYS), ReportStatus.COMPLIANT, null);
 
 		// when / then — the verdict is left alone; what expired is the evidence
 		given().when().get("/Users/index")

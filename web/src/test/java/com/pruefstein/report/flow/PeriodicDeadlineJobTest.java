@@ -49,7 +49,7 @@ class PeriodicDeadlineJobTest
 	void anOverdueDeviceIsRecordedMissingAndGivenANewCycle()
 	{
 		// given — last reported well beyond the interval
-		persistDevice(Instant.now().minus(30, ChronoUnit.DAYS), "stale-instance");
+		persistDevice(Instant.now().minus(60, ChronoUnit.DAYS), "stale-instance");
 
 		// when
 		periodicDeadlineJob.checkOverdueDevices();

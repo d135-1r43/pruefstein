@@ -302,7 +302,7 @@ public class Startup
 		addResult(userReport, autoUpdates, true, AUTO_UPDATES_ON);
 		addResult(userReport, screenLock, true, SCREEN_LOCK_THREE_MINUTES);
 
-		// Report 4: Uli's older run, well past the 7-day interval. The newest
+		// Report 4: Uli's older run, well past the 30-day interval. The newest
 		// run wins the row, so this one only shows inside the folded group —
 		// it is here to give the Reports list a genuinely aged entry.
 		Report aged = new Report();

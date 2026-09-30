@@ -25,8 +25,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * anyone could act on it, too late and the MISSING report has already landed.
  *
  * <p>
- * Defaults under test are a 7-day interval with the reminder 2 days out, so a
- * device is due for one once its last report is between 5 and 7 days old.
+ * Defaults under test are a 30-day interval with the reminder 2 days out, so a
+ * device is due for one once its last report is between 28 and 30 days old.
  */
 @QuarkusTest
 class ReportDueReminderJobTest
@@ -57,8 +57,8 @@ class ReportDueReminderJobTest
 	@Test
 	void remindsADeviceInsideTheWindowAndStampsIt()
 	{
-		// given a device last seen six days ago — one day before it is due
-		String deviceId = seed("due-reminder-inside", 6);
+		// given a device last seen 29 days ago — one day before it is due
+		String deviceId = seed("due-reminder-inside", 29);
 
 		// when
 		job.remindBeforeReportIsDue();
@@ -86,7 +86,7 @@ class ReportDueReminderJobTest
 	{
 		// given a device past the interval — PeriodicDeadlineJob owns this one,
 		// and a warning about a deadline that has passed helps nobody
-		seed("due-reminder-late", 9);
+		seed("due-reminder-late", 32);
 
 		// when
 		job.remindBeforeReportIsDue();
@@ -99,7 +99,7 @@ class ReportDueReminderJobTest
 	void remindsOnlyOncePerCycle()
 	{
 		// given a device already reminded this cycle
-		String deviceId = seed("due-reminder-once", 6);
+		String deviceId = seed("due-reminder-once", 29);
 		job.remindBeforeReportIsDue();
 		Mockito.clearInvocations(sender);
 
@@ -115,7 +115,7 @@ class ReportDueReminderJobTest
 	void stampsTheDeviceEvenWhenTheMailFails()
 	{
 		// given a send that blows up
-		String deviceId = seed("due-reminder-broken", 6);
+		String deviceId = seed("due-reminder-broken", 29);
 		Mockito.doThrow(new RuntimeException("smtp is down"))
 			.when(sender).send(Mockito.anyString(), Mockito.anyString(), Mockito.any());
 
@@ -131,8 +131,8 @@ class ReportDueReminderJobTest
 	void oneUnmailableDeviceDoesNotCostTheRestTheirReminder()
 	{
 		// given two devices due at once, the first of which cannot be mailed
-		seed("due-reminder-first", 6);
-		String second = seed("due-reminder-second", 6);
+		seed("due-reminder-first", 29);
+		String second = seed("due-reminder-second", 29);
 		Mockito.doThrow(new RuntimeException("smtp is down"))
 			.doNothing()
 			.when(sender).send(Mockito.anyString(), Mockito.anyString(), Mockito.any());
