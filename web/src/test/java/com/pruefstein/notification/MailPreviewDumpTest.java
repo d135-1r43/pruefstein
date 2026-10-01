@@ -35,9 +35,13 @@ class MailPreviewDumpTest
 	void dump() throws Exception
 	{
 		ReportMailData compliant = new ReportMailData(482, "MBP-C02XK1", "Markus", "COMPLIANT",
-			"13 Aug 2026, 09:14", null, 0, List.of(), "https://pruefstein.example.com/Reports/show/482");
+			"13 Aug 2026, 09:14", null, 0, List.of(),
+			"macOS 15.7.9 is fully patched, but macOS 27.0 is out. Upgrade when you can.",
+			"https://pruefstein.example.com/Reports/show/482");
 
 		List<ReportMailData.Failure> failures = List.of(
+			new ReportMailData.Failure("macOS up to date", null,
+				"macOS 26.7 is missing 26.7.1. Update under System Settings > General > Software Update."),
 			new ReportMailData.Failure("FileVault Enabled", "Disk Encryption",
 				"FileVault is switched off, so everything on this disk is readable if the machine is lost or stolen."),
 			new ReportMailData.Failure("Screen Lock After 5 Minutes", "Device Access",
@@ -46,15 +50,15 @@ class MailPreviewDumpTest
 				"TeamViewer is installed. Unmanaged remote-access tools bypass the company VPN entirely."));
 
 		ReportMailData open = new ReportMailData(483, "MBP-C02XK1", "Markus", "OPEN",
-			"13 Aug 2026, 09:14", "20 Aug 2026", 7, failures,
+			"13 Aug 2026, 09:14", "20 Aug 2026", 7, failures, null,
 			"https://pruefstein.example.com/Reports/show/483");
 
 		ReportMailData reminder = new ReportMailData(483, "MBP-C02XK1", "Markus", "OPEN",
-			"13 Aug 2026, 09:14", "20 Aug 2026", 2, failures,
+			"13 Aug 2026, 09:14", "20 Aug 2026", 2, failures, null,
 			"https://pruefstein.example.com/Reports/show/483");
 
 		ReportMailData nonCompliant = new ReportMailData(483, "MBP-C02XK1", "Markus", "NON_COMPLIANT",
-			"18 Aug 2026, 11:02", "20 Aug 2026", 0, failures,
+			"18 Aug 2026, 11:02", "20 Aug 2026", 0, failures, null,
 			"https://pruefstein.example.com/Reports/show/483");
 
 		// No device on this one — which is what makes it an invitation

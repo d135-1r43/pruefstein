@@ -2,6 +2,7 @@ package com.pruefstein.agent;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 
 import com.pruefstein.compliance.domain.ComplianceGroup;
 import com.pruefstein.compliance.domain.ExpressionCheck;
@@ -11,12 +12,14 @@ import com.pruefstein.compliance.repository.ComplianceResultRepository;
 import com.pruefstein.osversion.domain.MacOsRelease;
 import com.pruefstein.osversion.repository.MacOsReleaseRepository;
 import com.pruefstein.report.domain.Report;
+import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.repository.ReportRepository;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.jwt.Claim;
 import io.quarkus.test.security.jwt.JwtSecurity;
+import io.restassured.response.ValidatableResponse;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +27,10 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
@@ -80,6 +86,14 @@ class AgentOsVersionReportingTest
 			latest.setPublicRelease(true);
 			latest.setSeenAt(Instant.now());
 			releaseRepository.persist(latest);
+
+			MacOsRelease previousTrain = new MacOsRelease();
+			previousTrain.setProductVersion("26.7.1");
+			previousTrain.setBuild("25H17");
+			previousTrain.setPostingDate(LocalDate.of(2026, 9, 1));
+			previousTrain.setPublicRelease(true);
+			previousTrain.setSeenAt(Instant.now());
+			releaseRepository.persist(previousTrain);
 		});
 		groupId = ids[0];
 		itemId = ids[1];
@@ -93,7 +107,7 @@ class AgentOsVersionReportingTest
 			reportRepository.delete("deviceId = ?1", DEVICE);
 			itemRepository.deleteById(itemId);
 			groupRepository.deleteById(groupId);
-			releaseRepository.delete("productVersion = ?1", "27.0");
+			releaseRepository.delete("productVersion in ?1", List.of("27.0", "26.7.1"));
 		});
 	}
 
@@ -133,6 +147,76 @@ class AgentOsVersionReportingTest
 		// then the report is filed, simply without an OS on it
 		assertNull(report.getOsVersion());
 		assertNull(report.getOsLatestVersion());
+	}
+
+	/** A red OS fails the run, however clean the checks came out. */
+	@Test
+	void anOutdatedMacOsKeepsTheReportOpen()
+	{
+		// given / when — every check passed, but 26.7 is short of 26.7.1
+		Report report = push("""
+			,"osVersion":{"name":"macOS","version":"26.7","build":"25H5","platform":"darwin"}""");
+
+		// then
+		assertEquals(ReportStatus.OPEN, report.getStatus());
+		assertNotNull(report.getDeadline());
+	}
+
+	/** An amber OS is a hint, and a hint does not hold a report open. */
+	@Test
+	void aFullyPatchedOlderMacOsStillPasses()
+	{
+		// given / when
+		Report report = push("""
+			,"osVersion":{"name":"macOS","version":"26.7.1","build":"25H17","platform":"darwin"}""");
+
+		// then
+		assertEquals(ReportStatus.COMPLIANT, report.getStatus());
+	}
+
+	@Test
+	void tellsTheAgentWhatFails()
+	{
+		assess("26.7")
+			.body("verdict", equalTo("FAIL"))
+			.body("name", equalTo("macOS up to date"))
+			.body("text", equalTo(
+				"macOS 26.7 is missing 26.7.1. Update under System Settings > General > Software Update."));
+	}
+
+	@Test
+	void tellsTheAgentWhatIsOnlyAHint()
+	{
+		assess("26.7.1")
+			.body("verdict", equalTo("HINT"))
+			.body("text", equalTo("macOS 26.7.1 is fully patched, but macOS 27.0 is out. Upgrade when you can."));
+	}
+
+	@Test
+	void tellsTheAgentWhatPasses()
+	{
+		assess("27.0")
+			.body("verdict", equalTo("PASS"))
+			.body("text", equalTo("macOS 27.0 is up to date."));
+	}
+
+	@Test
+	void judgesNothingItCannotRead()
+	{
+		assess("not a version")
+			.body("verdict", equalTo("UNKNOWN"))
+			.body("text", nullValue());
+	}
+
+	private ValidatableResponse assess(String version)
+	{
+		return given()
+			.contentType(JSON)
+			.body("""
+				{"name":"macOS","version":"%s","build":"x","platform":"darwin"}""".formatted(version))
+			.when().post("/api/os-version")
+			.then()
+			.statusCode(200);
 	}
 
 	private Report push(String osFragment)

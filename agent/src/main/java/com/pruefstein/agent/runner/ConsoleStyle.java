@@ -30,6 +30,15 @@ public final class ConsoleStyle
 		return style(passed ? "@|bold,green [PASS]|@" : "@|bold,red [FAIL]|@");
 	}
 
+	/**
+	 * Yellow {@code [HINT]}: worth reading, nothing failed. Used for an older
+	 * macOS that is fully patched.
+	 */
+	public static String hintTag()
+	{
+		return style("@|bold,yellow [HINT]|@");
+	}
+
 	/** A check that never produced a verdict — red, like a failure, because it is one. */
 	public static String errorTag()
 	{

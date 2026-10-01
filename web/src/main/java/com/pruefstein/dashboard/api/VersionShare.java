@@ -55,7 +55,7 @@ public record VersionShare(
 	/** Amber: an older macOS Apple still patches, on its newest fix. */
 	public boolean isOlderTrainPatched()
 	{
-		return !folded && standing == OsVersionStanding.OLDER_TRAIN_PATCHED;
+		return !folded && standing.hints();
 	}
 
 	/**
@@ -64,11 +64,7 @@ public record VersionShare(
 	 */
 	public boolean isBehind()
 	{
-		return folded
-			|| standing == OsVersionStanding.PATCH_BEHIND
-			|| standing == OsVersionStanding.MINOR_BEHIND
-			|| standing == OsVersionStanding.OLDER_TRAIN_UNPATCHED
-			|| standing == OsVersionStanding.UNSUPPORTED_TRAIN;
+		return folded || standing.fails();
 	}
 
 	/** Grey: the machine never said, so there is nothing to judge. */

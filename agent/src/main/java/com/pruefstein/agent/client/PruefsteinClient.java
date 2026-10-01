@@ -21,6 +21,11 @@ public interface PruefsteinClient
 	List<CheckItem> getChecks();
 
 	@POST
+	@Path("/api/os-version")
+	@Consumes(MediaType.APPLICATION_JSON)
+	OsVersionVerdict assessOsVersion(OsVersionPayload os);
+
+	@POST
 	@Path("/api/reports")
 	@Consumes(MediaType.APPLICATION_JSON)
 	ReportResponse pushReport(ReportPayload report);

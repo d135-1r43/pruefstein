@@ -1,6 +1,7 @@
 package com.pruefstein.notification;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -10,6 +11,8 @@ import com.pruefstein.compliance.domain.ExpressionCheck;
 import com.pruefstein.compliance.repository.ComplianceGroupRepository;
 import com.pruefstein.compliance.repository.ComplianceItemRepository;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
+import com.pruefstein.osversion.domain.MacOsRelease;
+import com.pruefstein.osversion.repository.MacOsReleaseRepository;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.repository.ReportRepository;
@@ -47,6 +50,9 @@ class ReportMailServiceTest
 
 	@Inject
 	UserRepository userRepository;
+
+	@Inject
+	MacOsReleaseRepository releaseRepository;
 
 	@Inject
 	MockMailbox mailbox;
@@ -125,6 +131,64 @@ class ReportMailServiceTest
 		assertTrue(mail.getHtml().contains("FileVault Enabled"));
 	}
 
+	/** A red macOS is listed first among what failed, and counted with it. */
+	@Test
+	void anOutdatedMacOsIsListedAsAFailure()
+	{
+		// given — 26.7 while 26.7.1 was the newest, and one failed check
+		long reportId = persistReport(ReportStatus.OPEN, Instant.now().plus(7, ChronoUnit.DAYS), true);
+		runningMacOs(reportId, "26.7", "26.7.1");
+
+		// when
+		mailService.sendOutcomeMail(reportId);
+
+		// then
+		Mail mail = onlyMail();
+		assertTrue(mail.getSubject().contains("2 checks failed"), mail.getSubject());
+		String html = mail.getHtml();
+		assertTrue(html.contains("macOS up to date"));
+		assertTrue(html.contains("macOS 26.7 is missing 26.7.1."));
+		assertTrue(html.indexOf("macOS up to date") < html.indexOf("FileVault Enabled"),
+			"the OS should lead the list");
+		assertFalse(html.contains("HINT"));
+	}
+
+	/** An amber macOS earns a hint, not a failure — even on a clean report. */
+	@Test
+	void aFullyPatchedOlderMacOsGetsAHint()
+	{
+		// given — the newest fix of 26 while 27.0 is out
+		QuarkusTransaction.requiringNew().run(() -> {
+			MacOsRelease release = new MacOsRelease();
+			release.setProductVersion("26.7.1");
+			release.setBuild("25H17");
+			release.setPostingDate(LocalDate.of(2026, 9, 1));
+			release.setPublicRelease(true);
+			release.setSeenAt(Instant.now());
+			releaseRepository.persist(release);
+		});
+		long reportId = persistReport(ReportStatus.COMPLIANT, null, false);
+		runningMacOs(reportId, "26.7.1", "27.0");
+
+		try
+		{
+			// when
+			mailService.sendOutcomeMail(reportId);
+
+			// then
+			Mail mail = onlyMail();
+			assertTrue(mail.getSubject().contains("is compliant"), mail.getSubject());
+			assertTrue(mail.getHtml().contains("HINT"));
+			assertTrue(mail.getHtml().contains("macOS 26.7.1 is fully patched, but macOS 27.0 is out."));
+			assertFalse(mail.getHtml().contains("WHAT FAILED"));
+		}
+		finally
+		{
+			QuarkusTransaction.requiringNew()
+				.run(() -> releaseRepository.delete("productVersion = ?1", "26.7.1"));
+		}
+	}
+
 	@Test
 	void reportWithoutMailAddressIsSkipped()
 	{
@@ -190,6 +254,16 @@ class ReportMailServiceTest
 			}
 		});
 		return ids[0];
+	}
+
+	private void runningMacOs(long reportId, String version, String latest)
+	{
+		QuarkusTransaction.requiringNew().run(() -> {
+			Report report = reportRepository.findById(reportId);
+			report.setOsName("macOS");
+			report.setOsVersion(version);
+			report.setOsLatestVersion(latest);
+		});
 	}
 
 	private Report newReport(ReportStatus status, Instant deadline)

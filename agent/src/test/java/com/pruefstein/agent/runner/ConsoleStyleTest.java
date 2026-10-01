@@ -24,6 +24,7 @@ class ConsoleStyleTest
 		assertTrue(ConsoleStyle.verdict(true).contains("32"), "PASS should carry the green code");
 		assertTrue(ConsoleStyle.verdict(false).contains("31"), "FAIL should carry the red code");
 		assertTrue(ConsoleStyle.errorTag().contains("31"), "ERROR should carry the red code");
+		assertTrue(ConsoleStyle.hintTag().contains("33"), "HINT should carry the yellow code");
 	}
 
 	/**

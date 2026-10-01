@@ -34,6 +34,8 @@ public record OsVersionAssessment(
 	OsVersionStanding standing,
 	int yearsBehind)
 {
+	private static final String INSTALL = "Update under System Settings > General > Software Update.";
+
 	public static OsVersionAssessment unknown()
 	{
 		return new OsVersionAssessment(null, null, null, null, null, OsVersionStanding.UNKNOWN, 0);
@@ -116,6 +118,63 @@ public record OsVersionAssessment(
 	public boolean isUnsupportedTrain()
 	{
 		return standing == OsVersionStanding.UNSUPPORTED_TRAIN;
+	}
+
+	/**
+	 * Whether there was anything to compare against. Without Apple's release
+	 * data a version is shown, but neither passes nor fails.
+	 */
+	public boolean isJudged()
+	{
+		return isKnown() && latest != null;
+	}
+
+	/** Red: a failed check on the agent's run and in the mails. */
+	public boolean isFailing()
+	{
+		return isJudged() && standing.fails();
+	}
+
+	/** Amber: a hint on the agent's run and in the mails. */
+	public boolean isHint()
+	{
+		return isJudged() && standing.hints();
+	}
+
+	/**
+	 * What the OS counts as when it is listed beside the checks, e.g.
+	 * {@code macOS up to date}.
+	 */
+	public String getCheckName()
+	{
+		return getName() + " up to date";
+	}
+
+	/**
+	 * One sentence on how the version stands and what to do about it, the same
+	 * on the agent's run and in the mails. {@code null} when the version was
+	 * not judged.
+	 */
+	public String getVerdictText()
+	{
+		if (!isJudged())
+		{
+			return null;
+		}
+		String os = getName() + " " + reported;
+		return switch (standing)
+		{
+			case CURRENT -> os + " is up to date.";
+			case PATCH_BEHIND, MINOR_BEHIND -> os + " is missing " + latest + ". " + INSTALL;
+			case OLDER_TRAIN_UNPATCHED -> latestOfTrain != null
+				? os + " is missing " + latestOfTrain + ". " + INSTALL
+				: os + " is missing updates. " + INSTALL;
+			case OLDER_TRAIN_PATCHED -> os + " is fully patched, but " + getName() + " " + latest
+				+ " is out. Upgrade when you can.";
+			case UNSUPPORTED_TRAIN -> os + " is no longer patched by Apple. Upgrade to " + getName() + " "
+				+ latest + ".";
+			case UNKNOWN -> null;
+		};
 	}
 
 	/** Whether anything at all is out of date. */

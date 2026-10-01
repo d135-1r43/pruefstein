@@ -29,26 +29,42 @@ public class OsVersionAssessor
 
 	public OsVersionAssessment assess(Report report)
 	{
-		if (report == null || report.getOsVersion() == null || report.getOsVersion().isBlank())
+		if (report == null)
 		{
 			return OsVersionAssessment.unknown();
 		}
-		Optional<MacOsVersion> reported = MacOsVersion.parse(report.getOsVersion());
+		return assess(report.getOsName(), report.getOsVersion(), report.getOsBuild(), latestFor(report),
+			filedOn(report));
+	}
+
+	/**
+	 * Judges a version no report holds yet, against what Apple has published
+	 * now — what a report filed at this moment would say. The agent asks this
+	 * before anyone decides to report, and the upload asks it again to decide
+	 * whether the run passed.
+	 */
+	public OsVersionAssessment assessNow(String name, String version, String build)
+	{
+		return assess(name, version, build, catalog.latestPublicVersion().orElse(null),
+			LocalDate.now(ZoneOffset.UTC));
+	}
+
+	private OsVersionAssessment assess(String name, String version, String build, MacOsVersion latest,
+		LocalDate filedOn)
+	{
+		Optional<MacOsVersion> reported = MacOsVersion.parse(version);
 		if (reported.isEmpty())
 		{
 			return OsVersionAssessment.unknown();
 		}
-
-		MacOsVersion latest = latestFor(report);
 		if (latest == null)
 		{
 			// The version is worth showing even with nothing to measure it
 			// against; it simply gets no colour.
-			return new OsVersionAssessment(report.getOsName(), report.getOsVersion(), report.getOsBuild(),
-				null, null, OsVersionStanding.CURRENT, 0);
+			return new OsVersionAssessment(name, version, build, null, null, OsVersionStanding.CURRENT, 0);
 		}
 
-		MacOsVersion latestOfTrain = catalog.latestPublicPerTrain(filedOn(report)).get(reported.get().major());
+		MacOsVersion latestOfTrain = catalog.latestPublicPerTrain(filedOn).get(reported.get().major());
 		OsVersionStanding standing = reported.get().standingAgainst(latest, latestOfTrain);
 		int years = 0;
 		if (standing == OsVersionStanding.OLDER_TRAIN_UNPATCHED || standing == OsVersionStanding.UNSUPPORTED_TRAIN)
@@ -56,8 +72,8 @@ public class OsVersionAssessor
 			OptionalInt age = reported.get().trainAgeInYears(LocalDate.now(ZoneOffset.UTC));
 			years = age.orElse(0);
 		}
-		return new OsVersionAssessment(report.getOsName(), report.getOsVersion(), report.getOsBuild(),
-			latest.toString(), latestOfTrain != null ? latestOfTrain.toString() : null, standing, years);
+		return new OsVersionAssessment(name, version, build, latest.toString(),
+			latestOfTrain != null ? latestOfTrain.toString() : null, standing, years);
 	}
 
 	/**
@@ -74,6 +90,10 @@ public class OsVersionAssessor
 
 	private MacOsVersion latestFor(Report report)
 	{
+		if (report.getOsVersion() == null)
+		{
+			return null;
+		}
 		return MacOsVersion.parse(report.getOsLatestVersion())
 			.or(() -> catalog.latestPublicVersion())
 			.orElse(null);

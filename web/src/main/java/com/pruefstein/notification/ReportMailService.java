@@ -4,12 +4,15 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
 import com.pruefstein.compliance.domain.ComplianceResult;
 import com.pruefstein.compliance.repository.ComplianceResultRepository;
+import com.pruefstein.osversion.service.OsVersionAssessment;
+import com.pruefstein.osversion.service.OsVersionAssessor;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.repository.ReportRepository;
 import com.pruefstein.user.domain.AppUser;
@@ -46,6 +49,9 @@ public class ReportMailService
 
 	@Inject
 	ComplianceResultRepository resultRepository;
+
+	@Inject
+	OsVersionAssessor osVersionAssessor;
 
 	@ConfigProperty(name = "pruefstein.web.base-url")
 	String baseUrl;
@@ -113,12 +119,20 @@ public class ReportMailService
 
 	private ReportMailData describe(Report report)
 	{
-		List<ReportMailData.Failure> failures = resultRepository
+		// A red OS is listed first, as the failure it counted as when the run
+		// was judged; an amber one only earns a hint.
+		OsVersionAssessment os = osVersionAssessor.assess(report);
+		List<ReportMailData.Failure> failures = new ArrayList<>();
+		if (os.isFailing())
+		{
+			failures.add(new ReportMailData.Failure(os.getCheckName(), null, os.getVerdictText()));
+		}
+		resultRepository
 			.list("report = ?1 and passed = false and item.retiredAt is null",
 				Sort.by("item.name").ascending(), report)
 			.stream()
 			.map(ReportMailService::toFailure)
-			.toList();
+			.forEach(failures::add);
 
 		AppUser user = report.getAppUser();
 		String name = user != null && user.getFirstname() != null && !user.getFirstname().isBlank()
@@ -135,6 +149,7 @@ public class ReportMailService
 			deadline != null ? DATE.format(deadline) : null,
 			daysUntil(deadline),
 			failures,
+			os.isHint() ? os.getVerdictText() : null,
 			baseUrl + "/Reports/show/" + report.id);
 	}
 

@@ -230,6 +230,11 @@ The report header shows the version and how it compares:
 | `OLDER MACOS, MISSING UPDATES`, red, plus `USES A 2-YEAR-OLD VERSION` | an older macOS Apple still patches, short of its newest fix |
 | `OLDER MACOS, NO LONGER PATCHED`, red, plus the age | an older macOS Apple has stopped patching |
 
+A red macOS fails the run like a failed check: the agent lists it as
+`[FAIL] macOS up to date`, the report stays open until a patched machine reports
+again, and the mail lists it first under what failed. An amber one is a
+`[HINT]` on the agent and a hint in the mail, and fails nothing.
+
 Apple patches the newest macOS and the two before it. The dashboard's version
 chart uses the same standings and names the release a bar is missing — a bar on
 26.6.2 reads "older macOS, missing 26.7" when 27 is out.

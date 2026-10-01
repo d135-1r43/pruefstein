@@ -10,6 +10,11 @@ import java.util.List;
  * after the surrounding transaction has closed. Passing entities would
  * therefore risk lazy-loading failures — this record is built eagerly while the
  * session is still open.
+ *
+ * @param failures
+ *            the failed checks, led by the OS when it is red
+ * @param hint
+ *            what to say about an amber OS, or {@code null}
  */
 public record ReportMailData(
 	long id,
@@ -20,6 +25,7 @@ public record ReportMailData(
 	String deadline,
 	long daysLeft,
 	List<Failure> failures,
+	String hint,
 	String url)
 {
 	/** One failed check, as shown in the mail's issue list. */

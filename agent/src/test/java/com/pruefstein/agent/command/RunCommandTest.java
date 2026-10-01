@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 import com.pruefstein.agent.client.ReportPayload;
+import com.pruefstein.agent.runner.CheckedRun;
 import com.pruefstein.agent.runner.ComplianceRunner;
 import com.pruefstein.agent.runner.Prompt.Answer;
 import jakarta.ws.rs.WebApplicationException;
@@ -73,7 +74,7 @@ class RunCommandTest
 		RunCommand command = new RunCommand();
 		RecordingRunner runner = new RecordingRunner();
 		command.runner = runner;
-		ReportPayload run = run();
+		CheckedRun run = run();
 
 		assertEquals(CommandLine.ExitCode.OK, command.act(Answer.YES, run).intValue());
 		assertSame(run, runner.submitted, "the run someone said yes to should be the one submitted");
@@ -110,18 +111,18 @@ class RunCommandTest
 		assertNull(runner.submitted, "an unanswered prompt must not reach the server");
 	}
 
-	private static ReportPayload run()
+	private static CheckedRun run()
 	{
-		return new ReportPayload("device", "user", Instant.now(), List.of(), List.of(), null);
+		return new CheckedRun(new ReportPayload("device", "user", Instant.now(), List.of(), List.of(), null), null);
 	}
 
 	/** Stands in for the runner so nothing needs a server, or osquery. */
 	private static final class RecordingRunner extends ComplianceRunner
 	{
-		private ReportPayload submitted;
+		private CheckedRun submitted;
 
 		@Override
-		public void submit(ReportPayload run)
+		public void submit(CheckedRun run)
 		{
 			submitted = run;
 		}

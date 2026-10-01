@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pruefstein.agent.client.CheckItem;
 import com.pruefstein.agent.client.InstalledAppPayload;
 import com.pruefstein.agent.client.OsVersionPayload;
+import com.pruefstein.agent.client.OsVersionVerdict;
 import com.pruefstein.agent.client.PruefsteinClient;
 import com.pruefstein.agent.client.ReportPayload;
 import com.pruefstein.agent.client.ReportResponse;
@@ -94,7 +95,7 @@ public class ComplianceRunner
 	 * @return what a report of this run would say, or empty when the server has
 	 *         no checks configured and there is nothing to report
 	 */
-	public Optional<ReportPayload> check()
+	public Optional<CheckedRun> check()
 	{
 		String deviceId = fetchDeviceId();
 		String userId = hostname();
@@ -111,25 +112,33 @@ public class ComplianceRunner
 		List<ResultPayload> results = runChecks(checks, this::runCheck);
 		List<InstalledAppPayload> installedApps = collectInventory();
 		OsVersionPayload osVersion = collectOsVersion();
-
-		long passed = results.stream().filter(ResultPayload::passed).count();
-		System.out.println(ConsoleStyle.rule());
-		System.out.println(ConsoleStyle.summary(passed, results.size()));
+		OsVersionVerdict os = judgeOsVersion(osVersion);
+		String osLine = osLine(os);
+		if (osLine != null)
+		{
+			System.out.println(osLine);
+		}
 
 		// Stamped here rather than at submission: this is when the machine
 		// looked like this, and someone may sit on the question for a while.
-		return Optional.of(new ReportPayload(deviceId, userId, Instant.now(), results, installedApps, osVersion));
+		CheckedRun run = new CheckedRun(
+			new ReportPayload(deviceId, userId, Instant.now(), results, installedApps, osVersion), os);
+
+		long total = results.size() + (osLine != null ? 1 : 0);
+		System.out.println(ConsoleStyle.rule());
+		System.out.println(ConsoleStyle.summary(total - run.failing(), total));
+		return Optional.of(run);
 	}
 
 	/** Files a run that has already happened. The report exists from here on. */
-	public void submit(ReportPayload run)
+	public void submit(CheckedRun run)
 	{
-		System.out.printf("Reporting %d installed applications and packages%n", run.installedApps().size());
-		ReportResponse response = client.pushReport(run);
+		System.out.printf("Reporting %d installed applications and packages%n",
+			run.report().installedApps().size());
+		ReportResponse response = client.pushReport(run.report());
 		System.out.println("View report: " + response.reportUrl());
 
-		long failing = run.results().stream().filter(result -> !result.passed()).count();
-		String notice = remediationNotice(failing, response.deadline());
+		String notice = remediationNotice(run.failing(), response.deadline());
 		if (notice != null)
 		{
 			System.out.println(ConsoleStyle.notice(notice));
@@ -176,6 +185,50 @@ public class ComplianceRunner
 			return "today";
 		}
 		return days == 1 ? "1 day" : days + " days";
+	}
+
+	/**
+	 * The OS listed as one more check: {@code [PASS]}, {@code [FAIL]}, or a
+	 * {@code [HINT]} that is worth reading but fails nothing. The server judges
+	 * it, because only the server knows what Apple has released.
+	 *
+	 * @return the line to print, or {@code null} when there is no verdict
+	 */
+	static String osLine(OsVersionVerdict os)
+	{
+		if (os == null || !os.judged())
+		{
+			return null;
+		}
+		String tag = switch (os.verdict())
+		{
+			case "FAIL" -> ConsoleStyle.verdict(false);
+			case "HINT" -> ConsoleStyle.hintTag();
+			default -> ConsoleStyle.verdict(true);
+		};
+		return "  " + tag + " " + os.name() + " — " + os.text();
+	}
+
+	/**
+	 * Asks the server how the OS stands. A server from before this question
+	 * answers 404, and a run is worth more than this one line, so any failure
+	 * just leaves the OS out of the list.
+	 */
+	private OsVersionVerdict judgeOsVersion(OsVersionPayload os)
+	{
+		if (os == null)
+		{
+			return null;
+		}
+		try
+		{
+			return client.assessOsVersion(os);
+		}
+		catch (Exception e)
+		{
+			LOG.debug("The server could not judge the OS version.", e);
+			return null;
+		}
 	}
 
 	/**

@@ -40,5 +40,24 @@ public enum OsVersionStanding
 	UNSUPPORTED_TRAIN,
 
 	/** No version was reported, or it could not be read. */
-	UNKNOWN
+	UNKNOWN;
+
+	/**
+	 * Red: short of the newest fix of its train, or on a train Apple no longer
+	 * patches. A failed check, wherever a run is judged.
+	 */
+	public boolean fails()
+	{
+		return this == PATCH_BEHIND || this == MINOR_BEHIND || this == OLDER_TRAIN_UNPATCHED
+			|| this == UNSUPPORTED_TRAIN;
+	}
+
+	/**
+	 * Amber: nothing left to install short of the upgrade. Worth a hint, never
+	 * a failure.
+	 */
+	public boolean hints()
+	{
+		return this == OLDER_TRAIN_PATCHED;
+	}
 }

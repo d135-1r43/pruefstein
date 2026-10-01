@@ -5,7 +5,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 import com.pruefstein.agent.auth.AuthResolver;
-import com.pruefstein.agent.client.ReportPayload;
+import com.pruefstein.agent.runner.CheckedRun;
 import com.pruefstein.agent.runner.ComplianceRunner;
 import com.pruefstein.agent.runner.OsqueryRequirement;
 import com.pruefstein.agent.runner.Prompt;
@@ -64,7 +64,7 @@ public class RunCommand implements Callable<Integer>
 			throw new RuntimeException("Authentication failed.", e);
 		}
 
-		Optional<ReportPayload> run = withFreshCredentials(runner::check);
+		Optional<CheckedRun> run = withFreshCredentials(runner::check);
 		if (run.isEmpty())
 		{
 			// No checks configured on the server: there is nothing to look at
@@ -83,7 +83,7 @@ public class RunCommand implements Callable<Integer>
 	 * moment at which that is true: a report cannot be recalled once it is
 	 * filed.
 	 */
-	private Integer report(ReportPayload run)
+	private Integer report(CheckedRun run)
 	{
 		return act(assumeYes ? Prompt.Answer.YES : Prompt.ask("Report this run? [y/N]"), run);
 	}
@@ -92,7 +92,7 @@ public class RunCommand implements Callable<Integer>
 	 * Split from the question so the three endings can be tested without a
 	 * terminal to type into.
 	 */
-	Integer act(Prompt.Answer answer, ReportPayload run)
+	Integer act(Prompt.Answer answer, CheckedRun run)
 	{
 		return switch (answer)
 		{
@@ -102,7 +102,7 @@ public class RunCommand implements Callable<Integer>
 		};
 	}
 
-	private Integer submit(ReportPayload run)
+	private Integer submit(CheckedRun run)
 	{
 		withFreshCredentials(() -> {
 			runner.submit(run);

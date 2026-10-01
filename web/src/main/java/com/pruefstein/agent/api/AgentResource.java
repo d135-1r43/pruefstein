@@ -17,6 +17,8 @@ import com.pruefstein.device.domain.Device;
 import com.pruefstein.device.repository.DeviceRepository;
 import com.pruefstein.notification.ReportMailDispatcher;
 import com.pruefstein.osversion.service.MacOsReleaseCatalog;
+import com.pruefstein.osversion.service.OsVersionAssessment;
+import com.pruefstein.osversion.service.OsVersionAssessor;
 import com.pruefstein.report.domain.Report;
 import com.pruefstein.report.domain.ReportStatus;
 import com.pruefstein.report.flow.PeriodicFlowTrigger;
@@ -64,6 +66,9 @@ public class AgentResource
 
 	@Inject
 	MacOsReleaseCatalog releaseCatalog;
+
+	@Inject
+	OsVersionAssessor osVersionAssessor;
 
 	@Inject
 	ReportRepository reportRepository;
@@ -136,6 +141,31 @@ public class AgentResource
 	{
 	}
 
+	/**
+	 * How the device's OS stands, for the agent to list beside its checks.
+	 *
+	 * @param verdict
+	 *            {@code PASS}, {@code HINT}, {@code FAIL}, or {@code UNKNOWN}
+	 *            when there was nothing to judge it by
+	 * @param name
+	 *            what to call it beside the checks, e.g.
+	 *            {@code macOS up to date}
+	 * @param text
+	 *            how it stands and what to do about it, or {@code null} with
+	 *            {@code UNKNOWN}
+	 */
+	public record OsVersionVerdict(String verdict, String name, String text)
+	{
+		static OsVersionVerdict of(OsVersionAssessment os)
+		{
+			String verdict = !os.isJudged() ? "UNKNOWN"
+				: os.isFailing() ? "FAIL"
+					: os.isHint() ? "HINT"
+						: "PASS";
+			return new OsVersionVerdict(verdict, os.getCheckName(), os.getVerdictText());
+		}
+	}
+
 	@GET
 	@Path("/checks")
 	@Transactional
@@ -151,6 +181,19 @@ public class AgentResource
 				return new CheckDto(item.id, item.getName(), resolved.query(), resolved.expression());
 			})
 			.toList();
+	}
+
+	/**
+	 * Judges the OS a run found before anyone decides to report it, the way the
+	 * upload will: a red OS fails the run like a failed check does.
+	 */
+	@POST
+	@Path("/os-version")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Transactional
+	public OsVersionVerdict assessOsVersion(OsVersionPayload os)
+	{
+		return OsVersionVerdict.of(assess(os));
 	}
 
 	/**
@@ -173,9 +216,12 @@ public class AgentResource
 		// reports on it. Those answers are kept — they are what the device
 		// said — but a check no longer in force cannot open a report or hold
 		// one open, so the verdict is taken without them.
+		// A red OS fails the run like a failed check, and keeps the report
+		// open until an attempt on a patched machine closes it.
 		boolean allPassed = payload.results().stream()
 			.filter(this::stillInForce)
-			.allMatch(ResultPayload::passed);
+			.allMatch(ResultPayload::passed)
+			&& !assess(payload.osVersion()).isFailing();
 
 		Report report = reportRepository.findOpenByDeviceAndUser(payload.deviceId(), payload.userId())
 			.map(open -> anotherAttempt(open, payload, allPassed))
@@ -249,6 +295,13 @@ public class AgentResource
 			finalizer.finalizeReport(report, true);
 		}
 		return report;
+	}
+
+	private OsVersionAssessment assess(OsVersionPayload os)
+	{
+		return os == null
+			? OsVersionAssessment.unknown()
+			: osVersionAssessor.assessNow(os.name(), os.version(), os.build());
 	}
 
 	/**

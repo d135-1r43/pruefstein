@@ -11,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import com.pruefstein.agent.client.CheckItem;
+import com.pruefstein.agent.client.OsVersionVerdict;
+import com.pruefstein.agent.client.ReportPayload;
 import com.pruefstein.agent.client.ResultPayload;
 import org.junit.jupiter.api.Test;
 
@@ -145,6 +147,46 @@ class ComplianceRunnerTest
 		assertNull(ComplianceRunner.remediationNotice(0, null));
 		assertNull(ComplianceRunner.remediationNotice(3, null));
 		assertNull(ComplianceRunner.remediationNotice(0, Instant.now().plus(7, ChronoUnit.DAYS)));
+	}
+
+	/** A red OS reads as a failed check, with what to do about it. */
+	@Test
+	void anOutdatedOsIsListedAsAFailure()
+	{
+		String line = ComplianceRunner.osLine(new OsVersionVerdict("FAIL", "macOS up to date",
+			"macOS 26.7 is missing 26.7.1. Update under System Settings > General > Software Update."));
+
+		assertTrue(line.contains("[FAIL] macOS up to date — macOS 26.7 is missing 26.7.1."), line);
+	}
+
+	/** An amber OS is a hint: printed, but nothing failed. */
+	@Test
+	void aFullyPatchedOlderOsIsAHint()
+	{
+		String line = ComplianceRunner.osLine(new OsVersionVerdict("HINT", "macOS up to date",
+			"macOS 26.7.1 is fully patched, but macOS 27.0 is out. Upgrade when you can."));
+
+		assertTrue(line.contains("[HINT] macOS up to date — macOS 26.7.1 is fully patched"), line);
+	}
+
+	/** No verdict, no line — rather than a [PASS] the server never gave. */
+	@Test
+	void anUnjudgedOsIsLeftOut()
+	{
+		assertNull(ComplianceRunner.osLine(null));
+		assertNull(ComplianceRunner.osLine(new OsVersionVerdict("UNKNOWN", "macOS up to date", null)));
+	}
+
+	/** The deadline notice counts a red OS among the failures; a hint is not one. */
+	@Test
+	void aRedOsCountsAsAFailure()
+	{
+		ReportPayload report = new ReportPayload("device", "user", Instant.now(),
+			List.of(new ResultPayload(1L, false, null), new ResultPayload(2L, true, null)), List.of(), null);
+
+		assertEquals(2, new CheckedRun(report, new OsVersionVerdict("FAIL", "macOS up to date", "x")).failing());
+		assertEquals(1, new CheckedRun(report, new OsVersionVerdict("HINT", "macOS up to date", "x")).failing());
+		assertEquals(1, new CheckedRun(report, null).failing());
 	}
 
 	private static List<CheckItem> checks(int count)
