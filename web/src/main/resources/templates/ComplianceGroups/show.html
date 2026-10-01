@@ -48,7 +48,7 @@
           <td class="px-4 py-3 font-bold">
             {item.name}
             {#if !item.editable}
-            <a href="{uri:BlockedApps.index}"
+            <a href="{uri:Apps.index}?tab=blocked"
                class="block text-[10px] font-black tracking-widest text-stone-400 hover:text-black mt-1">
               GENERATED — MANAGE IN BLOCKED APPS
             </a>
@@ -104,7 +104,7 @@
                    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                    class="z-50 w-32 bg-white border-2 border-black shadow-brutal py-1 origin-top-right">
                 {#if !item.editable}
-                <a href="{uri:BlockedApps.index}"
+                <a href="{uri:Apps.index}?tab=blocked"
                    class="block px-3 py-1.5 text-sm font-medium hover:bg-accent transition-none">
                   Manage list
                 </a>

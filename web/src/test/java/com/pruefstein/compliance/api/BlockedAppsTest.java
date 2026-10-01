@@ -79,7 +79,7 @@ class BlockedAppsTest
 			.formParam("bundleIds", "com.example.one\ncom.example.two")
 			.formParam("homebrewNames", "examplebrew")
 			.formParam("appNames", "")
-			.when().post("/BlockedApps/create")
+			.when().post("/Apps/create")
 			.then()
 			.statusCode(lessThan(400));
 
@@ -110,7 +110,7 @@ class BlockedAppsTest
 			.formParam("homebrewNames", "")
 			.formParam("appNames", "")
 			.formParam("enabled", "true")
-			.when().post("/BlockedApps/update")
+			.when().post("/Apps/update")
 			.then()
 			.statusCode(lessThan(400));
 
@@ -135,7 +135,7 @@ class BlockedAppsTest
 			.formParam("id", id)
 			.formParam("label", "ZZ Test Nextcloud")
 			.formParam("bundleIds", "com.nextcloud.%")
-			.when().post("/BlockedApps/update")
+			.when().post("/Apps/update")
 			.then()
 			.statusCode(lessThan(400));
 
@@ -219,7 +219,7 @@ class BlockedAppsTest
 
 		// when / then — the check and its SQL live here now
 		given()
-			.when().get("/BlockedApps/index")
+			.when().get("/Apps/index")
 			.then()
 			.statusCode(200)
 			.body(allOf(

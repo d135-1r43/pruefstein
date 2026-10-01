@@ -187,7 +187,7 @@ class InventoryReportTest
 			.formParam("matcherType", "HOMEBREW")
 			.formParam("pattern", "wget")
 			.formParam("reportId", reportId)
-			.when().post("/BlockedApps/blockFromReport")
+			.when().post("/Apps/blockFromReport")
 			.then()
 			.statusCode(lessThan(400));
 
@@ -212,7 +212,7 @@ class InventoryReportTest
 			.formParam("label", "ZZ Inv Forbidden")
 			.formParam("matcherType", "HOMEBREW")
 			.formParam("pattern", "wget")
-			.when().post("/BlockedApps/blockFromReport")
+			.when().post("/Apps/blockFromReport")
 			.then()
 			.statusCode(403);
 	}

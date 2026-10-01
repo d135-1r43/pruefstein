@@ -54,7 +54,7 @@ class BlockedAppsAccessTest
 
 		// when / then — the list is readable by anyone signed in
 		given()
-			.when().get("/BlockedApps/index")
+			.when().get("/Apps/index")
 			.then()
 			.statusCode(lessThan(400));
 	}
@@ -70,7 +70,7 @@ class BlockedAppsAccessTest
 			.contentType("application/x-www-form-urlencoded")
 			.formParam("label", "ZZ Access Test Forbidden")
 			.formParam("homebrewNames", "forbidden")
-			.when().post("/BlockedApps/create")
+			.when().post("/Apps/create")
 			.then()
 			.statusCode(403);
 	}
@@ -86,7 +86,7 @@ class BlockedAppsAccessTest
 			.contentType("application/x-www-form-urlencoded")
 			.formParam("id", blockedAppId)
 			.formParam("label", "ZZ Access Test Renamed")
-			.when().post("/BlockedApps/update")
+			.when().post("/Apps/update")
 			.then()
 			.statusCode(403);
 	}
@@ -101,7 +101,7 @@ class BlockedAppsAccessTest
 		given()
 			.contentType("application/x-www-form-urlencoded")
 			.formParam("id", blockedAppId)
-			.when().post("/BlockedApps/delete")
+			.when().post("/Apps/delete")
 			.then()
 			.statusCode(403);
 	}

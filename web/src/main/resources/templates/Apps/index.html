@@ -1,17 +1,21 @@
 {#include main.html}
-{#title}Blocked Apps — Prüfstein{/title}
+{#title}Apps — Prüfstein{/title}
 
-<div x-data="blockedAppsPage()"
+<div x-data="appsPage('{tab}')"
      @open-edit.window="editApp($event.detail)"
      @open-delete.window="deleteApp($event.detail)"
-     class="max-w-4xl">
+     class="max-w-5xl">
 
   <!-- Page header -->
-  <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
     <div>
-      <h1 class="text-3xl sm:text-4xl font-black tracking-tight">Blocked Apps</h1>
+      <h1 class="text-3xl sm:text-4xl font-black tracking-tight">Apps</h1>
       <p class="text-sm font-medium text-stone-500 mt-1">
-        Applications that must not be installed. One entry per application — add every way it can be installed.
+        {#if inject:currentUser.admin}
+        Everything installed across the fleet, and the applications that must not be.
+        {#else}
+        Everything installed on your devices, and the applications that must not be.
+        {/if}
       </p>
     </div>
     {#if inject:currentUser.admin}
@@ -24,6 +28,136 @@
     </button>
     {/if}
   </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-2 mb-6">
+    <button @click="switchTab('all')"
+            :class="tab === 'all' ? 'bg-black text-white' : 'bg-white hover:bg-accent'"
+            class="px-4 py-2 text-sm font-bold border-2 border-black transition-none">
+      All Apps <span class="ml-1 text-xs font-black opacity-60">{apps.size()}</span>
+    </button>
+    <button @click="switchTab('blocked')"
+            :class="tab === 'blocked' ? 'bg-black text-white' : 'bg-white hover:bg-accent'"
+            class="px-4 py-2 text-sm font-bold border-2 border-black transition-none">
+      Blocked <span class="ml-1 text-xs font-black opacity-60">{blockedApps.size()}</span>
+    </button>
+  </div>
+
+  <!-- ── All apps ──────────────────────────────────────────── -->
+  <!-- Filtered by hand rather than an x-show per row: a fleet holds thousands
+       of apps, and the filter has to keep up with typing. -->
+  <div x-show="tab === 'all'" {#if tab != 'all'}x-cloak{/if}>
+    <div class="bg-white border-2 border-black shadow-brutal">
+      <div class="px-4 py-3 border-b-2 border-black flex flex-wrap items-center gap-3">
+        <input type="search" x-model="filter" @input="applyFilter()" placeholder="Search applications…" autofocus
+               class="flex-1 min-w-0 basis-48 px-3 py-1.5 text-sm border-2 border-black focus:outline-none focus:bg-accent">
+        <label class="flex items-center gap-1.5 text-xs font-bold whitespace-nowrap">
+          <input type="checkbox" x-model="hideBlocked" @change="applyFilter()" class="w-4 h-4 border-2 border-black">
+          Hide blocked
+        </label>
+        <label x-show="riskCount > 0" x-cloak class="flex items-center gap-1.5 text-xs font-bold whitespace-nowrap">
+          <input type="checkbox" x-model="flaggedOnly" @change="applyFilter()" class="w-4 h-4 border-2 border-black">
+          Flagged by AI only
+        </label>
+        {#if inject:currentUser.admin}
+        <button @click="analyze()" :disabled="analyzing"
+                title="Ask the AI which apps share files outside OneDrive or allow remote control"
+                class="text-xs font-black tracking-widest border-2 border-black px-3 py-1.5 whitespace-nowrap hover:bg-accent disabled:opacity-50 transition-none">
+          <span x-show="!analyzing">✦ ANALYZE WITH AI</span>
+          <span x-show="analyzing" x-cloak x-text="'ANALYZING ' + analyzed + ' / ' + analyzeTotal + '…'"></span>
+        </button>
+        {/if}
+      </div>
+      <div x-show="analysisNote" x-cloak class="px-4 py-2 border-b-2 border-black bg-accent flex items-center justify-between gap-3">
+        <p class="text-xs font-bold" x-text="analysisNote"></p>
+        <button @click="clearAnalysis()" class="text-[10px] font-black tracking-widest underline">CLEAR</button>
+      </div>
+      <p class="px-4 py-2 border-b-2 border-black text-xs font-medium text-stone-400">
+        As of each device's latest report ·
+        <span x-text="visibleCount">{apps.size()}</span> of {apps.size()} shown
+      </p>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[52rem] border-collapse text-sm">
+          <thead>
+            <tr class="border-b-2 border-black bg-black text-white">
+              <th class="text-left px-4 py-3 font-black text-xs tracking-widest">Application</th>
+              <th class="text-left px-4 py-3 font-black text-xs tracking-widest w-24">Source</th>
+              <th class="text-right px-4 py-3 font-black text-xs tracking-widest w-20">Devices</th>
+              <th class="px-4 py-3 font-black text-xs tracking-widest text-right w-56">Status</th>
+            </tr>
+          </thead>
+          <tbody x-ref="rows">
+            {#for app in apps}
+            <tr class="border-b-2 border-black last:border-0 hover:bg-stone-50 transition-colors"
+                data-key="{app.key}"
+                data-source="{app.row.source}"
+                data-name="{app.row.name}"
+                data-identifier="{app.row.identifier ?: ''}"
+                data-blocked="{app.row.blocked}"
+                data-search="{app.row.searchText}">
+              <td class="px-4 py-3">
+                {#if app.row.link}
+                <a href="{app.row.link}" target="_blank" rel="noopener noreferrer"
+                   class="font-medium underline decoration-2 decoration-stone-300 underline-offset-2 hover:decoration-black">{app.row.name}</a>
+                {#else}
+                <p class="font-medium">{app.row.name}</p>
+                {/if}
+                <code class="text-[11px] font-mono text-stone-400 break-all">{app.row.subtitle}</code>
+                <div data-risk hidden class="mt-1.5 flex items-start gap-1.5">
+                  <span data-risk-category class="flex-shrink-0 text-[9px] font-black tracking-widest border-2 border-black px-1 py-0.5 bg-red-400 text-white"></span>
+                  <p data-risk-reason class="text-xs text-stone-600"></p>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="text-[10px] font-black tracking-wide border-2 border-black px-1 py-0.5 bg-accent">{app.row.source}</span>
+              </td>
+              <td class="px-4 py-3 text-right font-mono text-xs">{app.devices}</td>
+              <td class="px-4 py-3 text-right whitespace-nowrap">
+                {#if app.row.blocked}
+                <span class="inline-block px-2 py-0.5 text-[10px] font-black tracking-widest border-2 border-black bg-red-400 text-white"
+                      title="{app.row.ruleLabel}">BLOCKED</span>
+                {#else if inject:currentUser.admin}
+                <form method="post" action="{uri:Apps.blockFromReport}" class="inline-flex items-center justify-end gap-1">
+                  {#authenticityToken /}
+                  <input type="hidden" name="label" value="{app.row.name}">
+                  <input type="hidden" name="matcherType" value="{app.row.suggestedMatcherType}">
+                  <input type="hidden" name="pattern" value="{app.row.suggestedPattern}">
+                  <input type="hidden" name="reason" value="" data-risk-reason-input>
+                  <button type="submit"
+                          title="Block just this identifier"
+                          class="text-[10px] font-black tracking-widest border-2 border-black px-2 py-1 hover:bg-red-400 hover:text-white transition-none">
+                    BLOCK
+                  </button>
+                  <button type="submit" name="useAi" value="true"
+                          title="Block, and let AI find the other install routes for this app"
+                          class="text-[10px] font-black tracking-widest border-2 border-black px-2 py-1 whitespace-nowrap hover:bg-accent transition-none">
+                    ✦ BLOCK WITH AI
+                  </button>
+                </form>
+                {/if}
+              </td>
+            </tr>
+            {/for}
+          </tbody>
+        </table>
+        {#if apps.isEmpty()}
+        <p class="px-4 py-16 text-center text-sm font-medium text-stone-400">
+          No device has reported an application inventory yet.
+        </p>
+        {#else}
+        <p x-show="visibleCount === 0" x-cloak class="px-4 py-16 text-center text-sm font-medium text-stone-400">
+          Nothing matches.
+        </p>
+        {/if}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Blocked apps ──────────────────────────────────────── -->
+  <div x-show="tab === 'blocked'" {#if tab != 'blocked'}x-cloak{/if}>
+  <p class="text-sm font-medium text-stone-500 mb-4">
+    Applications that must not be installed. One entry per application — add every way it can be installed.
+  </p>
 
   <!-- Table -->
   <div class="bg-white border-2 border-black shadow-brutal overflow-x-auto">
@@ -148,6 +282,7 @@
       </div>
     </div>
   </div>
+  </div>
 
   {#if devMode}
   <!-- ── Test locally Modal (dev mode only) ───────────────── -->
@@ -222,7 +357,7 @@
       <div class="px-6 pt-5 pb-4 border-b-2 border-black">
         <h2 class="text-xl font-black">Block Application</h2>
       </div>
-      <form method="post" action="{uri:BlockedApps.create}" class="px-6 pt-4 pb-6 space-y-4">
+      <form method="post" action="{uri:Apps.create}" class="px-6 pt-4 pb-6 space-y-4">
         {#authenticityToken /}
         <div>
           <label class="block text-xs font-black tracking-wide mb-1.5">Application</label>
@@ -234,7 +369,7 @@
           <textarea name="reason" rows="2" x-model="editData.reason" placeholder="Why this application is not permitted — shown to the user in the remediation tip"
                     class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent"></textarea>
         </div>
-        {#include BlockedApps/_matcher-fields.html idPrefix="create" /}
+        {#include Apps/_matcher-fields.html idPrefix="create" /}
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" @click="showCreate = false"
                   class="px-4 py-2 text-sm font-bold border-2 border-black hover:bg-stone-100">
@@ -257,7 +392,7 @@
       <div class="px-6 pt-5 pb-4 border-b-2 border-black">
         <h2 class="text-xl font-black">Edit Blocked Application</h2>
       </div>
-      <form method="post" action="{uri:BlockedApps.update}" class="px-6 pt-4 pb-6 space-y-4">
+      <form method="post" action="{uri:Apps.update}" class="px-6 pt-4 pb-6 space-y-4">
         {#authenticityToken /}
         <input type="hidden" name="id" :value="editData.id">
         <div>
@@ -270,7 +405,7 @@
           <textarea name="reason" rows="2" x-model="editData.reason"
                     class="w-full px-3 py-2 text-sm border-2 border-black focus:outline-none focus:bg-accent"></textarea>
         </div>
-        {#include BlockedApps/_matcher-fields.html idPrefix="edit" /}
+        {#include Apps/_matcher-fields.html idPrefix="edit" /}
         <label class="flex items-center gap-2 text-sm font-bold">
           <input type="checkbox" name="enabled" value="true" :checked="editData.enabled"
                  class="w-4 h-4 border-2 border-black">
@@ -303,7 +438,7 @@
           Devices will stop being checked for this application on their next run. Existing reports keep their findings.
         </p>
       </div>
-      <form method="post" action="{uri:BlockedApps.delete}" class="px-6 pb-6">
+      <form method="post" action="{uri:Apps.delete}" class="px-6 pb-6">
         {#authenticityToken /}
         <input type="hidden" name="id" :value="deleteId">
         <div class="flex justify-end gap-2 pt-4">
@@ -323,8 +458,23 @@
 </div>
 
 <script>
-function blockedAppsPage() {
+const RISK_STORAGE_KEY = 'pruefstein.appRisks';
+const RISK_BATCH_SIZE = 150;
+const RISK_LABELS = { FILE_SHARING: 'FILE SHARING', REMOTE_ACCESS: 'REMOTE ACCESS', OTHER: 'RISK' };
+
+function appsPage(initialTab) {
   return {
+    tab: initialTab,
+    filter: '',
+    hideBlocked: false,
+    flaggedOnly: false,
+    visibleCount: 0,
+    risks: {},
+    riskCount: 0,
+    analyzing: false,
+    analyzed: 0,
+    analyzeTotal: 0,
+    analysisNote: '',
     showCreate: false,
     showEdit: false,
     showDelete: false,
@@ -341,6 +491,116 @@ function blockedAppsPage() {
     testTipLong: null,
     editData: { id: '', label: '', reason: '', enabled: false, bundleids: '', appnames: '', homebrew: '' },
     deleteId: '',
+    init() {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(RISK_STORAGE_KEY) || 'null');
+        if (saved) {
+          this.risks = saved.risks || {};
+          this.analysisNote = saved.note || '';
+        }
+      } catch (e) { /* no storage, no remembered analysis */ }
+      this.renderRisks();
+      this.applyFilter();
+    },
+    switchTab(tab) {
+      this.tab = tab;
+      const url = new URL(window.location);
+      url.searchParams.set('tab', tab);
+      history.replaceState(null, '', url);
+    },
+    rows() {
+      return this.$refs.rows ? Array.from(this.$refs.rows.children) : [];
+    },
+    applyFilter() {
+      const needle = this.filter.trim().toLowerCase();
+      let visible = 0;
+      for (const row of this.rows()) {
+        const risk = this.risks[row.dataset.key];
+        const haystack = risk ? row.dataset.search + ' ' + risk.category.toLowerCase() + ' ' + risk.reason.toLowerCase() : row.dataset.search;
+        const show = (!needle || haystack.includes(needle))
+          && (!this.hideBlocked || row.dataset.blocked !== 'true')
+          && (!this.flaggedOnly || risk);
+        row.hidden = !show;
+        if (show) visible++;
+      }
+      this.visibleCount = visible;
+    },
+    renderRisks() {
+      let count = 0;
+      for (const row of this.rows()) {
+        const risk = this.risks[row.dataset.key];
+        const slot = row.querySelector('[data-risk]');
+        const reasonInput = row.querySelector('[data-risk-reason-input]');
+        if (risk) count++;
+        slot.hidden = !risk;
+        slot.querySelector('[data-risk-category]').textContent = risk ? '✦ ' + (RISK_LABELS[risk.category] || 'RISK') : '';
+        slot.querySelector('[data-risk-reason]').textContent = risk ? risk.reason : '';
+        if (reasonInput) reasonInput.value = risk ? risk.reason : '';
+      }
+      this.riskCount = count;
+      if (!count) this.flaggedOnly = false;
+    },
+    async analyze() {
+      const apps = this.rows()
+        .filter(row => row.dataset.blocked !== 'true')
+        .map(row => ({
+          key: row.dataset.key,
+          source: row.dataset.source,
+          name: row.dataset.name,
+          identifier: row.dataset.identifier,
+        }));
+      if (!apps.length) { this.analysisNote = 'Nothing left to analyze — every app is blocked already.'; return; }
+      const batches = [];
+      for (let i = 0; i < apps.length; i += RISK_BATCH_SIZE) batches.push(apps.slice(i, i + RISK_BATCH_SIZE));
+
+      this.analyzing = true;
+      this.analyzed = 0;
+      this.analyzeTotal = apps.length;
+      this.analysisNote = '';
+      const risks = {};
+      let failed = 0;
+      // A few batches in flight at once: one at a time takes minutes on a
+      // large fleet, all at once runs into the model's rate limit
+      const queue = batches.slice();
+      const worker = async () => {
+        while (queue.length) {
+          const batch = queue.shift();
+          try {
+            const res = await fetch('/ai/analyze-apps', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ apps: batch }),
+            });
+            if (!res.ok) throw new Error('Server error: ' + res.status);
+            for (const risk of await res.json()) risks[risk.key] = { category: risk.category, reason: risk.reason };
+          } catch (e) {
+            failed += batch.length;
+          } finally {
+            this.analyzed += batch.length;
+          }
+        }
+      };
+      await Promise.all([worker(), worker(), worker()]);
+
+      this.risks = risks;
+      const flagged = Object.keys(risks).length;
+      this.analysisNote = 'AI flagged ' + flagged + ' of ' + apps.length + ' unblocked apps — review before blocking.'
+        + (failed ? ' ' + failed + ' could not be analyzed; try again.' : '');
+      try {
+        sessionStorage.setItem(RISK_STORAGE_KEY, JSON.stringify({ risks, note: this.analysisNote }));
+      } catch (e) { /* the analysis just won't survive a reload */ }
+      this.analyzing = false;
+      this.renderRisks();
+      this.flaggedOnly = flagged > 0;
+      this.applyFilter();
+    },
+    clearAnalysis() {
+      this.risks = {};
+      this.analysisNote = '';
+      try { sessionStorage.removeItem(RISK_STORAGE_KEY); } catch (e) { /* nothing stored */ }
+      this.renderRisks();
+      this.applyFilter();
+    },
     resetCreate() {
       this.editData = { id: '', label: '', reason: '', enabled: true, bundleids: '', appnames: '', homebrew: '' };
       this.aiDescription = '';

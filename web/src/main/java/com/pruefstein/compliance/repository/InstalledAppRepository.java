@@ -1,5 +1,6 @@
 package com.pruefstein.compliance.repository;
 
+import java.util.Collection;
 import java.util.List;
 
 import com.pruefstein.compliance.domain.InstalledApp;
@@ -14,5 +15,27 @@ public class InstalledAppRepository implements PanacheRepository<InstalledApp>
 	public List<InstalledApp> listForReport(Report report)
 	{
 		return list("report", Sort.by("source").and("name"), report);
+	}
+
+	/**
+	 * Every distinct application across the given reports, as rows of
+	 * {@code source, name, identifier, newest version, device count}.
+	 * <p>
+	 * Plain columns rather than {@code select new}, for the same native-image
+	 * reason as {@code ReportRepository#findLatestPerDevice}.
+	 */
+	public List<Object[]> summarize(Collection<Long> reportIds)
+	{
+		if (reportIds.isEmpty())
+		{
+			return List.of();
+		}
+		return getEntityManager()
+			.createQuery("select a.source, a.name, a.identifier, max(a.version), count(distinct a.report.deviceId)"
+				+ " from InstalledApp a where a.report.id in :ids"
+				+ " group by a.source, a.name, a.identifier"
+				+ " order by lower(a.name), a.source", Object[].class)
+			.setParameter("ids", reportIds)
+			.getResultList();
 	}
 }

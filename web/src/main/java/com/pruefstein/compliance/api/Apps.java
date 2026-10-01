@@ -14,6 +14,8 @@ import com.pruefstein.compliance.service.BlacklistQueryGenerator;
 import com.pruefstein.compliance.service.BlockedAppAiService;
 import com.pruefstein.compliance.service.BlockedAppSuggestion;
 import com.pruefstein.report.api.Reports;
+import com.pruefstein.report.service.FleetInventory;
+import com.pruefstein.report.service.FleetInventory.FleetApp;
 import io.quarkiverse.renarde.Controller;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
@@ -24,13 +26,14 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.POST;
 import org.jboss.resteasy.reactive.RestForm;
+import org.jboss.resteasy.reactive.RestQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RolesAllowed("**")
-public class BlockedApps extends Controller
+public class Apps extends Controller
 {
-	private static final Logger LOG = LoggerFactory.getLogger(BlockedApps.class);
+	private static final Logger LOG = LoggerFactory.getLogger(Apps.class);
 
 	@Inject
 	BlockedAppRepository repository;
@@ -44,6 +47,13 @@ public class BlockedApps extends Controller
 	@Inject
 	ComplianceItemRepository itemRepository;
 
+	@Inject
+	FleetInventory fleetInventory;
+
+	static final String TAB_ALL = "all";
+
+	static final String TAB_BLOCKED = "blocked";
+
 	@CheckedTemplate
 	public static class Templates
 	{
@@ -51,17 +61,22 @@ public class BlockedApps extends Controller
 		{
 		}
 
-		public static native TemplateInstance index(List<BlockedApp> blockedApps, String checkName,
-			String generatedQuery, String generatedExpression, boolean devMode);
+		public static native TemplateInstance index(String tab, List<FleetApp> apps, List<BlockedApp> blockedApps,
+			String checkName, String generatedQuery, String generatedExpression, boolean devMode);
 	}
 
-	public TemplateInstance index()
+	/**
+	 * Two tabs: every application installed anywhere, to screen, and the ones
+	 * blocked so far. All apps first, since that is where blocking starts.
+	 */
+	public TemplateInstance index(@RestQuery String tab)
 	{
+		String current = TAB_BLOCKED.equals(tab) ? TAB_BLOCKED : TAB_ALL;
 		String checkName = itemRepository.findActiveBlacklistCheck()
 			.map(AppBlacklistCheck::getName)
 			.orElse(null);
 		boolean devMode = LaunchMode.current() == LaunchMode.DEVELOPMENT;
-		return Templates.index(repository.listAllSorted(), checkName,
+		return Templates.index(current, fleetInventory.list(), repository.listAllSorted(), checkName,
 			queryGenerator.generate(repository.listEnabled()), BlacklistQueryGenerator.EXPRESSION, devMode);
 	}
 
@@ -77,7 +92,7 @@ public class BlockedApps extends Controller
 	{
 		if (validationFailed())
 		{
-			index();
+			index(TAB_BLOCKED);
 			return;
 		}
 		BlockedApp app = new BlockedApp();
@@ -86,7 +101,7 @@ public class BlockedApps extends Controller
 		app.setEnabled(true);
 		app.setMatchers(parseMatchers(bundleIds, appNames, homebrewNames));
 		repository.persist(app);
-		index();
+		index(TAB_BLOCKED);
 	}
 
 	@POST
@@ -103,7 +118,7 @@ public class BlockedApps extends Controller
 	{
 		if (validationFailed())
 		{
-			index();
+			index(TAB_BLOCKED);
 			return;
 		}
 		BlockedApp app = repository.findById(id);
@@ -117,7 +132,7 @@ public class BlockedApps extends Controller
 		app.setEnabled(enabled != null && enabled);
 		app.getMatchers().clear();
 		app.getMatchers().addAll(parseMatchers(bundleIds, appNames, homebrewNames));
-		index();
+		index(TAB_BLOCKED);
 	}
 
 	@POST
@@ -126,14 +141,15 @@ public class BlockedApps extends Controller
 	public void delete(@RestForm Long id)
 	{
 		repository.deleteById(id);
-		index();
+		index(TAB_BLOCKED);
 	}
 
 	/**
-	 * One-click block straight from a report's installed-app list. The matcher
-	 * is derived from how the app was installed — a Homebrew name for packages,
-	 * the bundle identifier for application bundles — and the admin is returned
-	 * to the report they came from.
+	 * One-click block straight from an installed-app list — a report's, or the
+	 * fleet's on the All Apps tab. The matcher is derived from how the app was
+	 * installed — a Homebrew name for packages, the bundle identifier for
+	 * application bundles — and the admin is returned to the list they came
+	 * from.
 	 */
 	@POST
 	@Transactional
@@ -148,7 +164,7 @@ public class BlockedApps extends Controller
 	{
 		if (validationFailed())
 		{
-			index();
+			index(TAB_ALL);
 			return;
 		}
 		BlockedApp app = new BlockedApp();
@@ -164,9 +180,11 @@ public class BlockedApps extends Controller
 		}
 		repository.persist(app);
 
+		// Without a report it came from the fleet list, which is where to
+		// return
 		if (reportId == null)
 		{
-			index();
+			index(TAB_ALL);
 			return;
 		}
 		redirect(Reports.class).show(reportId);

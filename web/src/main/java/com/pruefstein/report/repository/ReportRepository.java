@@ -108,10 +108,24 @@ public class ReportRepository implements PanacheRepository<Report>
 	 */
 	public List<LatestRun> findLatestPerDevice()
 	{
-		List<Object[]> rows = getEntityManager()
-			.createQuery("select r.id, r.deviceId, r.osVersion from Report r"
-				+ " order by r.checkedAt desc, r.id desc", Object[].class)
-			.getResultList();
+		return findLatestPerDevice(null);
+	}
+
+	/**
+	 * {@link #findLatestPerDevice()}, narrowed to the devices one person
+	 * reported from, or every device for {@code null}.
+	 */
+	public List<LatestRun> findLatestPerDevice(String keycloakUser)
+	{
+		String owner = keycloakUser == null ? "" : " where r.keycloakUser = :owner";
+		var query = getEntityManager()
+			.createQuery("select r.id, r.deviceId, r.osVersion from Report r" + owner
+				+ " order by r.checkedAt desc, r.id desc", Object[].class);
+		if (keycloakUser != null)
+		{
+			query.setParameter("owner", keycloakUser);
+		}
+		List<Object[]> rows = query.getResultList();
 
 		Map<String, LatestRun> latest = new LinkedHashMap<>();
 		for (Object[] row : rows)

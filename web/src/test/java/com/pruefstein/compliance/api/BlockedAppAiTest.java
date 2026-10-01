@@ -92,7 +92,7 @@ class BlockedAppAiTest
 			.formParam("matcherType", "BUNDLE_ID")
 			.formParam("pattern", "com.nextcloud.desktopclient")
 			.formParam("useAi", "true")
-			.when().post("/BlockedApps/blockFromReport")
+			.when().post("/Apps/blockFromReport")
 			.then()
 			.statusCode(lessThan(400));
 
@@ -119,7 +119,7 @@ class BlockedAppAiTest
 			.formParam("label", "ZZ Ai Plain")
 			.formParam("matcherType", "BUNDLE_ID")
 			.formParam("pattern", "com.example.plain")
-			.when().post("/BlockedApps/blockFromReport")
+			.when().post("/Apps/blockFromReport")
 			.then()
 			.statusCode(lessThan(400));
 
@@ -145,7 +145,7 @@ class BlockedAppAiTest
 			.formParam("matcherType", "HOMEBREW")
 			.formParam("pattern", "sometool")
 			.formParam("useAi", "true")
-			.when().post("/BlockedApps/blockFromReport")
+			.when().post("/Apps/blockFromReport")
 			.then()
 			.statusCode(lessThan(400));
 
