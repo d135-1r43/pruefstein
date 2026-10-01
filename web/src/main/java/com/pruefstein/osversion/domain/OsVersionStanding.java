@@ -3,19 +3,17 @@ package com.pruefstein.osversion.domain;
 /**
  * How a device's macOS compares to the newest release Apple had published.
  * <p>
- * Within the newest train, the names say which number differs, because that
- * decides how loudly the report says it: a missing fix is a nag, a missing
- * feature update is a problem. On an older train, what matters is whether Apple
- * still patches it and whether the machine has taken those patches — the newest
- * fix of a supported train is a choice, anything short of it is neglect, and a
- * train Apple has dropped cannot be fixed without upgrading.
+ * Only the newest release is green. Anything short of the newest fix of its
+ * train is red, whether that is a fix or a feature update; the newest fix of an
+ * older train Apple still patches is amber, because nothing is left to install
+ * short of the upgrade. A train Apple has dropped is red however patched it is.
  */
 public enum OsVersionStanding
 {
 	/** At the newest release, or ahead of it on a beta. */
 	CURRENT,
 
-	/** Newest train and feature update, missing a fix. Shown in amber. */
+	/** Newest train and feature update, missing a fix. Shown in red. */
 	PATCH_BEHIND,
 
 	/** Newest train, an older feature update. Shown in red. */

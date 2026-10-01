@@ -50,7 +50,7 @@
         <p class="text-sm font-bold mt-0.5 tabular-nums flex items-center gap-1.5 flex-wrap">
           <span>{os.reported}</span>
           {#if os.patchBehind}
-          <span class="inline-block px-1.5 py-0.5 text-[9px] font-black tracking-widest border-2 border-black bg-amber-400">MISSING A FIX</span>
+          <span class="inline-block px-1.5 py-0.5 text-[9px] font-black tracking-widest border-2 border-black bg-red-400 text-white">MISSING A FIX</span>
           {#else if os.olderTrainPatched}
           <span class="inline-block px-1.5 py-0.5 text-[9px] font-black tracking-widest border-2 border-black bg-amber-400">OLDER MACOS, FULLY PATCHED</span>
           {#else if os.minorBehind}

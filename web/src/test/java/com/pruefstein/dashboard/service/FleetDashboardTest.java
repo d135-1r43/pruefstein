@@ -128,7 +128,7 @@ class FleetDashboardTest
 			FleetStats stats = fleet.stats();
 
 			VersionShare patched = share(stats, "15.7.9");
-			assertTrue(patched.isPatchBehind());
+			assertTrue(patched.isOlderTrainPatched());
 			assertFalse(patched.isBehind());
 			assertEquals("older macOS, fully patched", patched.note());
 			VersionShare unpatched = share(stats, "15.7.8");

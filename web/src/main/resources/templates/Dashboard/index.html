@@ -120,7 +120,7 @@
           <p class="text-[10px] font-medium text-stone-400 leading-tight mt-1">{version.note}</p>
         </div>
         <div class="chart-track flex-1 h-5 border-2 border-black bg-stone-100">
-          <div class="chart-bar h-full {#if version.current}bg-emerald-400{#else if version.patchBehind}bg-amber-400{#else if version.behind}bg-red-400{#else}bg-stone-300{/if}"
+          <div class="chart-bar h-full {#if version.current}bg-emerald-400{#else if version.olderTrainPatched}bg-amber-400{#else if version.behind}bg-red-400{#else}bg-stone-300{/if}"
                style="width: {version.barPct}%"></div>
         </div>
         <p class="w-20 shrink-0 text-right text-sm font-black tabular-nums">{version.devices}<span
@@ -133,8 +133,8 @@
          bar that happens to carry each one. -->
     <div class="flex flex-wrap gap-x-5 gap-y-2 mt-6 pt-4 border-t-2 border-stone-200 text-[10px] font-black tracking-widest text-stone-500">
       <span class="flex items-center gap-1.5"><span class="w-3 h-3 border-2 border-black bg-emerald-400"></span>UP TO DATE</span>
-      <span class="flex items-center gap-1.5"><span class="w-3 h-3 border-2 border-black bg-amber-400"></span>MISSING A FIX · OLDER MACOS, FULLY PATCHED</span>
-      <span class="flex items-center gap-1.5"><span class="w-3 h-3 border-2 border-black bg-red-400"></span>MISSING AN UPDATE · OLDER MACOS, MISSING UPDATES OR NO LONGER PATCHED</span>
+      <span class="flex items-center gap-1.5"><span class="w-3 h-3 border-2 border-black bg-amber-400"></span>OLDER MACOS, FULLY PATCHED</span>
+      <span class="flex items-center gap-1.5"><span class="w-3 h-3 border-2 border-black bg-red-400"></span>MISSING A FIX OR UPDATE · OLDER MACOS, MISSING UPDATES OR NO LONGER PATCHED</span>
       <span class="flex items-center gap-1.5"><span class="w-3 h-3 border-2 border-black bg-stone-300"></span>NOT REPORTED</span>
     </div>
 

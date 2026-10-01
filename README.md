@@ -224,7 +224,7 @@ The report header shows the version and how it compares:
 | Mark | Meaning |
 |---|---|
 | `CURRENT`, green | at the newest release, or ahead of it on a beta |
-| `MISSING A FIX`, amber | the newest macOS and feature update, missing a fix |
+| `MISSING A FIX`, red | the newest macOS and feature update, missing a fix |
 | `MISSING AN UPDATE`, red | the newest macOS, an older feature update |
 | `OLDER MACOS, FULLY PATCHED`, amber | an older macOS Apple still patches, on its newest fix |
 | `OLDER MACOS, MISSING UPDATES`, red, plus `USES A 2-YEAR-OLD VERSION` | an older macOS Apple still patches, short of its newest fix |

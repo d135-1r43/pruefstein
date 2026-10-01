@@ -89,7 +89,7 @@ class ReportOsVersionHeaderTest
 	}
 
 	@Test
-	void marksAMissingFixInAmber()
+	void marksAMissingFixInRed()
 	{
 		// given — same train, same feature update, one fix short
 		seed("26.7", "25G229", "26.7.1");
@@ -100,7 +100,8 @@ class ReportOsVersionHeaderTest
 			.then()
 			.statusCode(200)
 			.body(containsString("MISSING A FIX"))
-			.body(containsString("bg-amber-400"))
+			.body(containsString("bg-red-400"))
+			.body(not(containsString("bg-amber-400")))
 			.body(containsString("latest was 26.7.1"))
 			.body(not(containsString("USES A")));
 	}

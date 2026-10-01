@@ -52,23 +52,20 @@ public record VersionShare(
 		return !folded && standing == OsVersionStanding.CURRENT;
 	}
 
-	/**
-	 * Amber: the newest macOS missing a fix, or an older macOS Apple still
-	 * patches, on its newest fix.
-	 */
-	public boolean isPatchBehind()
+	/** Amber: an older macOS Apple still patches, on its newest fix. */
+	public boolean isOlderTrainPatched()
 	{
-		return !folded && (standing == OsVersionStanding.PATCH_BEHIND
-			|| standing == OsVersionStanding.OLDER_TRAIN_PATCHED);
+		return !folded && standing == OsVersionStanding.OLDER_TRAIN_PATCHED;
 	}
 
 	/**
-	 * Red: the newest macOS missing a feature update, an older macOS missing
-	 * its own updates or no longer patched, or a folded tail of those.
+	 * Red: anything short of the newest fix of its macOS, an older macOS no
+	 * longer patched, or a folded tail of those.
 	 */
 	public boolean isBehind()
 	{
 		return folded
+			|| standing == OsVersionStanding.PATCH_BEHIND
 			|| standing == OsVersionStanding.MINOR_BEHIND
 			|| standing == OsVersionStanding.OLDER_TRAIN_UNPATCHED
 			|| standing == OsVersionStanding.UNSUPPORTED_TRAIN;

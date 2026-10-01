@@ -85,7 +85,7 @@ public record OsVersionAssessment(
 		return latestOfTrain;
 	}
 
-	/** Newest train, missing a fix — worth saying, not alarming. Amber. */
+	/** Newest train and feature update, missing a fix. Red. */
 	public boolean isPatchBehind()
 	{
 		return standing == OsVersionStanding.PATCH_BEHIND;
